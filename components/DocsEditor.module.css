@@ -1,0 +1,135 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.titleInput {
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.categorySelect {
+  min-width: 180px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  background: var(--accent-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.toolbar button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.toolbar button:hover {
+  background: var(--accent);
+  border-color: var(--brand);
+}
+
+.toolbar button.active {
+  background: var(--brand);
+  color: white;
+  border-color: var(--brand);
+}
+
+.editable {
+  min-height: 240px;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition: all 0.2s ease;
+}
+
+.editable:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.editable :global(.ProseMirror) {
+  outline: none;
+  min-height: 200px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.editable :global(.ProseMirror p) {
+  margin: 0.5em 0;
+}
+
+.editable :global(.ProseMirror h2) {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 1em 0 0.5em 0;
+  color: var(--text);
+}
+
+.editable :global(.ProseMirror ul),
+.editable :global(.ProseMirror ol) {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.editable :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  color: var(--muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.saveWrap {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.saveBtn {
+  flex: 1;
+}
+
+.cancelBtn {
+  padding: 10px 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.cancelBtn:hover {
+  background: var(--accent-light);
+  border-color: var(--brand);
+}

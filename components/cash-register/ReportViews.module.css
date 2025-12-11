@@ -1,0 +1,305 @@
+.reportCard {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.reportHeader {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.reportHeader h2 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.reportMeta {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.reportStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.statCard {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.balanceSection {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.balanceSection h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.balanceRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+}
+
+.balanceRow:last-child {
+  border-bottom: none;
+}
+
+.balanceRowTotal {
+  font-weight: 600;
+  font-size: 16px;
+  padding: 16px 0;
+  border-top: 2px solid #e5e7eb;
+  border-bottom: none;
+  margin-top: 8px;
+}
+
+.balanceRowDifference {
+  padding: 12px;
+  background: #fef2f2;
+  border-radius: 6px;
+  border: 1px solid #fee2e2;
+  margin-top: 8px;
+}
+
+.positive {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.negative {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.categoryBreakdown {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.categoryBreakdown h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.categoryRow {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.categoryName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.categoryBar {
+  height: 24px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.categoryBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  transition: width 0.3s ease;
+}
+
+.categoryAmount {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.topServices {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.topServices h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.serviceRow {
+  display: grid;
+  grid-template-columns: 30px 1fr 80px 100px 80px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+}
+
+.serviceRow:last-child {
+  border-bottom: none;
+}
+
+.serviceRank {
+  font-weight: 700;
+  color: #3b82f6;
+  text-align: center;
+}
+
+.serviceName {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.serviceQuantity {
+  text-align: center;
+  color: #6b7280;
+}
+
+.serviceTotal {
+  text-align: right;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.servicePercent {
+  text-align: right;
+  color: #6b7280;
+}
+
+.dailyStats {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dailyStats h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dailyStatsTable {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dailyStatsHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.dailyStatsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.dailyStatsRow:last-child {
+  border-bottom: none;
+}
+
+.reportFooter {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.buttonPrint,
+.buttonExport {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.buttonPrint {
+  background: #3b82f6;
+  color: white;
+}
+
+.buttonPrint:hover {
+  background: #2563eb;
+}
+
+.buttonExport {
+  background: #10b981;
+  color: white;
+}
+
+.buttonExport:hover {
+  background: #059669;
+}
+
+.analyticsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media print {
+  .reportFooter {
+    display: none;
+  }
+
+  .reportCard {
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+}

@@ -1,0 +1,260 @@
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.titleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.count {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toolbarRight {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbarButton {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.toolbarButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.buttonPrimary {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.buttonPrimary:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.toolbarLeftButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.toolbarLink {
+  padding: 6px 12px;
+  border: none;
+  background: white;
+  color: #3b82f6;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbarLink:hover {
+  background: #eff6ff;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.nameColumn {
+  width: 40%;
+  min-width: 250px;
+}
+
+.typeColumn {
+  width: 25%;
+  min-width: 150px;
+}
+
+.balanceColumn {
+  width: 20%;
+  min-width: 120px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.actionsColumn {
+  width: 15%;
+  min-width: 80px;
+  text-align: center;
+}
+
+.nameCell {
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.balancePositive {
+  color: #10b981;
+}
+
+.balanceNegative {
+  color: #ef4444;
+}
+
+.balanceNeutral {
+  color: #6b7280;
+}
+
+.noData {
+  text-align: center;
+  color: #9ca3af;
+  padding: 32px 16px !important;
+}
+
+.totalRow {
+  background: #f9fafb;
+  border-top: 2px solid #e5e7eb;
+  border-bottom: none;
+  font-weight: 600;
+}
+
+.totalRow td {
+  border-bottom: none;
+  padding: 16px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.actionButton {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionButton:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.actionDelete:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+@media (max-width: 768px) {
+  .toolbarRight {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .toolbarButton {
+    width: 100%;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 12px;
+  }
+}

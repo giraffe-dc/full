@@ -1,0 +1,193 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.title {
+  margin: 0;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.itemsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.emptyCart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.cartItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemName {
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemPrice {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.itemControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.quantityButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.quantityButton:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.quantity {
+  width: 24px;
+  text-align: center;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.itemSubtotal {
+  width: 60px;
+  text-align: right;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.removeButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.removeButton:hover {
+  background: #fecaca;
+}
+
+.totals {
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.totalRow:last-child {
+  margin-bottom: 0;
+}
+
+.totalAmount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 8px;
+}
+
+.paymentButtons {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.paymentButton {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.paymentButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paymentCash {
+  background: #10b981;
+}
+
+.paymentCash:hover:not(:disabled) {
+  background: #059669;
+}
+
+.paymentCard {
+  background: #3b82f6;
+}
+
+.paymentCard:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.paymentMixed {
+  background: #f59e0b;
+}
+
+.paymentMixed:hover:not(:disabled) {
+  background: #d97706;
+}

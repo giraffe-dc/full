@@ -1,0 +1,498 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import styles from "./page.module.css";
+import { AccountingSidebar, type AccountingSection } from "../../components/accounting/Sidebar";
+import { ClientsSection } from "../../components/accounting/ClientsSection";
+import { DashboardSection } from "../../components/accounting/DashboardSection";
+import { ReceiptsSection } from "../../components/accounting/ReceiptsSection";
+import { TransactionsSection } from "../../components/accounting/TransactionsSection";
+import { StaffSection } from "../../components/accounting/StaffSection";
+import { CategoriesSection } from "../../components/accounting/CategoriesSection";
+import { ProductsSection } from "../../components/accounting/ProductsSection";
+import { PaymentsSection } from "../../components/accounting/PaymentsSection";
+import { CashShiftsSection } from '../../components/accounting/CashShiftsSection';
+import { SalarySection } from '../../components/accounting/SalarySection';
+import { InvoicesSection } from '../../components/accounting/InvoicesSection';
+import { StockSection } from '../../components/accounting/StockSection';
+import { MenuProductsSection } from '../../components/accounting/MenuProductsSection';
+// import { MenuRecipesSection } from '../../components/accounting/MenuRecipesSection';
+import { MenuProductCategoriesSection } from '../../components/accounting/MenuProductCategoriesSection';
+
+import type { Transaction, Totals, CashShift, SalaryRow } from "../../types/accounting";
+import {
+  CATEGORY_LABELS,
+  CATEGORIES,
+  MOCK_CLIENT_ROWS,
+  MOCK_STAFF_ROWS,
+  MOCK_CATEGORY_ROWS,
+  MOCK_PRODUCT_ROWS,
+  MOCK_PAYMENT_ROWS,
+  MOCK_RECEIPT_ROWS,
+  MOCK_CASH_SHIFTS,
+  MOCK_SALARY_ROWS,
+  MOCK_INVOICE_ROWS,
+  MOCK_MENU_PRODUCTS,
+  MOCK_MENU_RECIPES,
+  MOCK_PRODUCT_CATEGORIES,
+} from "../../lib/accounting-mock-data";
+import {
+  calculateClientsTotals,
+  calculateStaffTotals,
+  calculateCategoryTotals,
+  calculateProductTotals,
+  calculatePaymentTotals,
+  calculateIncomeStats,
+  calculateIncomeCategoryStats,
+  calculateExpenseCategoryStats,
+  calculateDailyStats,
+  calculateMaxDailyValue,
+  calculateTotals,
+} from "../../lib/accounting-utils";
+
+export default function AccountingPage() {
+  const [activeSection, setActiveSection] = useState<AccountingSection>("dashboard");
+  const [tx, setTx] = useState<Transaction[]>([]);
+  const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, balance: 0 });
+  const [showForm, setShowForm] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [filters, setFilters] = useState({
+    startDate: "",
+    endDate: "",
+    type: "",
+    category: "",
+    paymentMethod: "",
+    source: "",
+  });
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split("T")[0],
+    description: "",
+    amount: "",
+    type: "income",
+    category: "other",
+    paymentMethod: "cash",
+    source: "onsite",
+    visits: "",
+  });
+  const [cashShifts, setCashShifts] = useState<CashShift[]>(MOCK_CASH_SHIFTS);
+  const [salaryRows, setSalaryRows] = useState<SalaryRow[]>(MOCK_SALARY_ROWS);
+
+  // Мок-дані для розділів
+  const clientRows = MOCK_CLIENT_ROWS;
+  const clientsTotals = useMemo(() => calculateClientsTotals(clientRows), []);
+
+  const staffRows = MOCK_STAFF_ROWS;
+  const staffTotals = useMemo(() => calculateStaffTotals(staffRows), []);
+
+  const categoryRows = MOCK_CATEGORY_ROWS;
+  const categoryTotals = useMemo(() => calculateCategoryTotals(categoryRows), []);
+
+  const productRows = MOCK_PRODUCT_ROWS;
+  const productTotals = useMemo(() => calculateProductTotals(productRows), []);
+
+  const paymentRows = MOCK_PAYMENT_ROWS;
+  const paymentTotals = useMemo(() => calculatePaymentTotals(paymentRows), []);
+
+  const receiptRows = MOCK_RECEIPT_ROWS;
+  const invoiceRows = MOCK_INVOICE_ROWS;
+  const menuProducts = MOCK_MENU_PRODUCTS;
+  const menuRecipes = MOCK_MENU_RECIPES;
+  const productCategories = MOCK_PRODUCT_CATEGORIES;
+
+  // Використовуємо константи замість дублювання
+  const categories = CATEGORIES;
+  const categoryLabels = CATEGORY_LABELS;
+
+  // Агрегати для дашборда на основі поточних транзакцій (з мемоізацією)
+  const dashboardStats = useMemo(() => {
+    const incomeStats = calculateIncomeStats(tx);
+    const incomeCategoryStats = calculateIncomeCategoryStats(tx);
+    const expenseCategoryStats = calculateExpenseCategoryStats(tx);
+    const dailyStats = calculateDailyStats(tx);
+    const maxDailyValue = calculateMaxDailyValue(dailyStats);
+
+    return {
+      ...incomeStats,
+      incomeCategoryStats: Object.entries(incomeCategoryStats)
+        .map(([key, total]) => ({
+          key,
+          label: categoryLabels[key] || key,
+          total,
+          percent: incomeStats.totalIncomeAmount ? (total / incomeStats.totalIncomeAmount) * 100 : 0,
+        }))
+        .sort((a, b) => b.total - a.total),
+      expenseCategoryStats: Object.entries(expenseCategoryStats)
+        .map(([key, total]) => ({
+          key,
+          label: categoryLabels[key] || key,
+          total,
+          percent: Object.values(expenseCategoryStats).reduce((s, v) => s + v, 0)
+            ? (total / Object.values(expenseCategoryStats).reduce((s, v) => s + v, 0)) * 100
+            : 0,
+        }))
+        .sort((a, b) => b.total - a.total),
+      dailyStats,
+      maxDailyValue,
+    };
+  }, [tx, categoryLabels]);
+
+  async function fetchTx() {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
+    if (filters.type) params.append("type", filters.type);
+    if (filters.category) params.append("category", filters.category);
+    if (filters.paymentMethod) params.append("paymentMethod", filters.paymentMethod);
+    if (filters.source) params.append("source", filters.source);
+    const res = await fetch(`/api/accounting/transactions?${params.toString()}`);
+    const data = await res.json();
+    setTx(data.data || []);
+    setTotals(data.totals || { income: 0, expense: 0, balance: 0 });
+  }
+
+  useEffect(() => {
+    fetchTx();
+  }, [filters]);
+
+  function resetForm() {
+    setFormData({
+      date: new Date().toISOString().split("T")[0],
+      description: "",
+      amount: "",
+      type: "income",
+      category: "other",
+      paymentMethod: "cash",
+      source: "onsite",
+      visits: "",
+    });
+    setEditingTx(null);
+    setShowForm(false);
+  }
+
+  function handleEdit(t: Transaction) {
+    setEditingTx(t);
+    setFormData({
+      date: new Date(t.date).toISOString().split("T")[0],
+      description: t.description,
+      amount: String(t.amount),
+      type: t.type,
+      category: t.category || "other",
+      paymentMethod: t.paymentMethod || "cash",
+      source: t.source || "onsite",
+      visits: t.visits !== undefined ? String(t.visits) : "",
+    });
+    setShowForm(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const url = editingTx ? `/api/accounting/transactions/${editingTx._id}` : "/api/accounting/transactions";
+    const method = editingTx ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    if (res.ok) {
+      fetchTx();
+      resetForm();
+    } else {
+      alert("Помилка збереження");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Видалити транзакцію?")) return;
+    const res = await fetch(`/api/accounting/transactions/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      fetchTx();
+    } else {
+      alert("Помилка видалення");
+    }
+  }
+
+  const handleAddShift = () => {
+  console.log('Додати нову касову зміну');
+  // Тут буде логіка додавання нової касової зміни
+};
+const handleCloseShift = (id: string) => {
+  console.log('Закрити касову зміну', id);
+  setCashShifts(prev => 
+    prev.map(shift => 
+      shift.id === id ? { ...shift, status: 'closed' } : shift
+    )
+  );
+};
+const handleOpenShift = (id: string) => {
+  console.log('Відкрити касову зміну', id);
+  setCashShifts(prev => 
+    prev.map(shift => 
+      shift.id === id ? { ...shift, status: 'opened' } : shift
+    )
+  );
+};
+const handleViewShift = (id: string) => {
+  console.log('Переглянути касову зміну', id);
+  // Тут буде логіка перегляду деталей касової зміни
+};
+
+const handlePaySalary = (id: string) => {
+  console.log('Виплата зарплати для', id);
+  // Тут буде логіка виплати зарплати
+};
+
+const handleViewSalaryDetails = (id: string) => {
+  console.log('Перегляд деталей зарплати для', id);
+  // Тут буде логіка перегляду деталей
+};
+
+const handleExportSalary = () => {
+  console.log('Експорт даних про зарплату');
+  // Тут буде логіка експорту
+};
+
+  const sectionTitle =
+    activeSection === "dashboard"
+      ? "Дашборд"
+      : activeSection === "clients"
+      ? "Клієнти"
+      : activeSection === "staff"
+      ? "Працівники"
+      : activeSection === "categories"
+      ? "Категорії"
+      : activeSection === "products"
+      ? "Товари"
+      : activeSection === "receipts"
+      ? "Чеки"
+      : activeSection === "revenue"
+      ? "Виручка"
+      : activeSection === "payments"
+      ? "Оплати"
+      : activeSection === "taxes"
+      ? "Податки"
+      : activeSection === "menu"
+      ? "Меню"
+      : activeSection === "stock"
+      ? "Склад"
+      : activeSection === "marketing"
+      ? "Маркетинг"
+      : activeSection === "access"
+      ? "Доступи"
+      : activeSection === "venues"
+      ? "Усі заклади"
+      : activeSection === "settings"
+      ? "Налаштування"
+      : "Витрати";
+
+  const sectionDescription =
+    activeSection === "dashboard"
+      ? "Загальний огляд доходів, витрат та балансу."
+      : activeSection === "clients"
+      ? "Робота з клієнтами та історією їхніх відвідувань."
+      : activeSection === "staff"
+      ? "Показники роботи працівників та офіціантів."
+      : activeSection === "categories"
+      ? "Категорії товарів і послуг за виторгом та собівартістю."
+      : activeSection === "products"
+      ? "Номенклатура товарів та послуг. (планується)"
+      : activeSection === "receipts"
+      ? "Облік чеків та операцій за розрахунковими документами."
+      : activeSection === "revenue"
+      ? "Розрізи по виручці центру. (планується)"
+      : activeSection === "payments"
+      ? "Розрахунки та оплати. (планується)"
+      : activeSection === "taxes"
+      ? "Податкові нарахування та звітність. (планується)"
+      : activeSection === "menu"
+      ? "Меню кафе та додаткових послуг. (планується)"
+      : activeSection === "stock"
+      ? "Складські залишки та рух товарів. (планується)"
+      : activeSection === "marketing"
+      ? "Акції, промокоди та рекламні активності. (планується)"
+      : activeSection === "access"
+      ? "Права доступу бухгалтерів та менеджерів. (планується)"
+      : activeSection === "venues"
+      ? "Мережа закладів та їхні показники. (планується)"
+      : activeSection === "settings"
+      ? "Налаштування фінансових параметрів. (планується)"
+      : "Управління витратами центру за категоріями.";
+
+  return (
+    <div className={styles.container}>
+      <AccountingSidebar activeSection={activeSection} onChange={setActiveSection} />
+
+      <div className={styles.main}>
+        <h1 className={styles.pageTitle}>{sectionTitle}</h1>
+        <p className={styles.lead}>{sectionDescription}</p>
+
+       {activeSection === "dashboard" && (
+        <> 
+       <div className={styles.summary}>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Доходи (всі)</div>
+            <div className={styles.summaryValueIncome}>{totals.income.toFixed(2)} ₴</div>
+          </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Витрати (всі)</div>
+            <div className={styles.summaryValueExpense}>{totals.expense.toFixed(2)} ₴</div>
+          </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Баланс</div>
+            <div className={`${styles.summaryValue} ${totals.balance >= 0 ? styles.positive : styles.negative}`}>
+              {totals.balance.toFixed(2)} ₴
+            </div>
+          </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Кількість операцій</div>
+            <div className={styles.summaryValue}>{tx.length}</div>
+          </div>
+        </div>
+        
+          <DashboardSection
+            totals={totals}
+            totalIncomeAmount={dashboardStats.totalIncomeAmount}
+            averageCheck={dashboardStats.averageCheck}
+            totalVisits={dashboardStats.totalVisits}
+            incomeTxCount={dashboardStats.incomeTx.length}
+            incomeCategoryStats={dashboardStats.incomeCategoryStats}
+            expenseCategoryStats={dashboardStats.expenseCategoryStats}
+            dailyStats={dashboardStats.dailyStats}
+            maxDailyValue={dashboardStats.maxDailyValue}
+          />
+          </>
+        )}
+
+        {activeSection === "receipts" && (
+          <ReceiptsSection rows={receiptRows} />
+        )}
+
+        {activeSection === "revenue" && (
+        <TransactionsSection
+          active={true}
+          filters={filters}
+          onFiltersChange={setFilters}
+          categories={categories}
+          categoryLabels={categoryLabels}
+          showForm={showForm}
+          onCloseForm={() => setShowForm(false)}
+          onOpenForm={() => setShowForm(true)}
+          form={formData}
+          onFormChange={setFormData}
+          onSubmit={handleSubmit}
+          tx={tx}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+        )}
+
+        {activeSection === "clients" && (
+          <ClientsSection rows={clientRows} totals={clientsTotals} />
+        )}
+
+        {activeSection === "staff" && (
+          <StaffSection rows={staffRows} totals={staffTotals} />
+        )}
+
+        {activeSection === "categories" && (
+          <CategoriesSection rows={categoryRows} totals={categoryTotals} />
+        )}
+
+        {activeSection === "products" && (
+          <ProductsSection rows={productRows} totals={productTotals} />
+        )}
+
+        {activeSection === "payments" && (
+          <PaymentsSection rows={paymentRows} totals={paymentTotals} />
+        )}
+
+        {activeSection === "cashShifts" && (
+          <CashShiftsSection rows={cashShifts} onAddShift={handleAddShift} onCloseShift={handleCloseShift} onOpenShift={handleOpenShift} onViewShift={handleViewShift} />
+        )}
+
+        {activeSection === "salary" && (
+          <SalarySection 
+            rows={salaryRows}
+            onPay={handlePaySalary}
+            onView={handleViewSalaryDetails}
+            onExport={handleExportSalary}
+          />
+        )}
+
+        {activeSection === "accounts" && (
+          <InvoicesSection 
+            rows={invoiceRows}
+            onAddInvoice={() => console.log('Add invoice')}
+            onEditInvoice={(id) => console.log('Edit invoice', id)}
+            onDeleteInvoice={(id) => console.log('Delete invoice', id)}
+          />
+        )}
+
+        {activeSection === "stockNotes" && (
+          <StockSection title="Запишики" subtitle="Записи про рух товарів" />
+        )}
+
+        {activeSection === "stockSupply" && (
+          <StockSection title="Постачання" subtitle="Надходження товарів від постачальників" />
+        )}
+
+        {activeSection === "stockMovement" && (
+          <StockSection title="Переміщення" subtitle="Переміщення товарів між складами" />
+        )}
+
+        {activeSection === "stockWriteOff" && (
+          <StockSection title="Списання" subtitle="Списання товарів зі складу" />
+        )}
+
+        {activeSection === "stockReport" && (
+          <StockSection title="Звіт за рухом" subtitle="Аналіз руху товарів за період" />
+        )}
+
+        {activeSection === "stockInventory" && (
+          <StockSection title="Інвентаризації" subtitle="Перевірка залишків товарів" />
+        )}
+
+        {activeSection === "stockSuppliers" && (
+          <StockSection title="Постачальники" subtitle="Управління постачальниками" />
+        )}
+
+        {activeSection === "stockWarehouses" && (
+          <StockSection title="Склади" subtitle="Управління складами" />
+        )}
+
+        {activeSection === "stockPacking" && (
+          <StockSection title="Фасування" subtitle="Упакування товарів" />
+        )}
+
+        {activeSection === "menuProducts" && (
+          <MenuProductsSection />
+        )}
+
+        {/* {activeSection === "menuRecipes" && (
+          <MenuRecipesSection />
+        )} */}
+
+        {activeSection === "menuSemiFinished" && (
+          <StockSection title="Напівфабрикати" subtitle="Управління напівфабрикатами" />
+        )}
+
+        {activeSection === "menuIngredients" && (
+          <StockSection title="Інгредієнти" subtitle="Управління інгредієнтами" />
+        )}
+
+        {activeSection === "menuProductCategories" && (
+          <MenuProductCategoriesSection />
+        )}
+
+        {activeSection === "menuIngredientCategories" && (
+          <StockSection title="Категорії інгредієнтів" subtitle="Організація інгредієнтів" />
+        )}
+
+        {activeSection === "menuPrices" && (
+          <StockSection title="Ціни" subtitle="Управління цінами товарів" />
+        )}
+      </div>
+    </div>
+  );
+}
+
