@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       ingredients,
       notes,
       status,
+      cookingStation,
     } = body;
 
     if (!name || !category) {
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
       lastModified: new Date().toISOString(),
       modifiedBy: 'Current User',
       status: status || 'active',
+      cookingStation: cookingStation || 'all',
     };
 
     await collection.insertOne(newRecipe as any);

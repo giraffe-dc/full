@@ -40,7 +40,6 @@ import {
   MOCK_SALARY_ROWS,
   MOCK_INVOICE_ROWS,
   MOCK_MENU_PRODUCTS,
-  MOCK_MENU_RECIPES,
   MOCK_PRODUCT_CATEGORIES,
 } from "../../lib/accounting-mock-data";
 import {
@@ -117,9 +116,7 @@ export default function AccountingPage() {
 
   const receiptRows = MOCK_RECEIPT_ROWS;
   const invoiceRows = MOCK_INVOICE_ROWS;
-  const menuProducts = MOCK_MENU_PRODUCTS;
-  const menuRecipes = MOCK_MENU_RECIPES;
-  const productCategories = MOCK_PRODUCT_CATEGORIES;
+ 
 
   // Використовуємо константи замість дублювання
   const categories = CATEGORIES;

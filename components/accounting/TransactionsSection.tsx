@@ -65,7 +65,7 @@ export function TransactionsSection({
           <span className={styles.clientsCount}>{tx.length}</span>
         </div>
         <div className={styles.clientsToolbarRight}>
-          <button className={styles.toolbarButton} type="button">
+          {/* <button className={styles.toolbarButton} type="button">
             Стовпці
           </button>
           <button className={styles.toolbarButton} type="button">
@@ -73,28 +73,28 @@ export function TransactionsSection({
           </button>
           <button className={styles.toolbarButton} type="button">
             Друк
-          </button>
-          <button className={styles.dateRangeButton} type="button">
+          </button> */}
+          {/* <button className={styles.dateRangeButton} type="button">
             За весь час
           </button>
           <button className={styles.toolbarButton} type="button" onClick={onOpenForm}>
             Додати
-          </button>
+          </button> */}
         </div>
       </div>
 
       <div className={styles.clientsToolbarRow}>
-        <input className={styles.quickSearch} placeholder="Швидкий пошук" />
+        {/* <input className={styles.quickSearch} placeholder="Швидкий пошук" /> */}
         <div className={styles.clientsToolbarLeftButtons}>
-          <button className={styles.toolbarLink} type="button">
-            Категорія
-          </button>
-          <button className={styles.toolbarLink} type="button">
-            Рахунок
-          </button>
-          <button className={styles.toolbarLink} type="button">
-            + Фільтр
-          </button>
+            {/* <button className={styles.toolbarLink} type="button">
+              Категорія
+            </button>
+            <button className={styles.toolbarLink} type="button">
+              Рахунок
+            </button>
+            <button className={styles.toolbarLink} type="button">
+              + Фільтр
+            </button> */}
         </div>
       </div>
 

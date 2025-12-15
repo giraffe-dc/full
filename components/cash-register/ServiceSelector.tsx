@@ -21,6 +21,7 @@ const CATEGORY_COLORS: Record<ServiceCategory, string> = {
   karaoke: '#ec4899',
   games: '#f59e0b',
   bar: '#10b981',
+  
 };
 
 export function ServiceSelector({ services, onSelectService }: ServiceSelectorProps) {
@@ -85,7 +86,7 @@ export function ServiceSelector({ services, onSelectService }: ServiceSelectorPr
               className={styles.serviceListItem}
               onClick={() => onSelectService(service)}
               style={{
-                borderLeftColor: CATEGORY_COLORS[service.category],
+                borderLeftColor: service.category,
               }}
             >
               <div className={styles.serviceInfo}>
