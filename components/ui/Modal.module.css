@@ -1,0 +1,179 @@
+/* Modal Overlay */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal-backdrop);
+    animation: fadeIn var(--transition-base) ease-out;
+    padding: var(--space-4);
+}
+
+/* Modal Container */
+.modal {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: scaleIn var(--transition-base) ease-out;
+    position: relative;
+}
+
+/* Modal Sizes */
+.sm {
+    width: 100%;
+    max-width: 400px;
+}
+
+.md {
+    width: 100%;
+    max-width: 600px;
+}
+
+.lg {
+    width: 100%;
+    max-width: 800px;
+}
+
+.xl {
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* Modal Header */
+.header {
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.title {
+    margin: 0;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+}
+
+.closeButton {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.closeButton:hover {
+    background: var(--error-50);
+    color: var(--error-600);
+    transform: rotate(90deg);
+}
+
+.closeButton:active {
+    transform: rotate(90deg) scale(0.95);
+}
+
+/* Modal Body */
+.body {
+    padding: var(--space-6);
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Custom sections (when using ModalHeader, ModalBody, ModalFooter) */
+.customHeader {
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.customBody {
+    padding: var(--space-6);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.customFooter {
+    padding: var(--space-6);
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* Modal Footer */
+.footer {
+    padding: var(--space-6);
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .overlay {
+        padding: 0;
+    }
+
+    .modal {
+        max-height: 100vh;
+        border-radius: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .header,
+    .customHeader {
+        border-radius: 0;
+    }
+
+    .footer,
+    .customFooter {
+        border-radius: 0;
+    }
+}
+
+/* Scrollbar styling for modal body */
+.body::-webkit-scrollbar,
+.customBody::-webkit-scrollbar {
+    width: 6px;
+}
+
+.body::-webkit-scrollbar-track,
+.customBody::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.body::-webkit-scrollbar-thumb,
+.customBody::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: var(--radius-full);
+}
+
+.body::-webkit-scrollbar-thumb:hover,
+.customBody::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}

@@ -2,47 +2,102 @@
 
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
-import { CashRegisterState, XReport, ZReport, PeriodAnalytics, ServiceCategory } from "../../../types/cash-register";
+import { CashRegisterState, XReport, ZReport, ServiceCategory } from "../../../types/cash-register";
 import { XReportView } from "../../../components/cash-register/XReportView";
 import { ZReportView } from "../../../components/cash-register/ZReportView";
-import { PeriodAnalyticsView } from "../../../components/cash-register/PeriodAnalyticsView";
 
-type ReportType = "x-report" | "z-report" | "analytics";
+type ReportType = "x-report" | "z-report" | "receipts";
 
 export default function ReportsPage() {
   const [state, setState] = useState<CashRegisterState | null>(null);
   const [reportType, setReportType] = useState<ReportType>("x-report");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [expandedReceipt, setExpandedReceipt] = useState<string | null>(null);
 
-  // Завантажити дані з localStorage
+  // Завантажити дані з API
   useEffect(() => {
-    const savedState = localStorage.getItem("cashRegisterState");
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        setState(parsedState);
-      } catch (error) {
-        console.error("Помилка при завантаженні стану:", error);
+    fetchReports();
+  }, [reportType, startDate, endDate]);
+
+  const fetchReports = async () => {
+    try {
+      if (reportType === 'x-report') {
+        // X-Report needs current OPEN shift with its receipts
+        const res = await fetch('/api/cash-register/shifts?status=open');
+        const data = await res.json();
+
+        if (data.success && data.data.length > 0) {
+          const activeShift = data.data[0];
+
+          // Fetch full shift details including receipts
+          const detailsRes = await fetch(`/api/cash-register/shifts/${activeShift.id}`);
+          const detailsData = await detailsRes.json();
+
+          if (detailsData.success) {
+            setState(prev => ({
+              ...prev || {
+                currentCart: [], customers: [], services: [],
+                receipts: [], shifts: [], zReports: [], lastReceiptNumber: 0, lastShiftNumber: 0
+              },
+              currentShift: detailsData.data
+            }));
+          }
+        } else {
+          // No open shift
+          setState(prev => ({ ...prev!, currentShift: null }));
+        }
       }
+
+      if (reportType === 'z-report') {
+        const res = await fetch('/api/cash-register/reports?type=z-reports');
+        const data = await res.json();
+        if (data.success) {
+          setState(prev => ({
+            ...prev || {
+              currentShift: null, currentCart: [], customers: [], services: [],
+              receipts: [], shifts: [], zReports: [], lastReceiptNumber: 0, lastShiftNumber: 0
+            },
+            zReports: data.data
+          }));
+        }
+      }
+      if (reportType === 'receipts') {
+        const res = await fetch(`/api/cash-register/reports?type=analytics&startDate=${startDate}&endDate=${endDate}`);
+        const data = await res.json();
+        if (data.success) {
+          setState(prev => ({
+            ...prev || {
+              currentShift: null, currentCart: [], customers: [], services: [],
+              receipts: [], shifts: [], zReports: [], lastReceiptNumber: 0, lastShiftNumber: 0
+            },
+            receipts: data.data.receipts || []
+          }));
+        }
+      }
+    } catch (e) {
+      console.error("Reports load error", e);
     }
-  }, []);
+  };
 
   // Генерувати X-звіт (поточна зміна)
   const generateXReport = (): XReport | null => {
     if (!state?.currentShift) return null;
 
-    const salesByCategory: Record<ServiceCategory, number> = {
-      bowling: 0,
-      billiards: 0,
-      karaoke: 0,
-      games: 0,
-      bar: 0,
-    };
+    const salesByCategory: Record<string, number> = {};
+    let totalSales = 0;
 
     state.currentShift.receipts.forEach((receipt) => {
+      totalSales += receipt.total || 0;
+
       receipt.items.forEach((item) => {
-        salesByCategory[item.category] += item.subtotal;
+        const category = item.category || 'other';
+        const amount = item.subtotal || (item.price * item.quantity) || 0;
+
+        if (!salesByCategory[category]) {
+          salesByCategory[category] = 0;
+        }
+        salesByCategory[category] += amount;
       });
     });
 
@@ -52,115 +107,13 @@ export default function ReportsPage() {
       status: "open",
       createdAt: new Date().toISOString(),
       receiptsCount: state.currentShift.receipts.length,
-      totalSales: state.currentShift.totalSales,
-      currentBalance: state.currentShift.startBalance + state.currentShift.totalSales,
-      salesByCategory,
-    };
-  };
-
-  // Генерувати аналітику за період
-  const generatePeriodAnalytics = (): PeriodAnalytics => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    const relevantReceipts = state?.receipts.filter((receipt) => {
-      const receiptDate = new Date(receipt.createdAt);
-      return receiptDate >= start && receiptDate <= end;
-    }) || [];
-
-    const salesByCategory: Record<ServiceCategory, { total: number; percentage: number; count: number }> = {
-      bowling: { total: 0, percentage: 0, count: 0 },
-      billiards: { total: 0, percentage: 0, count: 0 },
-      karaoke: { total: 0, percentage: 0, count: 0 },
-      games: { total: 0, percentage: 0, count: 0 },
-      bar: { total: 0, percentage: 0, count: 0 },
-    };
-
-    const topServices: Array<{
-      serviceId: string;
-      serviceName: string;
-      quantity: number;
-      total: number;
-      percentage: number;
-    }> = [];
-
-    const dailyStats: Array<{ date: string; revenue: number; receiptsCount: number }> = [];
-    const dailyMap = new Map<string, { revenue: number; count: number }>();
-
-    let totalRevenue = 0;
-    let totalCustomers = new Set<string>();
-
-    relevantReceipts.forEach((receipt) => {
-      totalRevenue += receipt.total;
-      if (receipt.customerId) totalCustomers.add(receipt.customerId);
-
-      const receiptDate = new Date(receipt.createdAt).toISOString().split("T")[0];
-      const existing = dailyMap.get(receiptDate) || { revenue: 0, count: 0 };
-      dailyMap.set(receiptDate, {
-        revenue: existing.revenue + receipt.total,
-        count: existing.count + 1,
-      });
-
-      receipt.items.forEach((item) => {
-        salesByCategory[item.category].total += item.subtotal;
-        salesByCategory[item.category].count += item.quantity;
-
-        const existingService = topServices.find((s) => s.serviceId === item.serviceId);
-        if (existingService) {
-          existingService.quantity += item.quantity;
-          existingService.total += item.subtotal;
-        } else {
-          topServices.push({
-            serviceId: item.serviceId,
-            serviceName: item.serviceName,
-            quantity: item.quantity,
-            total: item.subtotal,
-            percentage: 0,
-          });
-        }
-      });
-    });
-
-    // Розрахувати відсотки
-    Object.keys(salesByCategory).forEach((category) => {
-      if (totalRevenue > 0) {
-        salesByCategory[category as ServiceCategory].percentage = (salesByCategory[category as ServiceCategory].total / totalRevenue) * 100;
-      }
-    });
-
-    topServices.forEach((service) => {
-      service.percentage = (service.total / totalRevenue) * 100;
-    });
-
-    topServices.sort((a, b) => b.total - a.total);
-
-    // Побудувати щоденну статистику
-    Array.from(dailyMap.entries()).forEach(([date, data]) => {
-      dailyStats.push({
-        date,
-        revenue: data.revenue,
-        receiptsCount: data.count,
-      });
-    });
-
-    dailyStats.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    return {
-      startDate,
-      endDate,
-      totalRevenue,
-      averageCheck: relevantReceipts.length > 0 ? totalRevenue / relevantReceipts.length : 0,
-      customersCount: totalCustomers.size,
-      receiptsCount: relevantReceipts.length,
-      salesByCategory,
-      topServices: topServices.slice(0, 5),
-      dailyStats,
+      totalSales: totalSales,
+      currentBalance: state.currentShift.startBalance + totalSales,
+      salesByCategory: salesByCategory as Record<ServiceCategory, number>,
     };
   };
 
   const xReport = reportType === "x-report" ? generateXReport() : null;
-  const periodAnalytics = reportType === "analytics" ? generatePeriodAnalytics() : null;
 
   return (
     <div className={styles.container}>
@@ -182,22 +135,56 @@ export default function ReportsPage() {
           Z-Звіти (закриті зміни)
         </button>
         <button
-          className={`${styles.tab} ${reportType === "analytics" ? styles.tabActive : ""}`}
-          onClick={() => setReportType("analytics")}
+          className={`${styles.tab} ${reportType === "receipts" ? styles.tabActive : ""}`}
+          onClick={() => setReportType("receipts")}
         >
-          Аналітика за період
+          Архів чеків
         </button>
       </div>
 
       <div className={styles.content}>
-        {reportType === "x-report" && xReport && <XReportView report={xReport} />}
+        {reportType === "x-report" && (
+          xReport ? (
+            <XReportView report={xReport} />
+          ) : (
+            <div className={styles.emptyState}>
+              <p>Немає відкритої зміни. Відкрийте зміну на касі для перегляду X-звіту.</p>
+            </div>
+          )
+        )}
 
         {reportType === "z-report" && (
           <div className={styles.zReportsList}>
             {state?.zReports && state.zReports.length > 0 ? (
               state.zReports
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .map((report) => <ZReportView key={report.id} report={report} />)
+                .map((report) => (
+                  <div key={report.id} className={styles.zReportAccordion}>
+                    <div
+                      className={styles.zReportSummary}
+                      onClick={() => setExpandedReceipt(expandedReceipt === report.id ? null : report.id)}
+                    >
+                      <div className={styles.zReportSummaryLeft}>
+                        <span className={styles.zReportNumber}>Зміна #{report.shiftNumber}</span>
+                        <span className={styles.zReportDate}>
+                          {new Date(report.createdAt).toLocaleString('uk-UA')} - {new Date(report.endTime || report.createdAt).toLocaleString('uk-UA')}
+                        </span>
+                      </div>
+                      <div className={styles.zReportSummaryRight}>
+                        <span className={styles.zReportTotal}>{(report.totalSales ?? 0).toFixed(2)} ₴</span>
+                        <span className={styles.expandIcon}>
+                          {expandedReceipt === report.id ? '▼' : '▶'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {expandedReceipt === report.id && (
+                      <div className={styles.zReportDetails}>
+                        <ZReportView report={report} />
+                      </div>
+                    )}
+                  </div>
+                ))
             ) : (
               <div className={styles.emptyState}>
                 <p>Немає закритих змін</p>
@@ -206,24 +193,88 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {reportType === "analytics" && (
+        {reportType === "receipts" && (
           <>
             <div className={styles.dateRange}>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className={styles.dateInput}
-              />
+              <label>
+                Від:
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </label>
               <span>—</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className={styles.dateInput}
-              />
+              <label>
+                До:
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </label>
             </div>
-            {periodAnalytics && <PeriodAnalyticsView analytics={periodAnalytics} />}
+
+            <div className={styles.receiptsList}>
+              {state?.receipts && state.receipts.length > 0 ? (
+                state.receipts.map((receipt) => (
+                  <div key={receipt.id} className={styles.receiptAccordion}>
+                    <div
+                      className={styles.receiptSummary}
+                      onClick={() => setExpandedReceipt(expandedReceipt === receipt.id ? null : receipt.id)}
+                    >
+                      <div className={styles.receiptSummaryLeft}>
+                        <span className={styles.receiptNumber}>Чек #{receipt.receiptNumber}</span>
+                        <span className={styles.receiptDate}>
+                          {new Date(receipt.createdAt).toLocaleString('uk-UA')}
+                        </span>
+                      </div>
+                      <div className={styles.receiptSummaryRight}>
+                        <span className={styles.receiptTotal}>{receipt.total.toFixed(2)} ₴</span>
+                        <span className={styles.expandIcon}>
+                          {expandedReceipt === receipt.id ? '▼' : '▶'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {expandedReceipt === receipt.id && (
+                      <div className={styles.receiptDetails}>
+                        <div className={styles.receiptItems}>
+                          <h4>Товари:</h4>
+                          {receipt.items.map((item, idx) => (
+                            <div key={idx} className={styles.receiptItem}>
+                              <span>{item.serviceName}</span>
+                              <span className={styles.itemQuantity}>x{item.quantity}</span>
+                              <span className={styles.itemPrice}>{item.subtotal.toFixed(2)} ₴</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className={styles.receiptFooter}>
+                          <div className={styles.receiptMeta}>
+                            <span className={styles.paymentMethod}>
+                              {receipt.paymentMethod === 'cash' ? '💵 Готівка' :
+                                receipt.paymentMethod === 'card' ? '💳 Карта' : '💰 Змішана'}
+                            </span>
+                            {receipt.subtotal && (
+                              <span className={styles.subtotalInfo}>
+                                Підсумок: {receipt.subtotal.toFixed(2)} ₴
+                                {receipt.tax && ` | Податок: ${receipt.tax.toFixed(2)} ₴`}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className={styles.emptyState}>
+                  <p>Немає чеків за обраний період</p>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

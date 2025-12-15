@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { MenuRecipe } from '@/types/accounting';
+import { ObjectId } from 'mongodb';
 
 // GET /api/accounting/recipes/[id] - отримати тех. картку за ID
 export async function GET(
@@ -13,7 +14,12 @@ export async function GET(
     const db = client.db('giraffe');
     const collection = db.collection<MenuRecipe>('recipes');
 
-    const recipe = await collection.findOne({ id });
+    let query: any = { id: id };
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ id: id }, { _id: new ObjectId(id) }] };
+    }
+
+    const recipe = await collection.findOne(query);
 
     if (!recipe) {
       return NextResponse.json(
@@ -65,8 +71,13 @@ export async function PUT(
       );
     }
 
+    let query: any = { id };
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ id: id }, { _id: new ObjectId(id) }] };
+    }
+
     const result = await collection.updateOne(
-      { id },
+      query,
       {
         $set: {
           code,
@@ -120,9 +131,18 @@ export async function DELETE(
     const db = client.db('giraffe');
     const collection = db.collection<MenuRecipe>('recipes');
 
-    const result = await collection.deleteOne({ id });
+    let query: any = { id };
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ id: id }, { _id: new ObjectId(id) }] };
+    }
 
-    if (result.deletedCount === 0) {
+    // Soft delete
+    const result = await collection.updateOne(
+      query,
+      { $set: { status: 'inactive' } }
+    );
+
+    if (result.matchedCount === 0) {
       return NextResponse.json(
         { success: false, error: 'Тех. картка не знайдена' },
         { status: 404 }
@@ -131,7 +151,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Тех. картка успішно видалена',
+      message: 'Тех. картка успішно переміщена в кошик',
     });
   } catch (error) {
     console.error('Error deleting recipe:', error);

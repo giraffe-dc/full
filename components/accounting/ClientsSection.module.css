@@ -1,0 +1,200 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header & Toolbar */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.titleBlock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.countBadge {
+    background: #ecfdf5;
+    color: #059669;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.headerActions {
+    display: flex;
+    gap: 12px;
+}
+
+.toolbarButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #374151;
+}
+
+.toolbarButton:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.primaryButton {
+    background: #2563eb;
+    color: white;
+    border: none;
+}
+
+.primaryButton:hover {
+    background: #1d4ed8;
+    border: none;
+}
+
+/* Controls Row (Search, Filters) */
+.controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.searchContainer {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+    background: white;
+}
+
+.searchInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Table */
+.tableCard {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.tableWrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: #f9fafb;
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.95rem;
+    color: #1f2937;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover {
+    background: #fdfdfd;
+}
+
+.clientInfo h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.clientInfo p {
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.moneyCell {
+    font-family: 'Inter', monospace;
+    /* Use monospaced numbers if available */
+    font-weight: 500;
+}
+
+.profitCell {
+    color: #059669;
+    font-weight: 600;
+}
+
+.totalRow td {
+    background: #f8fafc;
+    font-weight: 700;
+    border-top: 2px solid #e2e8f0;
+    color: #0f172a;
+}

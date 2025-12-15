@@ -145,36 +145,50 @@
   background: #eff6ff;
 }
 
-.recipesList {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.tableContainer {
+  overflow-x: auto;
 }
 
-.noData {
-  text-align: center;
-  color: #9ca3af;
-  padding: 32px 16px;
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
-.recipeCard {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
+.table thead {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
 }
 
-.recipeHeader {
-  padding: 16px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+.table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
 }
 
-.recipeTitleBlock {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+  vertical-align: middle;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.expandedRowParent {
+  background: #f1f5f9 !important;
+  border-bottom: none !important;
+}
+
+.expandedRow td {
+  padding: 0 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 
 .codeBadge {
@@ -187,58 +201,14 @@
   font-size: 12px;
 }
 
-.recipeTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.recipeStats {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.statItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.statLabel {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.statValue {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-left: auto;
-}
-
-.actionLink {
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  color: #3b82f6;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.actionLink:hover {
+.categoryBadge {
+  display: inline-block;
+  padding: 2px 8px;
   background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .actionButton {
@@ -265,125 +235,13 @@
   border-color: #fecaca;
 }
 
-.ingredientsSection {
-  padding: 0;
-}
-
-.expandButton {
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  color: #1f2937;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
-}
-
-.expandButton:hover {
-  background: #f3f4f6;
-}
-
-.expandIcon {
-  font-size: 10px;
-  color: #6b7280;
-}
-
-.ingredientsList {
-  padding: 16px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-}
-
-.ingredientsTable {
-  margin-bottom: 16px;
-}
-
-.tableHeader {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-}
-
-.tableRow {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 13px;
-  color: #1f2937;
-}
-
-.tableRow:last-child {
-  border-bottom: none;
-}
-
-.ingredientName {
-  color: #1f2937;
-}
-
-.ingredientQuantity {
-  text-align: right;
-  color: #6b7280;
-}
-
-.ingredientCost {
-  text-align: right;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.historySection {
-  padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.historyItem {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.historyDate {
-  margin-bottom: 4px;
-}
-
-.historyAuthor {
-  color: #9ca3af;
-}
-
 @media (max-width: 768px) {
-  .recipeStats {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  .table {
+    font-size: 12px;
   }
 
-  .actions {
-    margin-left: 0;
-    margin-top: 12px;
-  }
-
-  .tableHeader,
-  .tableRow {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .ingredientQuantity,
-  .ingredientCost {
-    text-align: left;
+  .table th,
+  .table td {
+    padding: 8px 10px;
   }
 }

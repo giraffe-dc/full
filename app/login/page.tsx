@@ -27,9 +27,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Даємо час cookie встановитися перед редиректом
         await new Promise(resolve => setTimeout(resolve, 100));
-        // Використовуємо window.location для надійного редиректу
         window.location.replace("/");
       } else {
         setError(data.error || "Помилка входу. Перевірте email та пароль.");
@@ -42,30 +40,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className={styles.root}>
-      <h1>Увійти</h1>
-      {error && <div className={styles.error}>{error}</div>}
-      <form onSubmit={submit} className={styles.form}>
-        <input
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={loading}
-        />
-        <input
-          placeholder="Пароль"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={loading}
-        />
-        <button type="submit" disabled={loading} className={styles.submitBtn}>
-          {loading ? "Вхід..." : "Увійти"}
-        </button>
-      </form>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.logo}>
+          <div className={styles.logoIcon}>🦒</div>
+          <h1 className={styles.title}>Giraffe</h1>
+          <p className={styles.subtitle}>Вхід до системи</p>
+        </div>
+
+        {error && <div className={styles.error}>{error}</div>}
+
+        <form onSubmit={submit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Email</label>
+            <input
+              className={styles.input}
+              placeholder="your@email.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Пароль</label>
+            <input
+              className={styles.input}
+              placeholder="••••••••"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className={styles.button}>
+            {loading ? "Вхід..." : "Увійти"}
+          </button>
+        </form>
+
+        <div className={styles.footer}>
+          Система управління розважальним центром
+        </div>
+      </div>
     </div>
   );
 }

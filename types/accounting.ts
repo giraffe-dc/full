@@ -45,7 +45,7 @@ export type ClientsTotals = {
 export type StaffRow = {
   id: string;
   name: string;
-  position:string;
+  position: string;
   revenue: number;
   profit: number;
   receipts: number;
@@ -169,6 +169,7 @@ export type InvoiceRow = {
 
 export type MenuProduct = {
   id: string;
+  _id?: string; // Optional MongoDB ID
   code: string;
   name: string;
   category: string;
@@ -181,17 +182,22 @@ export type MenuProduct = {
 export type RecipeIngredient = {
   id: string;
   name: string;
-  quantity: number;
+  quantity: number; // Gross weight/quantity (default view)
+  gross: number; // New field for Gross weight
+  net: number; // New field for Net weight
+  method: string; // New field from design: "Спосіб приготування"
   unit: string;
-  costPerUnit: number;
-  totalCost: number;
+  costPerUnit: number; // Cost per unit of the ingredient
+  totalCost: number; // Total cost for this ingredient entry
 };
 
 export type MenuRecipe = {
   id: string;
+  _id?: string; // Optional MongoDB ID
   code: string;
   name: string;
   category: string;
+  cookingStation: string; // New field: "Цех приготування"
   yield: number;
   yieldUnit: string;
   costPerUnit: number;
@@ -212,4 +218,15 @@ export type ProductCategory = {
   description?: string;
   status: 'active' | 'inactive';
   createdAt: string;
+};
+
+export type MenuIngredient = {
+  id: string;
+  _id?: string; // Optional MongoDB ID
+  code: string;
+  name: string;
+  category: string;
+  unit: string;
+  costPerUnit: number;
+  status: 'active' | 'inactive';
 };

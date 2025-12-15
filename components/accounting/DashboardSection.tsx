@@ -1,7 +1,6 @@
-"use client";
 
 import React from "react";
-import styles from "../../app/accounting/page.module.css";
+import styles from "./DashboardSection.module.css";
 
 export interface DailyPoint {
   dateKey: string;
@@ -16,10 +15,14 @@ interface DashboardSectionProps {
   averageCheck: number;
   totalVisits: number;
   incomeTxCount: number;
+  operationCount: number;
   incomeCategoryStats: { key: string; label: string; total: number; percent: number }[];
   expenseCategoryStats: { key: string; label: string; total: number; percent: number }[];
   dailyStats: DailyPoint[];
   maxDailyValue: number;
+  filters: { startDate: string; endDate: string };
+  onFilterChange: (key: string, value: string) => void;
+  onResetFilters: () => void;
 }
 
 export function DashboardSection({
@@ -28,156 +31,167 @@ export function DashboardSection({
   averageCheck,
   totalVisits,
   incomeTxCount,
+  operationCount,
   incomeCategoryStats,
   expenseCategoryStats,
   dailyStats,
   maxDailyValue,
+  filters,
+  onFilterChange,
+  onResetFilters
 }: DashboardSectionProps) {
   return (
-    <>
-      <section className={styles.dashboardHero}>
-        <div className={styles.dashboardHeroDate}>
-          <div className={styles.dashboardHeroDateLabel}>Сьогодні</div>
-          <div className={styles.dashboardHeroDateValue}>
-            {new Date().toLocaleDateString("uk-UA", {
-              day: "2-digit",
-              month: "long",
-            })}
-          </div>
+    <div className={styles.dashboardContainer}>
+
+      {/* FILTER BAR */}
+      <div className={styles.filterBar}>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Період з</label>
+          <input
+            type="date"
+            className={styles.filterInput}
+            value={filters.startDate}
+            onChange={(e) => onFilterChange("startDate", e.target.value)}
+          />
         </div>
-        <div className={styles.dashboardHeroItem}>
-          <div className={styles.dashboardHeroLabel}>Виручка</div>
-          <div className={styles.dashboardHeroValue}>{totalIncomeAmount.toFixed(2)} ₴</div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>по</label>
+          <input
+            type="date"
+            className={styles.filterInput}
+            value={filters.endDate}
+            onChange={(e) => onFilterChange("endDate", e.target.value)}
+          />
         </div>
-        <div className={styles.dashboardHeroItem}>
-          <div className={styles.dashboardHeroLabel}>Прибуток</div>
-          <div className={styles.dashboardHeroValue}>{totals.balance.toFixed(2)} ₴</div>
+        {(filters.startDate || filters.endDate) && (
+          <button className={styles.resetButton} onClick={onResetFilters}>
+            Скинути фільтри
+          </button>
+        )}
+      </div>
+
+      {/* HERO CARDS */}
+      <section className={styles.heroGrid}>
+        <div className={styles.heroCard}>
+          <span className={styles.heroLabel}>Всього Доходів</span>
+          <span className={`${styles.heroValue} ${styles.incomeText}`}>
+            {totals.income.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </span>
+          <span className={styles.heroSub}>{incomeTxCount} записів</span>
         </div>
-        <div className={styles.dashboardHeroItem}>
-          <div className={styles.dashboardHeroLabel}>Чеки</div>
-          <div className={styles.dashboardHeroValue}>{incomeTxCount}</div>
+
+        <div className={styles.heroCard}>
+          <span className={styles.heroLabel}>Всього Витрат</span>
+          <span className={`${styles.heroValue} ${styles.expenseText}`}>
+            {totals.expense.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </span>
+          <span className={styles.heroSub}>{operationCount - incomeTxCount} записів</span>
         </div>
-        <div className={styles.dashboardHeroItem}>
-          <div className={styles.dashboardHeroLabel}>Відвідувачі</div>
-          <div className={styles.dashboardHeroValue}>{totalVisits}</div>
+
+        <div className={styles.heroCard}>
+          <span className={styles.heroLabel}>Чистий Баланс</span>
+          <span className={`${styles.heroValue} ${totals.balance >= 0 ? styles.balancePos : styles.balanceNeg}`}>
+            {totals.balance.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </span>
+          <span className={styles.heroSub}>Різниця доходів і витрат</span>
         </div>
-        <div className={styles.dashboardHeroItem}>
-          <div className={styles.dashboardHeroLabel}>Середній чек</div>
-          <div className={styles.dashboardHeroValue}>{averageCheck.toFixed(2)} ₴</div>
+
+        <div className={styles.heroCard}>
+          <span className={styles.heroLabel}>Середній Чек</span>
+          <span className={styles.heroValue}>{averageCheck.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴</span>
+          <span className={styles.heroSub}>Транзакцій відвідувачів: {totalVisits}</span>
         </div>
       </section>
 
-      <section className={styles.timelineCard}>
-        <div className={styles.revenueHeader}>
-          <h2>Виручка</h2>
-          <div className={styles.revenueTabs}>
-            <button type="button" className={`${styles.revenueTab} ${styles.revenueTabActive}`}>
-              День
-            </button>
-            <button type="button" className={styles.revenueTab}>
-              Тиждень
-            </button>
-            <button type="button" className={styles.revenueTab}>
-              Місяць
-            </button>
-          </div>
+      {/* TIMELINE */}
+      <section className={styles.chartCard}>
+        <div className={styles.chartHeader}>
+          <h2 className={styles.chartTitle}>Динаміка Фінансів</h2>
         </div>
-        {dailyStats.length === 0 || maxDailyValue === 0 ? (
-          <p className={styles.empty}>Немає даних для побудови динаміки</p>
+        {dailyStats.length === 0 ? (
+          <div className={styles.emptyState}>Немає даних за обраний період</div>
         ) : (
-          <ul className={styles.timelineList}>
-            {dailyStats.map((d) => {
-              const incomePercent = (d.income / maxDailyValue) * 100;
-              const expensePercent = (d.expense / maxDailyValue) * 100;
-              return (
-                <li key={d.dateKey} className={styles.timelineRow}>
-                  <div className={styles.timelineDate}>
-                    {new Date(d.dateKey).toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit" })}
-                  </div>
-                  <div className={styles.timelineBars}>
-                    <div className={styles.timelineBarTrack}>
-                      <div
-                        className={styles.timelineBarIncome}
-                        style={{ width: `${Math.max(3, incomePercent)}%` }}
-                      />
+          <div className={styles.timelineScroll}>
+            <ul className={styles.timelineList}>
+              {dailyStats.map((d) => {
+                const incH = maxDailyValue ? (d.income / maxDailyValue) * 100 : 0;
+                const expH = maxDailyValue ? (d.expense / maxDailyValue) * 100 : 0;
+                return (
+                  <li key={d.dateKey} className={styles.timelineItem}>
+                    <div className={styles.timelineGraph}>
+                      <div className={`${styles.graphBar} ${styles.inc}`} style={{ height: `${Math.max(4, incH)}%` }} title={`Дохід: ${d.income}`} />
+                      <div className={`${styles.graphBar} ${styles.exp}`} style={{ height: `${Math.max(4, expH)}%` }} title={`Витрата: ${d.expense}`} />
                     </div>
-                    <div className={styles.timelineBarTrack}>
-                      <div
-                        className={styles.timelineBarExpense}
-                        style={{ width: `${Math.max(3, expensePercent)}%` }}
-                      />
+                    <div className={styles.timelineDate}>
+                      {new Date(d.dateKey).toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit" })}
                     </div>
-                  </div>
-                  <div className={styles.timelineNumbers}>
-                    <span className={styles.timelineIncome}>+{d.income.toFixed(0)} ₴</span>
-                    <span className={styles.timelineExpense}>-{d.expense.toFixed(0)} ₴</span>
-                    <span
-                      className={
-                        d.balance >= 0 ? styles.timelineBalancePositive : styles.timelineBalanceNegative
-                      }
-                    >
-                      {d.balance >= 0 ? "+" : ""}
-                      {d.balance.toFixed(0)} ₴
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                    <div className={styles.timelineValues}>
+                      <span className={styles.valInc}>+{d.income > 1000 ? (d.income / 1000).toFixed(1) + 'k' : d.income.toFixed(0)}</span>
+                      <span className={styles.valExp}>-{d.expense > 1000 ? (d.expense / 1000).toFixed(1) + 'k' : d.expense.toFixed(0)}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
       </section>
 
-      <div className={styles.dashboardGrid}>
-        <section className={styles.dashboardCard}>
-          <h2>Структура доходів</h2>
+      {/* CATEGORIES GRID */}
+      <div className={styles.chartsGrid}>
+
+        {/* INCOME CATEGORIES */}
+        <section className={styles.chartCard}>
+          <h2 className={styles.chartTitle}>Структура Доходів</h2>
           {incomeCategoryStats.length === 0 ? (
-            <p className={styles.empty}>Немає доходів за обраний період</p>
+            <div className={styles.emptyState}>Немає даних</div>
           ) : (
-            <ul className={styles.dashboardList}>
-              {incomeCategoryStats.map((item) => (
-                <li key={item.key} className={styles.dashboardListItem}>
-                  <div className={styles.dashboardListHeader}>
-                    <span className={styles.dashboardListLabel}>{item.label}</span>
-                    <span className={styles.dashboardListValue}>{item.total.toFixed(2)} ₴</span>
+            <div>
+              {incomeCategoryStats.map(cat => (
+                <div key={cat.key} className={styles.listRow}>
+                  <div className={styles.listInfo}>
+                    <div className={styles.listLabel}>
+                      <span>{cat.label}</span>
+                      <span>{cat.total.toLocaleString('uk-UA')} ₴</span>
+                    </div>
+                    <div className={styles.barBg}>
+                      <div className={`${styles.barFill} ${styles.income}`} style={{ width: `${cat.percent}%` }}></div>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>{cat.percent.toFixed(1)}%</div>
                   </div>
-                  <div className={styles.dashboardBarTrack}>
-                    <div
-                      className={styles.dashboardBarIncome}
-                      style={{ width: `${Math.max(5, Math.min(100, item.percent))}%` }}
-                    />
-                  </div>
-                  <div className={styles.dashboardListMeta}>{item.percent.toFixed(1)}% від усіх доходів</div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </section>
 
-        <section className={styles.dashboardCard}>
-          <h2>Основні витрати</h2>
+        {/* EXPENSE CATEGORIES */}
+        <section className={styles.chartCard}>
+          <h2 className={styles.chartTitle}>Структура Витрат</h2>
           {expenseCategoryStats.length === 0 ? (
-            <p className={styles.empty}>Немає витрат за обраний період</p>
+            <div className={styles.emptyState}>Немає даних</div>
           ) : (
-            <ul className={styles.dashboardList}>
-              {expenseCategoryStats.map((item) => (
-                <li key={item.key} className={styles.dashboardListItem}>
-                  <div className={styles.dashboardListHeader}>
-                    <span className={styles.dashboardListLabel}>{item.label}</span>
-                    <span className={styles.dashboardListValue}>{item.total.toFixed(2)} ₴</span>
+            <div>
+              {expenseCategoryStats.map(cat => (
+                <div key={cat.key} className={styles.listRow}>
+                  <div className={styles.listInfo}>
+                    <div className={styles.listLabel}>
+                      <span>{cat.label}</span>
+                      <span>{cat.total.toLocaleString('uk-UA')} ₴</span>
+                    </div>
+                    <div className={styles.barBg}>
+                      <div className={`${styles.barFill} ${styles.expense}`} style={{ width: `${cat.percent}%` }}></div>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>{cat.percent.toFixed(1)}%</div>
                   </div>
-                  <div className={styles.dashboardBarTrack}>
-                    <div
-                      className={styles.dashboardBarExpense}
-                      style={{ width: `${Math.max(5, Math.min(100, item.percent))}%` }}
-                    />
-                  </div>
-                  <div className={styles.dashboardListMeta}>{item.percent.toFixed(1)}% від усіх витрат</div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </section>
+
       </div>
-    </>
+    </div>
   );
 }
+

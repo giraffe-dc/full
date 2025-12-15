@@ -83,9 +83,69 @@
 }
 
 .zReportsList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zReportAccordion {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.zReportAccordion:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.zReportSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.zReportSummary:hover {
+  background: #f9fafb;
+}
+
+.zReportSummaryLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zReportNumber {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.zReportDate {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.zReportSummaryRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.zReportTotal {
+  font-size: 18px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.zReportDetails {
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
 .emptyState {
@@ -98,4 +158,158 @@
   border-radius: 8px;
   color: #9ca3af;
   font-size: 16px;
+}
+
+.dateRange label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.receiptsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.receiptAccordion {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.receiptAccordion:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.receiptSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.receiptSummary:hover {
+  background: #f9fafb;
+}
+
+.receiptSummaryLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receiptNumber {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.receiptDate {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.receiptSummaryRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.receiptTotal {
+  font-size: 18px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.expandIcon {
+  font-size: 12px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.receiptDetails {
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.receiptItems {
+  padding: 16px 20px;
+}
+
+.receiptItems h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.receiptItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.receiptItem:last-child {
+  border-bottom: none;
+}
+
+.itemQuantity {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.itemPrice {
+  font-weight: 600;
+  color: #059669;
+}
+
+.receiptFooter {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.receiptMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.paymentMethod {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.subtotalInfo {
+  font-size: 12px;
+  color: #9ca3af;
 }

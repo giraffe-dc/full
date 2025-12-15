@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import styles from "./Header.module.css";
 
 export default function Header() {
     const [user, setUser] = useState<{ email: string; role: string } | null>(null);
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         function checkAuth() {
@@ -22,50 +23,87 @@ export default function Header() {
                 })
                 .catch(() => setUser(null));
         }
-        
+
         checkAuth();
-        // Перевіряємо авторизацію при зміні фокусу вікна (на випадок, якщо користувач залогінувався в іншій вкладці)
+        // Перевіряємо авторизацію при зміні фокусу вікна
         window.addEventListener('focus', checkAuth);
         return () => window.removeEventListener('focus', checkAuth);
     }, []);
 
     function handleLogout() {
-        // Call server logout to clear HttpOnly cookie
         fetch('/api/auth/logout', { method: 'POST' })
             .then(() => {
                 setUser(null);
                 router.push('/login');
             })
             .catch(() => {
-                // fallback: clear cookie client-side and redirect
                 document.cookie = "token=; path=/; max-age=0";
                 setUser(null);
                 router.push('/login');
             });
     }
 
+    const navItems = [
+        { href: '/', label: 'Головна', icon: '🏠' },
+        { href: '/cash-register', label: 'Каса', icon: '💰' },
+        { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
+        { href: '/staff', label: 'Персонал', icon: '👥' },
+        { href: '/projects', label: 'Проекти', icon: '📁' },
+    ];
+
     return (
         <header className={styles.header}>
-            <div className={styles.inner}>
-                <Link href="/" className={styles.brand}>Giraffe Center</Link>
+            <div className={styles.container}>
+                {/* Logo */}
+                <Link href="/" className={styles.logo}>
+                    <span className={styles.logoIcon}>🦒</span>
+                    <span className={styles.logoText}>Giraffe</span>
+                </Link>
+
+                {/* Navigation */}
                 {user && (
                     <nav className={styles.nav}>
-                        <Link href="/docs">Документація</Link>
-                        <Link href="/projects">Проекти</Link>
-                        <Link href="/accounting">Бухгалтерія</Link>
-                        <Link href="/staff">Персонал</Link>
-                        <Link href="/cash-register">Каса</Link>
-                        {user.role === "admin" && <Link href="/admin">Адмін</Link>}
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href ||
+                                (item.href !== '/' && pathname.startsWith(item.href));
+
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+                                >
+                                    <span className={styles.navIcon}>{item.icon}</span>
+                                    <span className={styles.navLabel}>{item.label}</span>
+                                    {isActive && <span className={styles.activeIndicator} />}
+                                </Link>
+                            );
+                        })}
                     </nav>
                 )}
-                <div className={styles.auth}>
+
+                {/* Right Section */}
+                <div className={styles.rightSection}>
                     {user ? (
                         <>
-                            <span className={styles.userInfo}>{user.email}</span>
-                            <button onClick={handleLogout} className={styles.logoutBtn}>Вийти</button>
+                            <button className={styles.iconButton} aria-label="Notifications">
+                                <span className={styles.notificationIcon}>🔔</span>
+                                <span className={styles.notificationBadge}>3</span>
+                            </button>
+
+                            <div className={styles.userMenu}>
+                                <div className={styles.userAvatar}>👤</div>
+                                <span className={styles.userName}>{user.email}</span>
+                            </div>
+
+                            <button onClick={handleLogout} className={styles.logoutBtn}>
+                                Вийти
+                            </button>
                         </>
                     ) : (
-                        <Link href="/login">Увійти</Link>
+                        <Link href="/login" className={styles.loginLink}>
+                            Увійти
+                        </Link>
                     )}
                 </div>
             </div>

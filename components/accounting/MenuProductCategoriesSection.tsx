@@ -101,12 +101,12 @@ export function MenuProductCategoriesSection({}: MenuProductCategoriesSectionPro
             <span className={styles.count}>{categories.length}</span>
           </div>
           <div className={styles.toolbarRight}>
-            <button className={styles.toolbarButton} type="button">
+            {/* <button className={styles.toolbarButton} type="button">
               📥 Експорт
             </button>
             <button className={styles.toolbarButton} type="button">
               🖨️ Друк
-            </button>
+            </button> */}
             <button
               className={`${styles.toolbarButton} ${styles.buttonPrimary}`}
               type="button"
@@ -125,17 +125,17 @@ export function MenuProductCategoriesSection({}: MenuProductCategoriesSectionPro
             onChange={(e) => setSearchQuery(e.target.value)}
             className={styles.searchInput}
           />
-          <div className={styles.filterButtons}>
+          {/* <div className={styles.filterButtons}>
             <button className={styles.filterLink}>+ Фільтр</button>
-          </div>
+          </div> */}
         </div>
 
         <div className={styles.categoriesList}>
           {filteredRows.length === 0 ? (
             <div className={styles.noData}>Немає даних для відображення</div>
           ) : (
-            <div className={styles.categoriesGrid}>
-              {filteredRows.map((category) => (
+            <div className={styles.tableWrapper}>
+              {/* {filteredRows.map((category) => (
                 <div key={category.id} className={styles.categoryCard}>
                   <div className={styles.categoryImage}>
                     {category.image ? (
@@ -178,7 +178,53 @@ export function MenuProductCategoriesSection({}: MenuProductCategoriesSectionPro
                     </button>
                   </div>
                 </div>
-              ))}
+              ))} */}
+
+              <table className={styles.table}>
+          <thead>
+            <tr>
+              {/* <th className={styles.codeColumn}>Код</th> */}
+              <th className={styles.nameColumn}>Назва</th>   
+              <th className={styles.nameColumn}>Статус</th>  
+              <th className={styles.nameColumn}>Управління</th>           
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className={styles.noData}>
+                  Немає даних для відображення
+                </td>
+              </tr>
+            ) : (
+              filteredRows.map((row) => (
+                <tr key={row.id}>                  
+                  <td className={styles.nameColumn}>{row.name}</td>                
+                  <td className={`${styles.statusBadge} ${styles[row.status]}`}>{row.status}</td>  
+                  <td className={styles.actionsColumn}>
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.actionLink}
+                        onClick={() => handleEditCategory(row)}
+                      >
+                        Ред.
+                      </button>
+                      <button
+                        className={`${styles.actionLink} ${styles.actionDelete}`}
+                        onClick={() => handleDeleteCategory(row.id)}
+                        title="Видалити"
+                      >
+                        Видалити
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+
+
             </div>
           )}
         </div>

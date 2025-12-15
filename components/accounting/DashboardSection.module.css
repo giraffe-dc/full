@@ -1,0 +1,281 @@
+.dashboardContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* --- Filters --- */
+.filterBar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 8px;
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filterLabel {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.filterInput {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.filterInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.resetButton {
+    margin-left: auto;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    color: #ef4444;
+    background: #fee2e2;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.resetButton:hover {
+    background: #fecaca;
+}
+
+/* --- Hero Cards --- */
+.heroGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.heroCard {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.heroCard:hover {
+    transform: translateY(-2px);
+}
+
+.heroLabel {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.heroValue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.heroSub {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-top: auto;
+}
+
+.incomeText {
+    color: #10b981;
+}
+
+.expenseText {
+    color: #ef4444;
+}
+
+.balancePos {
+    color: #10b981;
+}
+
+.balanceNeg {
+    color: #ef4444;
+}
+
+/* --- Charts Section --- */
+.chartsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.chartCard {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chartTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.listRow {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.listRow:last-child {
+    border-bottom: none;
+}
+
+.listInfo {
+    flex: 1;
+}
+
+.listLabel {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.barBg {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.barFill {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.barFill.income {
+    background: #10b981;
+}
+
+.barFill.expense {
+    background: #ef4444;
+}
+
+/* --- Timeline --- */
+.timelineScroll {
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
+
+.timelineList {
+    display: flex;
+    gap: 40px;
+    /* Wider spacing */
+    padding: 0 10px;
+    list-style: none;
+    min-width: max-content;
+}
+
+.timelineItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 60px;
+}
+
+.timelineDate {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+.timelineGraph {
+    height: 150px;
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.graphBar {
+    width: 12px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: height 0.3s ease;
+}
+
+.graphBar.inc {
+    background: #10b981;
+    opacity: 0.8;
+}
+
+.graphBar.exp {
+    background: #ef4444;
+    opacity: 0.8;
+}
+
+.timelineValues {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.valInc {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.valExp {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.valBal {
+    color: #374151;
+    font-weight: bold;
+    margin-top: 4px;
+    border-top: 1px solid #eee;
+    padding-top: 2px
+}
+
+.emptyState {
+    text-align: center;
+    color: #9ca3af;
+    padding: 40px;
+    background: #f9fafb;
+    border-radius: 12px;
+}

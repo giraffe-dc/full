@@ -1,22 +1,60 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { ReceiptRow } from '@/types/accounting';
+import clientPromise from '../../../../lib/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ReceiptRow>('receipts');
 
-    const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get('status');
+    // 1. Fetch receipts
+    const receiptsRaw = await db.collection('receipts').find({}).sort({ createdAt: -1 }).toArray();
 
-    const filter: any = {};
-    if (status) {
-      filter.status = status;
-    }
+    // 2. Fetch products for cost calculation
+    const productsRaw = await db.collection('products').find({}).toArray();
+    const productMap = new Map(productsRaw.map(p => [p._id.toString(), p]));
+    const productMapById = new Map(productsRaw.map(p => [p.id, p]));
 
-    const receipts = await collection.find(filter).toArray();
+    const receipts = receiptsRaw.map(r => {
+      let totalCost = 0;
+
+      // Calculate cost for each item
+      if (r.items && Array.isArray(r.items)) {
+        r.items.forEach((item: any) => {
+          const id = item.productId || item.id;
+          let unitCost = Number(item.cost || 0);
+
+          if (!unitCost) {
+            // Fallback to product catalog cost
+            const product = productMap.get(id) || productMapById.get(id);
+            // Or try finding by name if no ID match (legacy data)
+            const productByName = !product ? productsRaw.find(p => p.name === item.name) : null;
+
+            unitCost = product ? Number(product.costPerUnit || 0) : (productByName ? Number(productByName.costPerUnit || 0) : 0);
+          }
+
+          const qty = Number(item.count || item.qty || item.quantity || 0);
+          totalCost += (unitCost * qty);
+        });
+      }
+
+      const total = Number(r.total || 0);
+      const profit = total - totalCost;
+
+      return {
+        id: r._id.toString(),
+        receiptNumber: r.receiptNumber || r._id.toString().slice(-6),
+        openedAt: r.createdAt || r.openedAt, // Use createdAt as main date
+        closedAt: r.closedAt,
+        waiter: r.waiter || "Каса",
+        status: r.status || "closed",
+        total: total,
+        discount: Number(r.discount || 0),
+        profit: profit,
+        paymentMethod: r.paymentMethod || "cash",
+        itemsCount: r.items ? r.items.length : 0
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -33,44 +71,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // .. Existing POST logic if needed, or keep generic ..
+  // Since POST is mainy for creating dummy data or testing, we can leave it simple or copy previous.
+  // The checkout API handles real receipt creation.
+  // I will minimalize POST here or keep it if it was used for seeding.
   try {
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ReceiptRow>('receipts');
-
     const body = await request.json();
-    const { waiter, openedAt, closedAt, paid, discount, profit, status } = body;
-
-    if (!waiter) {
-      return NextResponse.json(
-        { success: false, error: 'Офіціант обов\'язковий' },
-        { status: 400 }
-      );
-    }
-
-    const newReceipt: ReceiptRow = {
-      id: `receipt-${Date.now()}`,
-      waiter,
-      openedAt: openedAt || new Date().toISOString(),
-      closedAt: closedAt || null,
-      paid: paid || 0,
-      discount: discount || 0,
-      profit: profit || 0,
-      status: status || 'open',
-      risk: '',
-    };
-
-    await collection.insertOne(newReceipt as any);
-
-    return NextResponse.json(
-      { success: true, data: newReceipt, message: 'Чек успішно створений' },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error creating receipt:', error);
-    return NextResponse.json(
-      { success: false, error: 'Помилка при створенні чека' },
-      { status: 500 }
-    );
+    const result = await db.collection('receipts').insertOne({
+      ...body,
+      createdAt: new Date()
+    });
+    return NextResponse.json({ success: true, id: result.insertedId });
+  } catch (e) {
+    return NextResponse.json({ error: "Creation failed" }, { status: 500 });
   }
 }

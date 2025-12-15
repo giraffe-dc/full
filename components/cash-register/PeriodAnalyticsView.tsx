@@ -48,22 +48,25 @@ export function PeriodAnalyticsView({ analytics }: PeriodAnalyticsViewProps) {
 
         <div className={styles.categoryBreakdown}>
           <h3>Розбивка по категоріях</h3>
-          {Object.entries(analytics.salesByCategory).map(([category, data]) => (
-            <div key={category} className={styles.categoryRow}>
-              <div className={styles.categoryName}>
-                {CATEGORY_LABELS[category as ServiceCategory]}
+          {Object.entries(analytics.salesByCategory).map(([category, data]) => {
+            const label = CATEGORY_LABELS[category as ServiceCategory] || category;
+            return (
+              <div key={category} className={styles.categoryRow}>
+                <div className={styles.categoryName}>
+                  {label}
+                </div>
+                <div className={styles.categoryBar}>
+                  <div
+                    className={styles.categoryBarFill}
+                    style={{ width: `${data.percentage}%` }}
+                  />
+                </div>
+                <div className={styles.categoryAmount}>
+                  {data.total.toFixed(2)} ₴ ({data.percentage.toFixed(1)}%)
+                </div>
               </div>
-              <div className={styles.categoryBar}>
-                <div
-                  className={styles.categoryBarFill}
-                  style={{ width: `${data.percentage}%` }}
-                />
-              </div>
-              <div className={styles.categoryAmount}>
-                {data.total.toFixed(2)} ₴ ({data.percentage.toFixed(1)}%)
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {analytics.topServices.length > 0 && (

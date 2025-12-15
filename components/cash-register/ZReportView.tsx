@@ -6,26 +6,28 @@ interface ZReportViewProps {
   report: ZReport;
 }
 
-const CATEGORY_LABELS: Record<ServiceCategory, string> = {
-  bowling: '🎳 Боулінг',
-  billiards: '🎱 Більярд',
-  karaoke: '🎤 Караоке',
-  games: '🕹️ Ігри',
-  bar: '🍹 Бар',
-};
-
 export function ZReportView({ report }: ZReportViewProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('uk-UA');
   };
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+  const formatDuration = (start: string, end: string) => {
+    if (!start || !end) return 'Невідомо';
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 'Невідомо';
+
+    const diff = endDate.getTime() - startDate.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}г ${mins}хв`;
   };
 
-  const totalSales = Object.values(report.salesByCategory).reduce((sum, val) => sum + val, 0);
+  const totalSales = report.salesByCategory
+    ? Object.values(report.salesByCategory).reduce((sum, val) => sum + val, 0)
+    : 0;
 
   return (
     <div className={styles.reportCard}>
@@ -40,7 +42,7 @@ export function ZReportView({ report }: ZReportViewProps) {
       <div className={styles.reportStats}>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Тривалість зміни</div>
-          <div className={styles.statValue}>{formatDuration(report.duration)}</div>
+          <div className={styles.statValue}>{formatDuration(report.createdAt, report.endTime || report.createdAt)}</div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Чеків</div>
@@ -56,25 +58,25 @@ export function ZReportView({ report }: ZReportViewProps) {
         <h3>Касова дисципліна</h3>
         <div className={styles.balanceRow}>
           <span>Початковий баланс:</span>
-          <span>{report.startBalance.toFixed(2)} ₴</span>
+          <span>{(report.startBalance ?? 0).toFixed(2)} ₴</span>
         </div>
         <div className={styles.balanceRow}>
           <span>Продажи:</span>
-          <span>{report.totalSales.toFixed(2)} ₴</span>
+          <span>{(report.totalSales ?? 0).toFixed(2)} ₴</span>
         </div>
         <div className={styles.balanceRow}>
           <span>Витрати:</span>
-          <span>-{report.totalExpenses.toFixed(2)} ₴</span>
+          <span>-{(report.totalExpenses ?? 0).toFixed(2)} ₴</span>
         </div>
         <div className={`${styles.balanceRow} ${styles.balanceRowTotal}`}>
           <span>Кінцевий баланс:</span>
-          <span>{report.endBalance.toFixed(2)} ₴</span>
+          <span>{(report.endBalance ?? 0).toFixed(2)} ₴</span>
         </div>
         {report.cashDifference !== 0 && (
           <div className={`${styles.balanceRow} ${styles.balanceRowDifference}`}>
             <span>Різниця:</span>
-            <span className={report.cashDifference > 0 ? styles.positive : styles.negative}>
-              {report.cashDifference > 0 ? '+' : ''}{report.cashDifference.toFixed(2)} ₴
+            <span className={(report.cashDifference ?? 0) > 0 ? styles.positive : styles.negative}>
+              {(report.cashDifference ?? 0) > 0 ? '+' : ''}{(report.cashDifference ?? 0).toFixed(2)} ₴
             </span>
           </div>
         )}
@@ -82,12 +84,13 @@ export function ZReportView({ report }: ZReportViewProps) {
 
       <div className={styles.categoryBreakdown}>
         <h3>Розбивка по категоріях</h3>
-        {Object.entries(report.salesByCategory).map(([category, amount]) => {
+        {report.salesByCategory && Object.entries(report.salesByCategory).map(([category, amount]) => {
           const percentage = totalSales > 0 ? (amount / totalSales) * 100 : 0;
+          const label = category;
           return (
             <div key={category} className={styles.categoryRow}>
               <div className={styles.categoryName}>
-                {CATEGORY_LABELS[category as ServiceCategory]}
+                {label}
               </div>
               <div className={styles.categoryBar}>
                 <div
@@ -103,14 +106,14 @@ export function ZReportView({ report }: ZReportViewProps) {
         })}
       </div>
 
-      {report.topServices.length > 0 && (
+      {report.topServices && report.topServices.length > 0 && (
         <div className={styles.topServices}>
-          <h3>ТОП-5 послуг</h3>
-          {report.topServices.map((service, index) => (
+          <h3>Топ послуг</h3>
+          {report.topServices.slice(0, 5).map((service, idx) => (
             <div key={service.serviceId} className={styles.serviceRow}>
-              <span className={styles.serviceRank}>{index + 1}.</span>
+              <span className={styles.serviceRank}>#{idx + 1}</span>
               <span className={styles.serviceName}>{service.serviceName}</span>
-              <span className={styles.serviceQuantity}>{service.quantity} шт</span>
+              <span className={styles.serviceQuantity}>x{service.quantity}</span>
               <span className={styles.serviceTotal}>{service.total.toFixed(2)} ₴</span>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { MenuProduct } from '@/types/accounting';
+import { ObjectId } from 'mongodb';
 
 // GET /api/accounting/products/[id] - отримати товар за ID
 export async function GET(
@@ -13,7 +14,12 @@ export async function GET(
     const db = client.db('giraffe');
     const collection = db.collection<MenuProduct>('products');
 
-    const product = await collection.findOne({ id });
+    let query: any = { id: id };
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ id: id }, { _id: new ObjectId(id) }] };
+    }
+
+    const product = await collection.findOne(query);
 
     if (!product) {
       return NextResponse.json(
@@ -53,8 +59,13 @@ export async function PUT(
       );
     }
 
+    let query: any = { id };
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ id: id }, { _id: new ObjectId(id) }] };
+    }
+
     const result = await collection.updateOne(
-      { id },
+      query,
       {
         $set: {
           code,
@@ -102,9 +113,18 @@ export async function DELETE(
     const db = client.db('giraffe');
     const collection = db.collection<MenuProduct>('products');
 
-    const result = await collection.deleteOne({ id });
+    let query: any = { id };
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ id: id }, { _id: new ObjectId(id) }] };
+    }
 
-    if (result.deletedCount === 0) {
+    // Soft delete instead of remove
+    const result = await collection.updateOne(
+      query,
+      { $set: { status: 'inactive' } }
+    );
+
+    if (result.matchedCount === 0) {
       return NextResponse.json(
         { success: false, error: 'Товар не знайдений' },
         { status: 400 }
@@ -113,7 +133,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Товар успішно видалений',
+      message: 'Товар успішно переміщено в кошик',
     });
   } catch (error) {
     console.error('Error deleting product:', error);

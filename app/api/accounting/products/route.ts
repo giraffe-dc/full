@@ -13,15 +13,18 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const status = searchParams.get('status');
 
-    const filter: any = {};
+    // За замовчуванням показуємо тільки активні
+    const filter: any = { status: status || 'active' };
+
     if (category) {
       filter.category = category;
     }
-    if (status) {
-      filter.status = status;
-    }
 
-    const products = await collection.find(filter).toArray();
+    const productsData = await collection.find(filter).toArray();
+    const products = productsData.map(p => ({
+      ...p,
+      id: p.id || p._id.toString()
+    }));
 
     return NextResponse.json({
       success: true,
@@ -55,9 +58,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Auto-increment code if not provided
+    let generatedCode = '';
+    if (!code) {
+      try {
+        const maxCodeDoc = await collection.aggregate([
+          {
+            $match: {
+              code: { $regex: /^\d+$/ } // Match only numeric codes
+            }
+          },
+          {
+            $project: {
+              codeInt: { $toInt: "$code" }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              max: { $max: "$codeInt" }
+            }
+          }
+        ]).next();
+
+        const maxCode = maxCodeDoc ? maxCodeDoc.max : 0;
+        generatedCode = (maxCode + 1).toString();
+      } catch (e) {
+        console.error("Error calculating max code:", e);
+        // Fallback to simple date-based if aggreg fails? 
+        // Or just let it be empty string if crucial failure, but aggregation should work.
+      }
+    }
+
     const newProduct: MenuProduct = {
       id: `product-${Date.now()}`,
-      code: code || '',
+      code: code || generatedCode || '', // Use generatedCode if defined (when code was null)
       name,
       category,
       costPerUnit: costPerUnit || 0,

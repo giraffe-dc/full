@@ -46,10 +46,12 @@ export function XReportView({ report }: XReportViewProps) {
         <h3>Розбивка по категоріях</h3>
         {Object.entries(report.salesByCategory).map(([category, amount]) => {
           const percentage = totalSales > 0 ? (amount / totalSales) * 100 : 0;
+          // Use generic label or fallback to key
+          const label = CATEGORY_LABELS[category as ServiceCategory] || category;
           return (
             <div key={category} className={styles.categoryRow}>
               <div className={styles.categoryName}>
-                {CATEGORY_LABELS[category as ServiceCategory]}
+                {label}
               </div>
               <div className={styles.categoryBar}>
                 <div

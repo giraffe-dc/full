@@ -110,10 +110,10 @@ export function CategoryFormModal({
             </select>
           </div>
 
-          <div className={styles.formGroup}>
+          {/* <div className={styles.formGroup}>
             <label className={styles.label}>Обкладинка</label>
             <div className={styles.imagePlaceholder}></div>
-          </div>
+          </div> */}
         </div>
 
         <div className={styles.footer}>

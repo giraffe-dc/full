@@ -1,0 +1,141 @@
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-weight: var(--font-medium);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button:not(:disabled):active {
+    transform: scale(0.98);
+}
+
+/* Ripple effect */
+.button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.button:not(:disabled):active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Sizes */
+.sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    min-height: 32px;
+}
+
+.md {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    min-height: 40px;
+}
+
+.lg {
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-lg);
+    min-height: 48px;
+}
+
+/* Variants */
+.primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.primary:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.secondary {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-medium);
+    box-shadow: var(--shadow-xs);
+}
+
+.secondary:not(:disabled):hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-sm);
+}
+
+.ghost {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.ghost:not(:disabled):hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.danger {
+    background: linear-gradient(135deg, var(--error-500), var(--error-600));
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.danger:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--error-600), var(--error-700));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinnerIcon {
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}
+
+.spinnerCircle {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 60;
+    stroke-dashoffset: 15;
+}
+
+/* Icon */
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon svg {
+    width: 18px;
+    height: 18px;
+}

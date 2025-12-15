@@ -1,0 +1,116 @@
+.card {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    animation: fadeIn var(--transition-base) ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transition: transform var(--transition-base);
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Color variants */
+.primary::before {
+    background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+}
+
+.success::before {
+    background: linear-gradient(90deg, var(--success-500), var(--success-600));
+}
+
+.warning::before {
+    background: linear-gradient(90deg, var(--warning-500), var(--warning-600));
+}
+
+.error::before {
+    background: linear-gradient(90deg, var(--error-500), var(--error-600));
+}
+
+.info::before {
+    background: linear-gradient(90deg, var(--info-500), var(--info-600));
+}
+
+.card:hover::before {
+    transform: scaleX(1);
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.icon {
+    font-size: 24px;
+    opacity: 0.8;
+}
+
+/* Value */
+.value {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+    animation: countUp var(--transition-base) ease-out;
+}
+
+/* Trend */
+.trend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+}
+
+.trendPositive {
+    color: var(--success-600);
+}
+
+.trendNegative {
+    color: var(--error-600);
+}
+
+.trendIcon {
+    font-size: 16px;
+}
+
+.trendValue {
+    font-size: var(--text-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .value {
+        font-size: var(--text-3xl);
+    }
+}

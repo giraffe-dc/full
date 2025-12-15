@@ -11,7 +11,7 @@ export async function GET(
     const { id } = await params;
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ProductCategory>('categories');
+    const collection = db.collection<ProductCategory>('product_categories');
 
     const category = await collection.findOne({ id });
 
@@ -41,7 +41,7 @@ export async function PUT(
     const { id } = await params;
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ProductCategory>('categories');
+    const collection = db.collection<ProductCategory>('product_categories');
 
     const body = await request.json();
     const { name, parentCategory, description, status } = body;
@@ -97,7 +97,7 @@ export async function DELETE(
     const { id } = await params;
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ProductCategory>('categories');
+    const collection = db.collection<ProductCategory>('product_categories');
 
     const result = await collection.deleteOne({ id });
 

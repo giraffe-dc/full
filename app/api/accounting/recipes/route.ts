@@ -13,15 +13,18 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const status = searchParams.get('status');
 
-    const filter: any = {};
+    // За замовчуванням показуємо тільки активні
+    const filter: any = { status: status || 'active' };
+
     if (category) {
       filter.category = category;
     }
-    if (status) {
-      filter.status = status;
-    }
 
-    const recipes = await collection.find(filter).toArray();
+    const recipesData = await collection.find(filter).toArray();
+    const recipes = recipesData.map(r => ({
+      ...r,
+      id: r.id || r._id.toString()
+    }));
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,4 @@
-import { MenuProduct, MenuRecipe, ProductCategory, ClientRow, StaffRow, PaymentRow, ReceiptRow, CashShift, SalaryRow } from '@/types/accounting';
+import { MenuProduct, MenuRecipe, MenuIngredient, ProductCategory, ClientRow, StaffRow, PaymentRow, ReceiptRow, CashShift, SalaryRow } from '@/types/accounting';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -6,6 +6,112 @@ interface ApiResponse<T> {
   error?: string;
   message?: string;
   count?: number;
+}
+
+// ============ INGREDIENTS API ============
+
+export async function getIngredients(filters?: {
+  category?: string;
+  status?: string;
+}): Promise<MenuIngredient[]> {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.status) params.append('status', filters.status);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`/api/accounting/ingredients${query}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<MenuIngredient[]> = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Помилка при отриманні інгредієнтів');
+    }
+
+    return result.data || [];
+  } catch (error) {
+    console.error('Error fetching ingredients:', error);
+    throw error;
+  }
+}
+
+export async function createIngredient(ingredient: Omit<MenuIngredient, 'id'>): Promise<MenuIngredient> {
+  try {
+    const response = await fetch('/api/accounting/ingredients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ingredient),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<MenuIngredient> = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Помилка при створенні інгредієнта');
+    }
+
+    return result.data!;
+  } catch (error) {
+    console.error('Error creating ingredient:', error);
+    throw error;
+  }
+}
+
+export async function updateIngredient(id: string, ingredient: Partial<MenuIngredient>): Promise<MenuIngredient> {
+  try {
+    const response = await fetch(`/api/accounting/ingredients/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ingredient),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<MenuIngredient> = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Помилка при оновленні інгредієнта');
+    }
+
+    return result.data!;
+  } catch (error) {
+    console.error('Error updating ingredient:', error);
+    throw error;
+  }
+}
+
+export async function deleteIngredient(id: string): Promise<void> {
+  try {
+    const response = await fetch(`/api/accounting/ingredients/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<void> = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Помилка при видаленні інгредієнта');
+    }
+  } catch (error) {
+    console.error('Error deleting ingredient:', error);
+    throw error;
+  }
 }
 
 // ============ PRODUCTS API ============

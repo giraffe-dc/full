@@ -16,8 +16,15 @@ import { SalarySection } from '../../components/accounting/SalarySection';
 import { InvoicesSection } from '../../components/accounting/InvoicesSection';
 import { StockSection } from '../../components/accounting/StockSection';
 import { MenuProductsSection } from '../../components/accounting/MenuProductsSection';
-// import { MenuRecipesSection } from '../../components/accounting/MenuRecipesSection';
+import { MenuRecipesSection } from '../../components/accounting/MenuRecipesSection';
+import { MenuIngredientsSection } from '../../components/accounting/MenuIngredientsSection';
 import { MenuProductCategoriesSection } from '../../components/accounting/MenuProductCategoriesSection';
+import { StockWarehouses } from '../../components/accounting/stock/StockWarehouses';
+import { StockSuppliers } from '../../components/accounting/stock/StockSuppliers';
+import { StockBalances } from '../../components/accounting/stock/StockBalances';
+import { StockSupply } from '../../components/accounting/stock/StockSupply';
+import { StockMovements } from '../../components/accounting/stock/StockMovements';
+import { StockWriteOff } from '../../components/accounting/stock/StockWriteOff';
 
 import type { Transaction, Totals, CashShift, SalaryRow } from "../../types/accounting";
 import {
@@ -74,7 +81,22 @@ export default function AccountingPage() {
     source: "onsite",
     visits: "",
   });
-  const [cashShifts, setCashShifts] = useState<CashShift[]>(MOCK_CASH_SHIFTS);
+
+  // Detailed mock shifts matching new UI
+  // Detailed mock shifts matching new UI
+  const [cashShifts, setCashShifts] = useState<any[]>([]);
+
+  async function fetchCashShifts() {
+    try {
+      const res = await fetch('/api/accounting/cash-shifts');
+      const data = await res.json();
+      if (data.data) {
+        setCashShifts(data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
   const [salaryRows, setSalaryRows] = useState<SalaryRow[]>(MOCK_SALARY_ROWS);
 
   // Мок-дані для розділів
@@ -150,9 +172,66 @@ export default function AccountingPage() {
     setTotals(data.totals || { income: 0, expense: 0, balance: 0 });
   }
 
+  // Clients Data
+  const [clientsData, setClientsData] = useState<{ rows: any[], totals: any }>({ rows: [], totals: { noDiscount: 0, cash: 0, card: 0, profit: 0, receipts: 0 } });
+
+  async function fetchClients() {
+    try {
+      const res = await fetch('/api/accounting/clients');
+      const data = await res.json();
+      if (data.data) {
+        setClientsData({ rows: data.data, totals: data.totals });
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // Staff Data
+  const [staffData, setStaffData] = useState<{ rows: any[], totals: any }>({ rows: [], totals: { revenue: 0, profit: 0, receipts: 0 } });
+
+  async function fetchStaff() {
+    try {
+      const res = await fetch('/api/accounting/staff');
+      const data = await res.json();
+      if (data.data) {
+        setStaffData({ rows: data.data, totals: data.totals });
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // Products Stats Data
+  const [productsStats, setProductsStats] = useState<{ rows: any[], totals: any }>({ rows: [], totals: { count: 0, grossRevenue: 0, discount: 0, revenue: 0, profit: 0 } });
+
+  async function fetchProductsStats() {
+    try {
+      const res = await fetch('/api/accounting/products/stats');
+      const data = await res.json();
+      if (data.data) {
+        setProductsStats({ rows: data.data, totals: data.totals });
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // Receipts Data
+  const [receiptsData, setReceiptsData] = useState<any[]>([]);
+
+  async function fetchReceipts() {
+    try {
+      const res = await fetch('/api/accounting/receipts');
+      const data = await res.json();
+      if (data.data) {
+        setReceiptsData(data.data);
+      }
+    } catch (e) { console.error(e); }
+  }
+
   useEffect(() => {
     fetchTx();
-  }, [filters]);
+    if (activeSection === 'clients') fetchClients();
+    if (activeSection === 'staff') fetchStaff();
+    if (activeSection === 'products') fetchProductsStats();
+    if (activeSection === 'receipts') fetchReceipts();
+    if (activeSection === 'cashShifts') fetchCashShifts();
+  }, [filters, activeSection]);
 
   function resetForm() {
     setFormData({
@@ -213,110 +292,110 @@ export default function AccountingPage() {
   }
 
   const handleAddShift = () => {
-  console.log('Додати нову касову зміну');
-  // Тут буде логіка додавання нової касової зміни
-};
-const handleCloseShift = (id: string) => {
-  console.log('Закрити касову зміну', id);
-  setCashShifts(prev => 
-    prev.map(shift => 
-      shift.id === id ? { ...shift, status: 'closed' } : shift
-    )
-  );
-};
-const handleOpenShift = (id: string) => {
-  console.log('Відкрити касову зміну', id);
-  setCashShifts(prev => 
-    prev.map(shift => 
-      shift.id === id ? { ...shift, status: 'opened' } : shift
-    )
-  );
-};
-const handleViewShift = (id: string) => {
-  console.log('Переглянути касову зміну', id);
-  // Тут буде логіка перегляду деталей касової зміни
-};
+    console.log('Додати нову касову зміну');
+    // Тут буде логіка додавання нової касової зміни
+  };
+  const handleCloseShift = (id: string) => {
+    console.log('Закрити касову зміну', id);
+    setCashShifts(prev =>
+      prev.map(shift =>
+        shift.id === id ? { ...shift, status: 'closed' } : shift
+      )
+    );
+  };
+  const handleOpenShift = (id: string) => {
+    console.log('Відкрити касову зміну', id);
+    setCashShifts(prev =>
+      prev.map(shift =>
+        shift.id === id ? { ...shift, status: 'opened' } : shift
+      )
+    );
+  };
+  const handleViewShift = (id: string) => {
+    console.log('Переглянути касову зміну', id);
+    // Тут буде логіка перегляду деталей касової зміни
+  };
 
-const handlePaySalary = (id: string) => {
-  console.log('Виплата зарплати для', id);
-  // Тут буде логіка виплати зарплати
-};
+  const handlePaySalary = (id: string) => {
+    console.log('Виплата зарплати для', id);
+    // Тут буде логіка виплати зарплати
+  };
 
-const handleViewSalaryDetails = (id: string) => {
-  console.log('Перегляд деталей зарплати для', id);
-  // Тут буде логіка перегляду деталей
-};
+  const handleViewSalaryDetails = (id: string) => {
+    console.log('Перегляд деталей зарплати для', id);
+    // Тут буде логіка перегляду деталей
+  };
 
-const handleExportSalary = () => {
-  console.log('Експорт даних про зарплату');
-  // Тут буде логіка експорту
-};
+  const handleExportSalary = () => {
+    console.log('Експорт даних про зарплату');
+    // Тут буде логіка експорту
+  };
 
   const sectionTitle =
     activeSection === "dashboard"
       ? "Дашборд"
       : activeSection === "clients"
-      ? "Клієнти"
-      : activeSection === "staff"
-      ? "Працівники"
-      : activeSection === "categories"
-      ? "Категорії"
-      : activeSection === "products"
-      ? "Товари"
-      : activeSection === "receipts"
-      ? "Чеки"
-      : activeSection === "revenue"
-      ? "Виручка"
-      : activeSection === "payments"
-      ? "Оплати"
-      : activeSection === "taxes"
-      ? "Податки"
-      : activeSection === "menu"
-      ? "Меню"
-      : activeSection === "stock"
-      ? "Склад"
-      : activeSection === "marketing"
-      ? "Маркетинг"
-      : activeSection === "access"
-      ? "Доступи"
-      : activeSection === "venues"
-      ? "Усі заклади"
-      : activeSection === "settings"
-      ? "Налаштування"
-      : "Витрати";
+        ? "Клієнти"
+        : activeSection === "staff"
+          ? "Працівники"
+          : activeSection === "categories"
+            ? "Категорії"
+            : activeSection === "products"
+              ? "Товари"
+              : activeSection === "receipts"
+                ? "Чеки"
+                : activeSection === "revenue"
+                  ? "Виручка"
+                  : activeSection === "payments"
+                    ? "Оплати"
+                    : activeSection === "taxes"
+                      ? "Податки"
+                      : activeSection === "menu"
+                        ? "Меню"
+                        : activeSection === "stock"
+                          ? "Склад"
+                          : activeSection === "marketing"
+                            ? "Маркетинг"
+                            : activeSection === "access"
+                              ? "Доступи"
+                              : activeSection === "venues"
+                                ? "Усі заклади"
+                                : activeSection === "settings"
+                                  ? "Налаштування"
+                                  : "";
 
   const sectionDescription =
     activeSection === "dashboard"
       ? "Загальний огляд доходів, витрат та балансу."
       : activeSection === "clients"
-      ? "Робота з клієнтами та історією їхніх відвідувань."
-      : activeSection === "staff"
-      ? "Показники роботи працівників та офіціантів."
-      : activeSection === "categories"
-      ? "Категорії товарів і послуг за виторгом та собівартістю."
-      : activeSection === "products"
-      ? "Номенклатура товарів та послуг. (планується)"
-      : activeSection === "receipts"
-      ? "Облік чеків та операцій за розрахунковими документами."
-      : activeSection === "revenue"
-      ? "Розрізи по виручці центру. (планується)"
-      : activeSection === "payments"
-      ? "Розрахунки та оплати. (планується)"
-      : activeSection === "taxes"
-      ? "Податкові нарахування та звітність. (планується)"
-      : activeSection === "menu"
-      ? "Меню кафе та додаткових послуг. (планується)"
-      : activeSection === "stock"
-      ? "Складські залишки та рух товарів. (планується)"
-      : activeSection === "marketing"
-      ? "Акції, промокоди та рекламні активності. (планується)"
-      : activeSection === "access"
-      ? "Права доступу бухгалтерів та менеджерів. (планується)"
-      : activeSection === "venues"
-      ? "Мережа закладів та їхні показники. (планується)"
-      : activeSection === "settings"
-      ? "Налаштування фінансових параметрів. (планується)"
-      : "Управління витратами центру за категоріями.";
+        ? "Робота з клієнтами та історією їхніх відвідувань."
+        : activeSection === "staff"
+          ? "Показники роботи працівників та офіціантів."
+          : activeSection === "categories"
+            ? "Категорії товарів і послуг за виторгом та собівартістю."
+            : activeSection === "products"
+              ? "Номенклатура товарів та послуг. (планується)"
+              : activeSection === "receipts"
+                ? "Облік чеків та операцій за розрахунковими документами."
+                : activeSection === "revenue"
+                  ? "Розрізи по виручці центру. (планується)"
+                  : activeSection === "payments"
+                    ? "Розрахунки та оплати. (планується)"
+                    : activeSection === "taxes"
+                      ? "Податкові нарахування та звітність. (планується)"
+                      : activeSection === "menu"
+                        ? "Меню кафе та додаткових послуг. (планується)"
+                        : activeSection === "stock"
+                          ? "Складські залишки та рух товарів. (планується)"
+                          : activeSection === "marketing"
+                            ? "Акції, промокоди та рекламні активності. (планується)"
+                            : activeSection === "access"
+                              ? "Права доступу бухгалтерів та менеджерів. (планується)"
+                              : activeSection === "venues"
+                                ? "Мережа закладів та їхні показники. (планується)"
+                                : activeSection === "settings"
+                                  ? "Налаштування фінансових параметрів. (планується)"
+                                  : "";
 
   return (
     <div className={styles.container}>
@@ -326,72 +405,55 @@ const handleExportSalary = () => {
         <h1 className={styles.pageTitle}>{sectionTitle}</h1>
         <p className={styles.lead}>{sectionDescription}</p>
 
-       {activeSection === "dashboard" && (
-        <> 
-       <div className={styles.summary}>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Доходи (всі)</div>
-            <div className={styles.summaryValueIncome}>{totals.income.toFixed(2)} ₴</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Витрати (всі)</div>
-            <div className={styles.summaryValueExpense}>{totals.expense.toFixed(2)} ₴</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Баланс</div>
-            <div className={`${styles.summaryValue} ${totals.balance >= 0 ? styles.positive : styles.negative}`}>
-              {totals.balance.toFixed(2)} ₴
-            </div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Кількість операцій</div>
-            <div className={styles.summaryValue}>{tx.length}</div>
-          </div>
-        </div>
-        
+
+        {activeSection === "dashboard" && (
           <DashboardSection
             totals={totals}
             totalIncomeAmount={dashboardStats.totalIncomeAmount}
             averageCheck={dashboardStats.averageCheck}
             totalVisits={dashboardStats.totalVisits}
             incomeTxCount={dashboardStats.incomeTx.length}
+            operationCount={tx.length}
             incomeCategoryStats={dashboardStats.incomeCategoryStats}
             expenseCategoryStats={dashboardStats.expenseCategoryStats}
             dailyStats={dashboardStats.dailyStats}
             maxDailyValue={dashboardStats.maxDailyValue}
+            filters={filters}
+            onFilterChange={(k, v) => setFilters(prev => ({ ...prev, [k]: v }))}
+            onResetFilters={() => setFilters(prev => ({ ...prev, startDate: "", endDate: "" }))}
           />
-          </>
         )}
 
+
         {activeSection === "receipts" && (
-          <ReceiptsSection rows={receiptRows} />
+          <ReceiptsSection rows={receiptsData} />
         )}
 
         {activeSection === "revenue" && (
-        <TransactionsSection
-          active={true}
-          filters={filters}
-          onFiltersChange={setFilters}
-          categories={categories}
-          categoryLabels={categoryLabels}
-          showForm={showForm}
-          onCloseForm={() => setShowForm(false)}
-          onOpenForm={() => setShowForm(true)}
-          form={formData}
-          onFormChange={setFormData}
-          onSubmit={handleSubmit}
-          tx={tx}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+          <TransactionsSection
+            active={true}
+            filters={filters}
+            onFiltersChange={setFilters}
+            categories={categories}
+            categoryLabels={categoryLabels}
+            showForm={showForm}
+            onCloseForm={() => setShowForm(false)}
+            onOpenForm={() => setShowForm(true)}
+            form={formData}
+            onFormChange={setFormData}
+            onSubmit={handleSubmit}
+            tx={tx}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         )}
 
         {activeSection === "clients" && (
-          <ClientsSection rows={clientRows} totals={clientsTotals} />
+          <ClientsSection rows={clientsData.rows} totals={clientsData.totals} />
         )}
 
         {activeSection === "staff" && (
-          <StaffSection rows={staffRows} totals={staffTotals} />
+          <StaffSection rows={staffData?.rows} totals={staffData?.totals} />
         )}
 
         {activeSection === "categories" && (
@@ -399,7 +461,7 @@ const handleExportSalary = () => {
         )}
 
         {activeSection === "products" && (
-          <ProductsSection rows={productRows} totals={productTotals} />
+          <ProductsSection rows={productsStats.rows} totals={productsStats.totals} />
         )}
 
         {activeSection === "payments" && (
@@ -411,7 +473,7 @@ const handleExportSalary = () => {
         )}
 
         {activeSection === "salary" && (
-          <SalarySection 
+          <SalarySection
             rows={salaryRows}
             onPay={handlePaySalary}
             onView={handleViewSalaryDetails}
@@ -420,7 +482,7 @@ const handleExportSalary = () => {
         )}
 
         {activeSection === "accounts" && (
-          <InvoicesSection 
+          <InvoicesSection
             rows={invoiceRows}
             onAddInvoice={() => console.log('Add invoice')}
             onEditInvoice={(id) => console.log('Edit invoice', id)}
@@ -428,20 +490,20 @@ const handleExportSalary = () => {
           />
         )}
 
-        {activeSection === "stockNotes" && (
-          <StockSection title="Запишики" subtitle="Записи про рух товарів" />
+        {activeSection === "stockBalances" && (
+          <StockBalances />
         )}
 
         {activeSection === "stockSupply" && (
-          <StockSection title="Постачання" subtitle="Надходження товарів від постачальників" />
+          <StockSupply />
         )}
 
         {activeSection === "stockMovement" && (
-          <StockSection title="Переміщення" subtitle="Переміщення товарів між складами" />
+          <StockMovements />
         )}
 
         {activeSection === "stockWriteOff" && (
-          <StockSection title="Списання" subtitle="Списання товарів зі складу" />
+          <StockWriteOff />
         )}
 
         {activeSection === "stockReport" && (
@@ -453,11 +515,11 @@ const handleExportSalary = () => {
         )}
 
         {activeSection === "stockSuppliers" && (
-          <StockSection title="Постачальники" subtitle="Управління постачальниками" />
+          <StockSuppliers />
         )}
 
         {activeSection === "stockWarehouses" && (
-          <StockSection title="Склади" subtitle="Управління складами" />
+          <StockWarehouses />
         )}
 
         {activeSection === "stockPacking" && (
@@ -468,16 +530,12 @@ const handleExportSalary = () => {
           <MenuProductsSection />
         )}
 
-        {/* {activeSection === "menuRecipes" && (
+        {activeSection === "menuRecipes" && (
           <MenuRecipesSection />
-        )} */}
-
-        {activeSection === "menuSemiFinished" && (
-          <StockSection title="Напівфабрикати" subtitle="Управління напівфабрикатами" />
         )}
 
         {activeSection === "menuIngredients" && (
-          <StockSection title="Інгредієнти" subtitle="Управління інгредієнтами" />
+          <MenuIngredientsSection />
         )}
 
         {activeSection === "menuProductCategories" && (
@@ -488,9 +546,7 @@ const handleExportSalary = () => {
           <StockSection title="Категорії інгредієнтів" subtitle="Організація інгредієнтів" />
         )}
 
-        {activeSection === "menuPrices" && (
-          <StockSection title="Ціни" subtitle="Управління цінами товарів" />
-        )}
+
       </div>
     </div>
   );

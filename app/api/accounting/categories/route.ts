@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ProductCategory>('categories');
+    const collection = db.collection<ProductCategory>('product_categories');
 
     const searchParams = request.nextUrl.searchParams;
     const parentCategory = searchParams.get('parentCategory');
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ProductCategory>('categories');
+    const collection = db.collection<ProductCategory>('product_categories');
 
     const body = await request.json();
     const { name, parentCategory, description, status } = body;

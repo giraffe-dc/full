@@ -6,10 +6,13 @@ interface RecipeFormModalProps {
   isOpen: boolean;
   recipe?: MenuRecipe;
   categories: string[];
-  ingredients: string[];
+  ingredients: string[]; // This might need to be full objects to get cost, but for now simple string
   onClose: () => void;
   onSave: (recipe: MenuRecipe) => void;
 }
+
+// Mock stations for now - could be from props later
+const COOKING_STATIONS = ['Кухня', 'Бар', 'Кондитерська', 'Холодний цех'];
 
 export function RecipeFormModal({
   isOpen,
@@ -23,6 +26,7 @@ export function RecipeFormModal({
     code: '',
     name: '',
     category: '',
+    cookingStation: '',
     yield: 0,
     yieldUnit: 'г',
     costPerUnit: 0,
@@ -34,9 +38,13 @@ export function RecipeFormModal({
   });
 
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
-  const [selectedIngredient, setSelectedIngredient] = useState('');
-  const [ingredientQuantity, setIngredientQuantity] = useState('');
-  const [ingredientUnit, setIngredientUnit] = useState('');
+  // Local state for adding/editing ingredients not strictly needed if we edit inline or via a small form row.
+  // Design shows an "Add Ingredient" button at bottom, implying inline or a new row appears.
+  // For simplicity, let's keep the separate inputs for adding but style them to look integrated or just append empty row.
+  // Let's try appending empty row approach for better UX if possible, or keep the top inputs.
+  // The screenshot shows a list with input fields. So we should render the list as inputs!
+
+  // Checking ingredient autocompletion - for now simple select/datalist
 
   useEffect(() => {
     if (recipe) {
@@ -47,6 +55,7 @@ export function RecipeFormModal({
         code: '',
         name: '',
         category: '',
+        cookingStation: '',
         yield: 0,
         yieldUnit: 'г',
         costPerUnit: 0,
@@ -60,61 +69,125 @@ export function RecipeFormModal({
     }
   }, [recipe, isOpen]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'yield' || name === 'costPerUnit' || name === 'sellingPrice' || name === 'markup'
-        ? parseFloat(value) || 0
-        : value,
-    }));
-  };
+  // Recalculate totals whenever ingredients change
+  useEffect(() => {
+    const totalCost = recipeIngredients.reduce((sum, ing) => sum + (ing.totalCost || 0), 0);
+    const totalWeight = recipeIngredients.reduce((sum, ing) => sum + (ing.net || 0), 0); // Usually yield is sum of NET weights
 
-  const handleAddIngredient = () => {
-    if (!selectedIngredient || !ingredientQuantity) {
-      alert('Виберіть інгредієнт та введіть кількість');
+    setFormData(prev => {
+      // Only update if changed to avoid loop, but here it's safe as we set specific fields
+      if (Math.abs(prev.costPerUnit! - totalCost) < 0.01 && Math.abs(prev.yield! - totalWeight) < 0.01) return prev;
+
+      // Also recalculate markup if selling price is set
+      let markup = prev.markup;
+      if (prev.sellingPrice && totalCost > 0) {
+        markup = ((prev.sellingPrice - totalCost) / totalCost) * 100;
+      }
+
+      return {
+        ...prev,
+        costPerUnit: totalCost,
+        yield: totalWeight, // Auto-update yield based on net weight
+        markup: markup
+      };
+    });
+  }, [recipeIngredients]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+
+    // Handle checkbox
+    if (type === 'checkbox') {
+      // For now ignoring specialized checkboxes logic storage as per TS interface limitations 
+      // unless we add them to interface. Sticking to basic fields.
       return;
     }
 
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+
+      if (name === 'sellingPrice') {
+        const price = parseFloat(value) || 0;
+        if (prev.costPerUnit && prev.costPerUnit > 0) {
+          newData.markup = ((price - prev.costPerUnit) / prev.costPerUnit) * 100;
+        }
+      }
+
+      // If markup changes -> update selling price
+      // (Not implementing reverse logic here to avoid conflict, usually one dir is primary)
+
+      return newData;
+    });
+  };
+
+  const handleIngredientChange = (id: string, field: keyof RecipeIngredient, value: string | number) => {
+    setRecipeIngredients(prev => prev.map(ing => {
+      if (ing.id !== id) return ing;
+
+      const updated = { ...ing, [field]: value };
+
+      // Recalculate logic
+      if (field === 'gross' || field === 'net') {
+        // Simple cost logic: assuming costPerUnit is per 1 unit (e.g. kg or L)
+        // We need the ACTUAL cost of the ingredient from DB to calc totalCost.
+        // Since we only have strings in `ingredients` prop, we can't look up cost here easily 
+        // without fetching or having rich objects.
+        // For this task, we'll assume user enters cost manually or we stick to existing logic.
+        // Wait, existing logic was: costPerUnit input * quantity.
+        // Let's keep it simple: We need `costPerUnit` (of ingredient) to be known.
+        // I'll add a 'costPerUnit' field to the row so user can adjust it if not fetched.
+
+        // totalCost = costPerUnit * gross (usually you pay for gross)
+        updated.totalCost = (Number(updated.costPerUnit) || 0) * (Number(updated.gross) || 0);
+      }
+      if (field === 'costPerUnit') {
+        updated.totalCost = (Number(value) || 0) * (Number(updated.gross) || 0);
+      }
+
+      return updated;
+    }));
+  };
+
+  const addEmptyIngredient = () => {
     const newIngredient: RecipeIngredient = {
-      id: `ingredient-${Date.now()}`,
-      name: selectedIngredient,
-      quantity: parseFloat(ingredientQuantity),
-      unit: ingredientUnit || 'шт',
+      id: `ing-${Date.now()}`,
+      name: '',
+      method: '-',
+      quantity: 0, // Using gross as quantity mapping
+      gross: 0,
+      net: 0,
+      unit: 'г', // default
       costPerUnit: 0,
       totalCost: 0,
     };
-
     setRecipeIngredients([...recipeIngredients, newIngredient]);
-    setSelectedIngredient('');
-    setIngredientQuantity('');
-    setIngredientUnit('');
   };
 
-  const handleRemoveIngredient = (id: string) => {
-    setRecipeIngredients(recipeIngredients.filter((ing) => ing.id !== id));
+  const removeIngredient = (id: string) => {
+    setRecipeIngredients(prev => prev.filter(i => i.id !== id));
   };
 
   const handleSave = () => {
     if (!formData.name || !formData.category) {
-      alert('Заповніть обов\'язкові поля');
+      alert('Заповніть обов\'язкові поля (Назва, Категорія)');
       return;
     }
 
     const newRecipe: MenuRecipe = {
       id: recipe?.id || `recipe-${Date.now()}`,
       code: formData.code || '',
-      name: formData.name,
-      category: formData.category,
+      name: formData.name!,
+      category: formData.category!,
+      cookingStation: formData.cookingStation || '',
       yield: formData.yield || 0,
       yieldUnit: formData.yieldUnit || 'г',
       costPerUnit: formData.costPerUnit || 0,
-      sellingPrice: formData.sellingPrice || 0,
+      sellingPrice: parseFloat(String(formData.sellingPrice)) || 0,
       markup: formData.markup || 0,
       ingredients: recipeIngredients,
       notes: formData.notes || '',
       lastModified: new Date().toISOString(),
-      modifiedBy: 'Current User',
+      modifiedBy: 'User', // Placeholder
       status: formData.status || 'active',
     };
 
@@ -124,241 +197,178 @@ export function RecipeFormModal({
 
   if (!isOpen) return null;
 
-  const totalIngredientsCost = recipeIngredients.reduce((sum, ing) => sum + ing.totalCost, 0);
-
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <div className={styles.header}>
-          <button className={styles.backButton} onClick={onClose}>
-            ‹
-          </button>
-          <h2 className={styles.title}>
-            {recipe ? 'Редагування тех. картки' : 'Додавання тех. картки'}
-          </h2>
-          <button className={styles.recalcButton}>
-            🔄 Розрахувати
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className={styles.backButton} onClick={onClose}>‹</button>
+            <h2 className={styles.title}>{recipe ? 'Редагування тех. картки' : 'Створення тех. картки'}</h2>
+          </div>
+          <button className={styles.printButton}>🖨️ Роздрукувати</button>
         </div>
 
         <div className={styles.content}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Назва</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Введіть назву тех. картки"
-            />
-          </div>
+          {/* Top Form Fields */}
+          <div className={styles.topGrid}>
+            <div className={styles.fieldRow}>
+              <label>Назва</label>
+              <input
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className={styles.input}
+                placeholder="Наприклад: Борщ український"
+              />
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Категорія</label>
-            <select
-              name="category"
-              value={formData.category || ''}
-              onChange={handleInputChange}
-              className={styles.select}
-            >
-              <option value="">Виберіть категорію</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className={styles.fieldRow}>
+              <label>Категорія</label>
+              <select name="category" value={formData.category} onChange={handleInputChange} className={styles.select}>
+                <option value="">Оберіть категорію</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Ціна приготування</label>
-            <select className={styles.select}>
-              <option>Без ціну</option>
-            </select>
-            <p className={styles.helpText}>
-              Виберіть, ціну, цифу допускаються на нечислові та правильного списувати інгредієнти з рівня списку
-            </p>
-          </div>
+            <div className={styles.fieldRow}>
+              <label>Цех приготування</label>
+              <select name="cookingStation" value={formData.cookingStation} onChange={handleInputChange} className={styles.select}>
+                <option value="">Оберіть цех</option>
+                {COOKING_STATIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <div className={styles.hint}>Виберіть цех, щоб друкувати на нього бігунки</div>
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Обкладинка</label>
-            <div className={styles.imagePlaceholder}></div>
-          </div>
+            <div className={styles.fieldRow} style={{ alignItems: 'flex-start' }}>
+              <label>Обкладинка</label>
+              <div className={styles.imagePlaceholder}>БЧ</div>
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.checkboxLabel}>
-              <input type="checkbox" />
-              <span>Ватова тех. картка</span>
-            </label>
-            <label className={styles.checkboxLabel}>
-              <input type="checkbox" />
-              <span>Не бере участь в знижках</span>
-            </label>
-          </div>
+            <div className={styles.fieldRow}>
+              <label>Опції</label>
+              <div className={styles.optionsGroup}>
+                <label><input type="checkbox" /> Вагова тех. картка</label>
+                <label><input type="checkbox" /> Не бере участь в знижках</label>
+              </div>
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Ціна</label>
-            <div className={styles.priceInputs}>
-              <div className={styles.priceField}>
+            <div className={styles.fieldRow}>
+              <label>Ціна</label>
+              <div className={styles.priceRow}>
                 <input
                   type="number"
-                  value={formData.costPerUnit || 0}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      costPerUnit: parseFloat(e.target.value) || 0,
-                    }))
-                  }
+                  name="sellingPrice"
+                  value={formData.sellingPrice}
+                  onChange={handleInputChange}
                   className={styles.priceInput}
-                  placeholder="0"
                 />
                 <span className={styles.currency}>₴</span>
-              </div>
 
-              <button className={styles.plusButton}>+</button>
-
-              <div className={styles.priceField}>
-                <input
-                  type="number"
-                  value={formData.markup || 0}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      markup: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  className={styles.priceInput}
-                  placeholder="0"
-                />
-                <span className={styles.currency}>%</span>
-              </div>
-
-              <span className={styles.equals}>=</span>
-
-              <div className={styles.priceField}>
-                <input
-                  type="number"
-                  value={formData.sellingPrice || 0}
-                  readOnly
-                  className={styles.priceInput}
-                  placeholder="0"
-                />
-                <span className={styles.currency}>₴</span>
+                <div className={styles.markupInfo}>
+                  <span className={styles.markupLabel}>Націнка без податку</span>
+                  <span className={styles.markupValue}>{formData.markup?.toFixed(0)}%</span>
+                </div>
+                <div className={styles.markupInfo}>
+                  <span className={styles.markupLabel}>Собівартість без ПДВ</span>
+                  <span className={styles.markupValue}>{formData.costPerUnit?.toFixed(2)} ₴</span>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Ingredients Section */}
           <div className={styles.ingredientsSection}>
             <h3 className={styles.sectionTitle}>Складники</h3>
-            <p className={styles.sectionHint}>
-              Інгредієнти та напівфабрикати, з яких складається тех. картка
-            </p>
+            <p className={styles.sectionSubtitle}>Інгредієнти та напівфабрикати, з яких складається тех. картка</p>
 
-            <div className={styles.ingredientInput}>
-              <select
-                value={selectedIngredient}
-                onChange={(e) => setSelectedIngredient(e.target.value)}
-                className={styles.ingredientSelect}
-              >
-                <option value="">Продукти</option>
-                {ingredients.map((ing) => (
-                  <option key={ing} value={ing}>
-                    {ing}
-                  </option>
-                ))}
-              </select>
-
-              <div className={styles.quantityInputs}>
-                <input
-                  type="number"
-                  value={ingredientQuantity}
-                  onChange={(e) => setIngredientQuantity(e.target.value)}
-                  className={styles.quantityInput}
-                  placeholder="—"
-                />
-
-                <input
-                  type="text"
-                  value={ingredientUnit}
-                  onChange={(e) => setIngredientUnit(e.target.value)}
-                  className={styles.unitInput}
-                  placeholder="0"
-                />
-
-                <button
-                  className={styles.editButton}
-                  onClick={handleAddIngredient}
-                >
-                  ✏️
-                </button>
-
-                <input
-                  type="number"
-                  className={styles.costInput}
-                  placeholder="0"
-                  disabled
-                />
-
-                <span className={styles.currency}>г</span>
-              </div>
+            <div className={styles.tableHeader}>
+              <div className={styles.colName}>Продукти</div>
+              <div className={styles.colMethod}>Спосіб приготування</div>
+              <div className={styles.colGross}>Брутто</div>
+              <div className={styles.colNet}>Нетто</div>
+              <div className={styles.colCost}>Собівартість без ПДВ</div>
             </div>
 
-            <div className={styles.ingredientsList}>
-              <div className={styles.ingredientsHeader}>
-                <div className={styles.colProduct}>Продукти</div>
-                <div className={styles.colQuantity}>Спосіб приготування</div>
-                <div className={styles.colBrutto}>Брутто</div>
-                <div className={styles.colCost}>Нетто</div>
-                <div className={styles.colCostPerUnit}>Собівартість без ПДВ</div>
-              </div>
-
-              {recipeIngredients.length === 0 ? (
-                <div className={styles.noIngredients}>
-                  Виход: 0 г<br />
-                  Всього: 0,00 ₴
-                </div>
-              ) : (
-                <>
-                  {recipeIngredients.map((ing) => (
-                    <div key={ing.id} className={styles.ingredientRow}>
-                      <div className={styles.colProduct}>{ing.name}</div>
-                      <div className={styles.colQuantity}>—</div>
-                      <div className={styles.colBrutto}>{ing.quantity} {ing.unit}</div>
-                      <div className={styles.colCost}>0 г</div>
-                      <div className={styles.colCostPerUnit}>
-                        {ing.totalCost.toFixed(2)} ₴
-                        <button
-                          className={styles.removeButton}
-                          onClick={() => handleRemoveIngredient(ing.id)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <div className={styles.ingredientsSummary}>
-                    <div>Виход: 0 г</div>
-                    <div>Всього: {totalIngredientsCost.toFixed(2)} ₴</div>
+            <div className={styles.tableBody}>
+              {recipeIngredients.map((ing) => (
+                <div key={ing.id} className={styles.tableRow}>
+                  <div className={styles.colName}>
+                    <input
+                      list="ingredients-list"
+                      value={ing.name}
+                      onChange={(e) => handleIngredientChange(ing.id, 'name', e.target.value)}
+                      className={styles.tableInput}
+                      placeholder="Пошук продукту"
+                    />
                   </div>
-                </>
-              )}
+                  <div className={styles.colMethod}>
+                    <input
+                      value={ing.method || '-'}
+                      onChange={(e) => handleIngredientChange(ing.id, 'method', e.target.value)}
+                      className={styles.tableInput}
+                    />
+                  </div>
+                  <div className={styles.colGross}>
+                    <div className={styles.unitWrapper}>
+                      <input
+                        type="number"
+                        value={ing.gross || 0}
+                        onChange={(e) => handleIngredientChange(ing.id, 'gross', parseFloat(e.target.value))}
+                        className={styles.numberInput}
+                      />
+                      <span className={styles.unitLabel}>{ing.unit}</span>
+                    </div>
+                  </div>
+                  <div className={styles.colNet}>
+                    <div className={styles.unitWrapper}>
+                      <input
+                        type="number"
+                        value={ing.net || 0}
+                        onChange={(e) => handleIngredientChange(ing.id, 'net', parseFloat(e.target.value))}
+                        className={styles.numberInput}
+                      />
+                      <span className={styles.unitLabel}>{ing.unit}</span>
+                    </div>
+                  </div>
+                  <div className={styles.colCost}>
+                    <span>{ing.totalCost?.toFixed(2)} ₴</span>
+                    <button onClick={() => removeIngredient(ing.id)} className={styles.removeBtn}>×</button>
+                  </div>
+                </div>
+              ))}
+
+              <button onClick={addEmptyIngredient} className={styles.addIngredientBtn}>
+                + Додати інгредієнт
+              </button>
+            </div>
+
+            <div className={styles.tableFooter}>
+              <div className={styles.footerTotal}>
+                Вихід: {formData.yield} г
+              </div>
+              <div className={styles.footerTotal}>
+                Всього: {formData.costPerUnit?.toFixed(2)} ₴
+              </div>
             </div>
           </div>
 
-          <div className={styles.additionalSection}>
-            <a href="#" className={styles.additionalLink}>
-              Додатково ↓
-            </a>
+          <datalist id="ingredients-list">
+            {ingredients.map(ing => <option key={ing} value={ing} />)}
+          </datalist>
+
+          {/* Modifiers placeholder */}
+          <div className={styles.modifiersSection}>
+            <h3 className={styles.sectionTitle}>Модифікатори</h3>
+            <p className={styles.sectionSubtitle}>Вибір серед різновидів або з можливістю додати додаткові інгредієнти</p>
+            <button className={styles.addModifierBtn}>+ Додати набір модифікаторів...</button>
           </div>
+
         </div>
 
         <div className={styles.footer}>
+          {/* Keeping original save layout */}
           <button className={styles.saveButton} onClick={handleSave}>
             Зберегти
-          </button>
-          <button className={styles.saveContinueButton} onClick={handleSave}>
-            Зберегти та створити ще
           </button>
         </div>
       </div>

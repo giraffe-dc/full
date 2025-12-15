@@ -1,47 +1,25 @@
+
+
 "use client";
 
-import { useEffect, useState } from "react";
-import styles from "./page.module.css";
+import { useEffect, useState, useMemo } from "react";
+import styles from "./page_v2.module.css";
 import { CashRegisterState, Service, Customer, CartItem, Receipt, CashShift, ServiceCategory } from "../../types/cash-register";
-import { CashRegisterHeader } from "../../components/cash-register/CashRegisterHeader";
-import { ServiceSelector } from "../../components/cash-register/ServiceSelector";
-import { ShoppingCart } from "../../components/cash-register/ShoppingCart";
-import { CustomerSelector } from "../../components/cash-register/CustomerSelector";
-import { CashRegisterStatus } from "../../components/cash-register/CashRegisterStatus";
-import { ReceiptModal } from "../../components/cash-register/ReceiptModal";
-
-const DEFAULT_SERVICES: Service[] = [
-  // Боулінг
-  { id: "bowl-1", name: "Боулінг - 1 година", category: "bowling", price: 150 },
-  { id: "bowl-2", name: "Боулінг - 2 години", category: "bowling", price: 280 },
-  { id: "bowl-3", name: "Боулінг - 4 години", category: "bowling", price: 500 },
-  
-  // Більярд
-  { id: "bill-1", name: "Більярд - 1 година", category: "billiards", price: 100 },
-  { id: "bill-2", name: "Більярд - 2 години", category: "billiards", price: 180 },
-  
-  // Караоке
-  { id: "kara-1", name: "Караоке - 1 година", category: "karaoke", price: 200 },
-  { id: "kara-2", name: "Караоке - 2 години", category: "karaoke", price: 350 },
-  
-  // Ігри
-  { id: "game-1", name: "Ігрові автомати - 30 хв", category: "games", price: 50 },
-  { id: "game-2", name: "Ігрові автомати - 1 година", category: "games", price: 90 },
-  { id: "game-3", name: "VR-гра - 30 хв", category: "games", price: 120 },
-  
-  // Бар
-  { id: "bar-1", name: "Напій - Сік", category: "bar", price: 40 },
-  { id: "bar-2", name: "Напій - Кава", category: "bar", price: 60 },
-  { id: "bar-3", name: "Закуска - Попкорн", category: "bar", price: 50 },
-  { id: "bar-4", name: "Закуска - Чіпси", category: "bar", price: 45 },
-];
+import { MenuProduct, ProductCategory } from "../../types/accounting";
+import { Modal } from "../../components/ui";
 
 export default function CashRegisterPage() {
+  const [products, setProducts] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // State initialization
   const [state, setState] = useState<CashRegisterState>({
     currentShift: null,
     currentCart: [],
     customers: [],
-    services: DEFAULT_SERVICES,
+    services: [], // We'll populate this from API
     receipts: [],
     shifts: [],
     zReports: [],
@@ -50,365 +28,537 @@ export default function CashRegisterPage() {
   });
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null);
-  const [shiftStartBalance, setShiftStartBalance] = useState("");
+  const [lastReceipt, setLastReceipt] = useState<any | null>(null); // Using any for receipt temporarily to match API resp
   const [showShiftModal, setShowShiftModal] = useState(false);
+  const [shiftStartBalance, setShiftStartBalance] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed'>('cash');
+  const [amountGiven, setAmountGiven] = useState("");
 
-  // Завантажити дані з localStorage при завантаженні сторінки
+  // Load Initial State and Data
   useEffect(() => {
     const savedState = localStorage.getItem("cashRegisterState");
     if (savedState) {
       try {
-        const parsedState = JSON.parse(savedState);
-        setState(parsedState);
-      } catch (error) {
-        console.error("Помилка при завантаженні стану:", error);
-      }
+        const parsed = JSON.parse(savedState);
+        // Restore shift if open
+        if (parsed.currentShift && parsed.currentShift.status === 'open') {
+          setState(prev => ({ ...prev, ...parsed }));
+        } else {
+          // Even if closed, we might want some history, but safe to just keep shift data
+          setState(prev => ({ ...prev, ...parsed }));
+        }
+      } catch (e) { console.error("State load error", e); }
     }
+
+    fetchData();
   }, []);
 
-  // Зберегти стан в localStorage при змінах
+  // Save State
   useEffect(() => {
     localStorage.setItem("cashRegisterState", JSON.stringify(state));
   }, [state]);
 
-  // Відкрити касу
-  const handleOpenShift = (balance: number) => {
-    const newShift: CashShift = {
-      id: `shift-${Date.now()}`,
-      shiftNumber: state.lastShiftNumber + 1,
-      startTime: new Date().toISOString(),
-      startBalance: balance,
-      receipts: [],
-      totalSales: 0,
-      totalExpenses: 0,
-      status: "open",
-      cashier: "Касир",
-    };
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [prodRes, catRes, shiftRes] = await Promise.all([
+        fetch('/api/accounting/products?status=active'),
+        fetch('/api/accounting/categories?status=active'),
+        fetch('/api/cash-register/shifts?status=open')
+      ]);
 
-    setState((prev) => ({
-      ...prev,
-      currentShift: newShift,
-      lastShiftNumber: prev.lastShiftNumber + 1,
-    }));
+      const prodData = await prodRes.json();
+      const catData = await catRes.json();
+      const shiftData = await shiftRes.json();
 
-    setShowShiftModal(false);
-    setShiftStartBalance("");
+      if (prodData.success) {
+        // Map API products to Service type expected by UI
+        const services: Service[] = prodData.data.map((p: any) => ({
+          id: p.id || p._id,
+          name: p.name,
+          category: p.category, // string
+          price: p.sellingPrice,
+          code: p.code,
+          imageUrl: p.imageUrl
+        }));
+
+        // Deduplicate
+        const uniqueServices = Array.from(new Map(services.map(s => [s.id, s])).values());
+
+        setProducts(uniqueServices);
+        setState(prev => ({ ...prev, services: uniqueServices }));
+      }
+
+      if (catData.success) {
+        // Add 'All' category
+        setCategories([{ id: 'all', name: 'Всі' }, ...catData.data]);
+      }
+
+      if (shiftData.success && shiftData.data.length > 0) {
+        const activeShift = shiftData.data[0];
+        setState(prev => ({
+          ...prev,
+          currentShift: {
+            ...activeShift,
+            receipts: [] // We don't load all receipts for performance, just the shift meta
+          }
+        }));
+      }
+
+    } catch (e) {
+      console.error("Failed to fetch data", e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Закрити касу
-  const handleCloseShift = () => {
+  // --- Handlers ---
+
+  const handleOpenShift = async (balance: number) => {
+    try {
+      const res = await fetch('/api/cash-register/shifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startBalance: balance, cashier: 'Admin' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setState(prev => ({
+          ...prev,
+          currentShift: { ...data.data, receipts: [] }
+        }));
+        setShowShiftModal(false);
+      } else {
+        alert("Помилка: " + data.error);
+      }
+    } catch (e) {
+      alert("Помилка мережі");
+    }
+  };
+
+  const handleCloseShift = async () => {
     if (!state.currentShift) return;
+    const endBalance = prompt("Введіть фактичну суму в касі:", "0");
+    if (endBalance === null) return;
 
-    const closedShift: CashShift = {
-      ...state.currentShift,
-      endTime: new Date().toISOString(),
-      status: "closed",
-      endBalance: calculateCurrentBalance(),
-    };
+    try {
+      const res = await fetch('/api/cash-register/shifts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: state.currentShift.id, endBalance: Number(endBalance) })
+      });
+      const data = await res.json();
 
-    const zReport = generateZReport(closedShift);
-
-    setState((prev) => ({
-      ...prev,
-      currentShift: null,
-      shifts: [...prev.shifts, closedShift],
-      zReports: [...prev.zReports, zReport],
-    }));
+      if (data.success) {
+        alert("Зміна закрита успішно!");
+        setState(prev => ({ ...prev, currentShift: null }));
+      } else {
+        alert("Помилка: " + data.error);
+      }
+    } catch (e) {
+      alert("Помилка мережі");
+    }
   };
 
-  // Додати товар в кошик
-  const handleAddToCart = (service: Service) => {
+  const addToCart = (product: Service) => {
     if (!state.currentShift) {
-      alert("Каса закрита. Відкрийте касу перед продажем.");
+      alert("Спочатку відкрийте зміну!");
+      setShowShiftModal(true);
       return;
     }
 
-    setState((prev) => {
-      const existingItem = prev.currentCart.find((item) => item.serviceId === service.id);
-
-      if (existingItem) {
+    setState(prev => {
+      const existing = prev.currentCart.find(item => item.productId === product.id); // Use productId check logic
+      if (existing) {
         return {
           ...prev,
-          currentCart: prev.currentCart.map((item) =>
-            item.serviceId === service.id
-              ? {
-                  ...item,
-                  quantity: item.quantity + 1,
-                  subtotal: (item.quantity + 1) * item.price,
-                }
+          currentCart: prev.currentCart.map(item =>
+            item.productId === product.id
+              ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
               : item
-          ),
+          )
         };
       }
-
       return {
         ...prev,
-        currentCart: [
-          ...prev.currentCart,
-          {
-            serviceId: service.id,
-            serviceName: service.name,
-            category: service.category,
-            price: service.price,
-            quantity: 1,
-            subtotal: service.price,
-          },
-        ],
+        currentCart: [...prev.currentCart, {
+          serviceId: `item-${Date.now()}`, // Temporary ID for cart logic
+          productId: product.id,
+          serviceName: product.name,
+          category: product.category,
+          price: product.price,
+          quantity: 1,
+          subtotal: product.price
+        }]
       };
     });
   };
 
-  // Видалити товар з кошика
-  const handleRemoveFromCart = (serviceId: string) => {
-    setState((prev) => ({
+  const updateQuantity = (productId: string, delta: number) => {
+    setState(prev => {
+      const newCart = prev.currentCart.map(item => {
+        if (item.productId === productId) {
+          const newQty = item.quantity + delta;
+          if (newQty <= 0) return null;
+          return { ...item, quantity: newQty, subtotal: newQty * item.price };
+        }
+        return item;
+      }).filter(Boolean) as CartItem[];
+      return { ...prev, currentCart: newCart };
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setState(prev => ({
       ...prev,
-      currentCart: prev.currentCart.filter((item) => item.serviceId !== serviceId),
+      currentCart: prev.currentCart.filter(item => item.productId !== productId)
     }));
   };
 
-  // Змінити кількість товару
-  const handleUpdateQuantity = (serviceId: string, quantity: number) => {
-    if (quantity <= 0) {
-      handleRemoveFromCart(serviceId);
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      currentCart: prev.currentCart.map((item) =>
-        item.serviceId === serviceId
-          ? {
-              ...item,
-              quantity,
-              subtotal: quantity * item.price,
-            }
-          : item
-      ),
-    }));
-  };
-
-  // Розрахувати загальну суму
-  const calculateTotal = () => {
+  const getTotals = () => {
     const subtotal = state.currentCart.reduce((sum, item) => sum + item.subtotal, 0);
-    const tax = subtotal * 0.1; // 10% податок
+    const tax = 0; // Simplified for now
     return { subtotal, tax, total: subtotal + tax };
   };
 
-  // Розрахувати поточний баланс каси
-  const calculateCurrentBalance = () => {
-    if (!state.currentShift) return 0;
-    const totalSales = state.currentShift.receipts.reduce((sum, receipt) => sum + receipt.total, 0);
-    return state.currentShift.startBalance + totalSales;
-  };
+  const handleCheckout = async () => {
+    if (!state.currentShift) return;
+    const { total, subtotal, tax } = getTotals();
 
-  // Оформити чек
-  const handleCheckout = (paymentMethod: "cash" | "card" | "mixed") => {
-    if (!state.currentShift) {
-      alert("Каса закрита.");
-      return;
-    }
-
-    if (state.currentCart.length === 0) {
-      alert("Кошик порожній.");
-      return;
-    }
-
-    const { subtotal, tax, total } = calculateTotal();
-
-    const receipt: Receipt = {
-      id: `receipt-${Date.now()}`,
-      receiptNumber: state.lastReceiptNumber + 1,
-      customerId: selectedCustomer?.id,
-      customerName: selectedCustomer?.name,
+    const payload = {
       items: state.currentCart,
+      paymentMethod,
+      total,
       subtotal,
       tax,
-      total,
-      paymentMethod,
-      createdAt: new Date().toISOString(),
-      shiftId: state.currentShift.id,
+      customerId: selectedCustomer?.id,
+      shiftId: state.currentShift.id
     };
 
-    // Оновити дані клієнта
-    if (selectedCustomer) {
-      setState((prev) => ({
-        ...prev,
-        customers: prev.customers.map((c) =>
-          c.id === selectedCustomer.id
-            ? {
-                ...c,
-                visits: c.visits + 1,
-                totalSpent: c.totalSpent + total,
-                lastVisit: new Date().toISOString(),
-              }
-            : c
-        ),
-      }));
+    try {
+      const res = await fetch('/api/cash-register/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Success
+        const newReceipt: Receipt = {
+          id: data.receiptId || `local-${Date.now()}`,
+          receiptNumber: state.lastReceiptNumber + 1,
+          items: state.currentCart,
+          total,
+          subtotal,
+          tax,
+          paymentMethod,
+          createdAt: new Date().toISOString(),
+          shiftId: state.currentShift.id
+        };
+
+        setLastReceipt(newReceipt);
+
+        // Clear Cart & Update State
+        setState(prev => ({
+          ...prev,
+          currentCart: [],
+          receipts: [...prev.receipts, newReceipt],
+          lastReceiptNumber: prev.lastReceiptNumber + 1,
+          currentShift: prev.currentShift ? {
+            ...prev.currentShift,
+            receipts: [...prev.currentShift.receipts, newReceipt],
+            totalSales: prev.currentShift.totalSales + total
+          } : null
+        }));
+
+        setShowPaymentModal(false);
+        setShowReceiptModal(true);
+        setAmountGiven(""); // Reset
+      } else {
+        alert("Помилка при проведенні чеку: " + data.error);
+      }
+    } catch (e) {
+      alert("Помилка мережі");
+      console.error(e);
+    }
+  };
+
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+
+  // Filtered Products
+  const filteredProducts = useMemo(() => {
+    let result = products;
+
+    // 1. Search Filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(p => {
+        const name = p.name ? String(p.name).toLowerCase() : '';
+        const code = p.code ? String(p.code).toLowerCase() : '';
+        return name.includes(query) || code.includes(query);
+      });
     }
 
-    // Додати чек до зміни
-    setState((prev) => ({
-      ...prev,
-      currentShift: prev.currentShift
-        ? {
-            ...prev.currentShift,
-            receipts: [...prev.currentShift.receipts, receipt],
-            totalSales: prev.currentShift.totalSales + total,
-          }
-        : null,
-      currentCart: [],
-      receipts: [...prev.receipts, receipt],
-      lastReceiptNumber: prev.lastReceiptNumber + 1,
-    }));
+    // 2. Category Filter
+    if (selectedCategory !== 'all') {
+      result = result.filter(p => p.category === selectedCategory);
+    }
 
-    setLastReceipt(receipt);
-    setShowReceiptModal(true);
-    setSelectedCustomer(null);
+    return result;
+  }, [products, selectedCategory, searchQuery]);
+
+  const { total } = getTotals();
+
+  // Helper to get category icon (random placeholder logic or map)
+  const getCategoryIcon = (catId: string, name: string) => {
+    if (catId === 'all') return '♾️';
+    if (name.toLowerCase().includes('кав')) return '☕';
+    if (name.toLowerCase().includes('десерт') || name.toLowerCase().includes('торт')) return '🍰';
+    if (name.toLowerCase().includes('бар') || name.toLowerCase().includes('напо')) return '🍹';
+    if (name.toLowerCase().includes('салат') || name.toLowerCase().includes('їжа')) return '🥗';
+    return '📦';
   };
 
-  // Створити Z-звіт
-  const generateZReport = (shift: CashShift) => {
-    const startTime = new Date(shift.startTime);
-    const endTime = new Date(shift.endTime || new Date());
-    const duration = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
-
-    const salesByCategory: Record<ServiceCategory, number> = {
-      bowling: 0,
-      billiards: 0,
-      karaoke: 0,
-      games: 0,
-      bar: 0,
-    };
-
-    const topServices: Array<{
-      serviceId: string;
-      serviceName: string;
-      quantity: number;
-      total: number;
-    }> = [];
-
-    shift.receipts.forEach((receipt) => {
-      receipt.items.forEach((item) => {
-        salesByCategory[item.category] += item.subtotal;
-
-        const existingService = topServices.find((s) => s.serviceId === item.serviceId);
-        if (existingService) {
-          existingService.quantity += item.quantity;
-          existingService.total += item.subtotal;
-        } else {
-          topServices.push({
-            serviceId: item.serviceId,
-            serviceName: item.serviceName,
-            quantity: item.quantity,
-            total: item.subtotal,
-          });
-        }
-      });
-    });
-
-    topServices.sort((a, b) => b.total - a.total);
-
-    return {
-      id: `zreport-${Date.now()}`,
-      shiftId: shift.id,
-      shiftNumber: shift.shiftNumber,
-      status: "closed" as const,
-      startTime: shift.startTime,
-      endTime: shift.endTime || new Date().toISOString(),
-      duration,
-      startBalance: shift.startBalance,
-      endBalance: shift.endBalance || 0,
-      receiptsCount: shift.receipts.length,
-      totalSales: shift.totalSales,
-      totalExpenses: shift.totalExpenses,
-      cashDifference: (shift.endBalance || 0) - shift.startBalance - shift.totalSales,
-      salesByCategory,
-      topServices: topServices.slice(0, 5),
-      createdAt: new Date().toISOString(),
-    };
-  };
+  /* 
+   * V2 Redesign Layout (No Categories, Vibrant)
+   * Removing sidebar code.
+   */
 
   return (
     <div className={styles.container}>
-      <CashRegisterHeader
-        shiftNumber={state.currentShift?.shiftNumber}
-        isOpen={state.currentShift?.status === "open"}
-        onOpenShift={() => setShowShiftModal(true)}
-        onCloseShift={handleCloseShift}
-      />
 
+      {/* 2. MAIN CONTENT (Header + Grid) */}
       <div className={styles.mainContent}>
-        <div className={styles.leftPanel}>
-          <ServiceSelector services={state.services} onSelectService={handleAddToCart} />
+
+        {/* Header */}
+        <div className={styles.header}>
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            {state.currentShift ? (
+              <div className={styles.statusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
+                🟢 Зміна #{state.currentShift.shiftNumber} ({state.currentShift.cashier})
+              </div>
+            ) : (
+              <div className={styles.statusBadge} style={{ background: '#fee2e2', color: '#991b1b' }}>
+                🔴 Каса закрита
+              </div>
+            )}
+          </div>
+
+          <div style={{ flex: 1, margin: '0 30px', position: 'relative' }}>
+            <input
+              className={styles.inputField}
+              style={{ width: '100%', paddingLeft: '46px', fontSize: '1.1rem' }}
+              placeholder="🔍 Пошук товару..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
+            <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem' }}>🔍</span>
+          </div>
+
+          <div>
+            {!state.currentShift ? (
+              <button className={styles.payButton} style={{ width: 'auto', padding: '10px 24px', fontSize: '1rem' }} onClick={() => setShowShiftModal(true)}>
+                Відкрити зміну
+              </button>
+            ) : (
+              <button className={styles.payButton} style={{ width: 'auto', padding: '10px 24px', fontSize: '1rem', background: '#4b5563' }} onClick={handleCloseShift}>
+                Закрити зміну
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className={styles.rightPanel}>
-          <CashRegisterStatus
-            currentBalance={calculateCurrentBalance()}
-            receiptsCount={state.currentShift?.receipts.length || 0}
-            isOpen={state.currentShift?.status === "open"}
-          />
+        {/* Product Grid */}
+        <div className={styles.productGrid}>
+          {filteredProducts.map(product => (
+            <div key={product.id} className={styles.productCard} onClick={() => addToCart(product)}>
+              <div className={styles.productImage}>
+                {product.imageUrl ? (
+                  <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span>{product.name[0]}</span>
+                )}
+              </div>
+              <div className={styles.productInfo}>
+                <div className={styles.productName}>{product.name}</div>
+                <div className={styles.productPrice}>{product.price} ₴</div>
+              </div>
+            </div>
+          ))}
+          {filteredProducts.length === 0 && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', marginTop: '50px', color: '#9ca3af' }}>
+              <h3>Товарів не знайдено 🔍</h3>
+              <p>Спробуйте змінити пошуковий запит</p>
+            </div>
+          )}
+        </div>
 
-          <CustomerSelector
-            customers={state.customers}
-            selectedCustomer={selectedCustomer}
-            onSelectCustomer={setSelectedCustomer}
-            onAddCustomer={(newCustomer: Customer) => {
-              setState((prev) => ({
-                ...prev,
-                customers: [...prev.customers, newCustomer],
-              }));
-            }}
-          />
+      </div>
 
-          <ShoppingCart
-            items={state.currentCart}
-            onRemoveItem={handleRemoveFromCart}
-            onUpdateQuantity={handleUpdateQuantity}
-            onCheckout={handleCheckout}
-            totals={calculateTotal()}
-          />
+      {/* 3. CART PANEL (Right) */}
+      <div className={styles.cartPanel}>
+        <div className={styles.cartHeader}>
+          <div className={styles.cartTitle}>Замовлення</div>
+          <div className={styles.statusBadge} style={{ background: '#f3f4f6', color: '#4b5563' }}>
+            {state.currentCart.length} поз.
+          </div>
+        </div>
+
+        <div className={styles.cartItems}>
+          {state.currentCart.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: '80px', opacity: 0.6 }}>
+              <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🛒</div>
+              <p>Кошик порожній</p>
+            </div>
+          ) : (
+            state.currentCart.map(item => (
+              <div key={item.serviceId} className={styles.cartItem}>
+                <div className={styles.cartItemInfo}>
+                  <div className={styles.cartItemName}>{item.serviceName}</div>
+                  <div className={styles.cartItemPrice}>{item.price} ₴</div>
+                </div>
+                <div className={styles.cartControls}>
+                  <button className={styles.qtyButton} onClick={() => updateQuantity(item.productId!, -1)}>−</button>
+                  <div className={styles.qtyValue}>{item.quantity}</div>
+                  <button className={styles.qtyButton} onClick={() => updateQuantity(item.productId!, 1)}>+</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className={styles.cartFooter}>
+          <div className={styles.summaryRow}>
+            <span>Знижка</span>
+            <span>0.00 ₴</span>
+          </div>
+          <div className={styles.totalRow}>
+            <span>Разом</span>
+            <span style={{ color: '#2563eb' }}>{total} ₴</span>
+          </div>
+          <button
+            className={styles.payButton}
+            disabled={state.currentCart.length === 0}
+            onClick={() => setShowPaymentModal(true)}
+          >
+            Оплатити ({total} ₴)
+          </button>
         </div>
       </div>
 
-      {showShiftModal && (
-        <div className={styles.modal}>
+      {/* --- MODALS --- */}
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <h2>Відкрити касу</h2>
-            <input
-              type="number"
-              placeholder="Початковий баланс"
-              value={shiftStartBalance}
-              onChange={(e) => setShiftStartBalance(e.target.value)}
-              className={styles.input}
-            />
-            <div className={styles.modalButtons}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Оплата</h2>
+            <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#2563eb', marginBottom: '30px', textAlign: 'center' }}>{total} ₴</div>
+
+            <div className={styles.paymentOptions}>
               <button
-                onClick={() => handleOpenShift(Number(shiftStartBalance) || 0)}
-                className={styles.buttonPrimary}
+                className={`${styles.paymentOption} ${paymentMethod === 'cash' ? styles.active : ''}`}
+                onClick={() => setPaymentMethod('cash')}
               >
-                Відкрити
+                <span style={{ fontSize: '2rem' }}>💵</span>
+                Готівка
               </button>
               <button
-                onClick={() => setShowShiftModal(false)}
-                className={styles.buttonSecondary}
+                className={`${styles.paymentOption} ${paymentMethod === 'card' ? styles.active : ''}`}
+                onClick={() => setPaymentMethod('card')}
               >
-                Скасувати
+                <span style={{ fontSize: '2rem' }}>💳</span>
+                Карта
               </button>
+            </div>
+
+            {paymentMethod === 'cash' && (
+              <div className={styles.inputGroup}>
+                <label className={styles.inputLabel}>Внесена сума</label>
+                <input
+                  type="number"
+                  className={styles.inputField}
+                  placeholder="0.00"
+                  value={amountGiven}
+                  onChange={(e) => setAmountGiven(e.target.value)}
+                  autoFocus
+                  style={{ fontSize: '1.2rem' }}
+                />
+                {Number(amountGiven) > total && (
+                  <div style={{ marginTop: '10px', color: '#166534', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'right' }}>
+                    Решта: <span style={{ fontSize: '1.3rem' }}>{(Number(amountGiven) - total).toFixed(2)} ₴</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className={styles.modalActions}>
+              <button className={styles.cancelButton} onClick={() => setShowPaymentModal(false)}>Скасувати</button>
+              <button className={styles.payButton} onClick={handleCheckout}>Підтвердити</button>
             </div>
           </div>
         </div>
       )}
 
-      {showReceiptModal && lastReceipt && (
-        <ReceiptModal
-          receipt={lastReceipt}
-          onClose={() => setShowReceiptModal(false)}
-          onPrint={() => window.print()}
-        />
+      {/* Shift Modal */}
+      {/* Shift Opening Modal */}
+      <Modal
+        isOpen={showShiftModal}
+        onClose={() => setShowShiftModal(false)}
+        title="Відкриття зміни"
+        size="sm"
+      >
+        <div style={{ padding: 'var(--space-4) 0' }}>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Початковий баланс каси (₴)</label>
+            <input
+              type="number"
+              className={styles.inputField}
+              value={shiftStartBalance}
+              onChange={(e) => setShiftStartBalance(e.target.value)}
+              placeholder="0.00"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className={styles.modalActions}>
+          <button
+            className={styles.cancelButton}
+            onClick={() => setShowShiftModal(false)}
+          >
+            Скасувати
+          </button>
+          <button
+            className={styles.payButton}
+            onClick={() => handleOpenShift(Number(shiftStartBalance) || 0)}
+          >
+            Відкрити зміну
+          </button>
+        </div>
+      </Modal>
+
+      {/* Receipt Success Modal */}
+      {showReceiptModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <div style={{ fontSize: '5rem', marginBottom: '20px', color: '#22c55e' }}>✅</div>
+            <h2 style={{ marginBottom: '10px' }}>Оплата успішна!</h2>
+            <p style={{ color: '#6b7280', marginBottom: '30px' }}>Чек #{lastReceipt?.receiptNumber} збережено.</p>
+            <button className={styles.payButton} onClick={() => setShowReceiptModal(false)}>
+              Нове замовлення
+            </button>
+          </div>
+        </div>
       )}
+
     </div>
   );
 }
+

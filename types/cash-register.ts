@@ -6,10 +6,12 @@ export type ServiceCategory = 'bowling' | 'billiards' | 'karaoke' | 'games' | 'b
 export interface Service {
   id: string;
   name: string;
-  category: ServiceCategory;
+  category: string;
   price: number;
   description?: string;
   icon?: string;
+  code?: string;
+  imageUrl?: string;
 }
 
 // Клієнти
@@ -27,9 +29,10 @@ export interface Customer {
 
 // Товари в кошику
 export interface CartItem {
-  serviceId: string;
+  serviceId: string; // Unique ID (transaction ID in cart)
+  productId?: string; // ID from database
   serviceName: string;
-  category: ServiceCategory;
+  category: string; // Changed from enum to string to support DB categories
   price: number;
   quantity: number;
   subtotal: number;
