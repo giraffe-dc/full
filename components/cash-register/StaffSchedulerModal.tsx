@@ -11,9 +11,11 @@ interface StaffSchedulerModalProps {
     currentActiveIds: string[];
     onSave: (activeIds: string[]) => void;
     onClose: () => void;
+    shiftId: string;
+    activeStaffIds: string[];
 }
 
-export function StaffSchedulerModal({ currentActiveIds, onSave, onClose }: StaffSchedulerModalProps) {
+export function StaffSchedulerModal({ currentActiveIds, onSave, onClose, shiftId, activeStaffIds }: StaffSchedulerModalProps) {
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(currentActiveIds));
     const [loading, setLoading] = useState(true);

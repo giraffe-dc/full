@@ -9,16 +9,18 @@ interface CheckViewProps {
     onUpdateCheck: (check: Check) => void;
     onBack: () => void;
     onPay: () => void;
+    onAddItem: (item: CartItem) => void;
+    onVoid: () => void;
 }
 
-export function CheckView({ check, products, onUpdateCheck, onBack, onPay }: CheckViewProps) {
+export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAddItem, onVoid }: CheckViewProps) {
     const [selectedGuestId, setSelectedGuestId] = useState<string>('guest-1');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [showClientModal, setShowClientModal] = useState(false);
 
     // --- Logic ---
-
+    // console.log(products);
     const guests = useMemo(() => {
         // Extract unique guest IDs from items, plus "guest-1" default
         const uniqueGuests = new Set(check.items.map(i => i.guestId || 'guest-1'));
@@ -27,36 +29,17 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay }: Che
     }, [check.items]);
 
     const addToCart = (product: Service) => {
-        const existingItem = check.items.find(
-            item => item.productId === product.id && (item.guestId || 'guest-1') === selectedGuestId
-        );
-
-        let newItems: CartItem[];
-
-        if (existingItem) {
-            newItems = check.items.map(item =>
-                item === existingItem
-                    ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
-                    : item
-            );
-        } else {
-            newItems = [...check.items, {
-                serviceId: `item-${Date.now()}`,
-                productId: product.id,
-                serviceName: product.name,
-                category: product.category,
-                price: product.price,
-                quantity: 1,
-                subtotal: product.price,
-                guestId: selectedGuestId
-            }];
-        }
-
-        const subtotal = newItems.reduce((sum, item) => sum + item.subtotal, 0);
-        const tax = 0;
-        const total = subtotal + tax;
-
-        onUpdateCheck({ ...check, items: newItems, subtotal, tax, total });
+        const newItem: CartItem = {
+            serviceId: `item-${Date.now()}`,
+            productId: product.id,
+            serviceName: product.name,
+            category: product.category,
+            price: product.price,
+            quantity: 1,
+            subtotal: product.price,
+            guestId: selectedGuestId
+        };
+        onAddItem(newItem);
     };
 
     const updateQuantity = (itemToUpdate: CartItem, delta: number) => {
@@ -71,9 +54,32 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay }: Che
 
         const subtotal = newItems.reduce((sum, item) => sum + item.subtotal, 0);
         const tax = 0;
-        const total = subtotal + tax;
+        // Basic recalculation: Total = Subtotal - Discount
+        // Note: Ideally, promotion eligibility should be re-evaluated when cart changes.
+        // For MVP, we preserve the discount AMOUNT (check.discount) or reset it?
+        // Let's preserve the existing global discount amount for now, 
+        // as re-calculating per-item discount without promotion context is hard.
+        // But if item.discount exists, we should probably re-sum it?
 
-        onUpdateCheck({ ...check, items: newItems, subtotal, tax, total });
+        // Detect if we are using item-based discounts (Percent) or global (Fixed)
+        // If the *original* check had item discounts, we stick to item discount summation (even if it becomes 0).
+        // If original check had NO item discounts but had a global discount, we preserve global.
+        const hadItemDiscounts = check.items.some(i => (i.discount || 0) > 0);
+
+        const totalDiscount = newItems.reduce((sum, i) => sum + (i.discount || 0), 0);
+
+        const effectiveDiscount = hadItemDiscounts ? totalDiscount : (check.discount || 0);
+
+        const total = Math.max(0, subtotal + tax - effectiveDiscount);
+
+        onUpdateCheck({
+            ...check,
+            items: newItems,
+            subtotal,
+            tax,
+            total,
+            discount: effectiveDiscount
+        });
     };
 
     // const addGuest = () => {
@@ -92,12 +98,19 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay }: Che
     };
 
     const filteredProducts = useMemo(() => {
+        console.log("Filtering products", products.length, searchQuery, selectedCategory);
+        if (!products) return [];
         let result = products;
-        if (searchQuery.trim()) {
+
+        // Debug check
+        // if (process.env.NODE_ENV === 'development') console.log("Filtering products", products.length, searchQuery, selectedCategory);
+
+        if (searchQuery && searchQuery.trim()) {
             const query = searchQuery.toLowerCase().trim();
             result = result.filter(p => p.name.toLowerCase().includes(query));
         }
-        if (selectedCategory !== 'all') {
+
+        if (selectedCategory && selectedCategory !== 'all') {
             result = result.filter(p => p.category === selectedCategory);
         }
         return result;
@@ -177,7 +190,21 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay }: Che
                                                 <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, 1); }}>+</button>
                                             </div>
                                             <div className={styles.itemPrice}>
-                                                {item.subtotal.toFixed(2)}
+                                                {item.discount ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                        <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem' }}>
+                                                            {item.subtotal.toFixed(2)}
+                                                        </span>
+                                                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                                                            {(item.subtotal - item.discount).toFixed(2)}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>
+                                                            (-{item.discount.toFixed(2)})
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    item.subtotal.toFixed(2)
+                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -216,14 +243,25 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay }: Che
                                         <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handlePrintCheck(); }}>
                                             🖨️ Друк чеку
                                         </button>
+                                        {Math.abs(check.total) < 0.01 && (
+                                            <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); onVoid(); }} style={{ color: '#ef4444' }}>
+                                                🗑️ Анулювати (Помилковий)
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
                         </div>
                     </div>
-                    <button className={styles.payButton} onClick={onPay}>
-                        Оплатити
-                    </button>
+                    {Math.abs(check.total) < 0.01 ? (
+                        <button className={styles.payButton} onClick={onVoid} style={{ backgroundColor: '#ef4444' }}>
+                            Закрити (Помилковий)
+                        </button>
+                    ) : (
+                        <button className={styles.payButton} onClick={onPay}>
+                            Оплатити
+                        </button>
+                    )}
                 </div>
             </div>
 

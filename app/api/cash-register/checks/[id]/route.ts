@@ -21,6 +21,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                     total,
                     customerId,
                     customerName,
+                    discount: body.discount,
+                    appliedPromotionId: body.appliedPromotionId,
                     comment: body.comment,
                     updatedAt: new Date()
                 }

@@ -113,6 +113,8 @@ export async function PUT(request: Request) {
                     comment,
                     customerId,
                     customerName,
+                    discount: body.discount,
+                    appliedPromotionId: body.appliedPromotionId,
                     updatedAt: new Date().toISOString()
                 }
             }

@@ -55,6 +55,7 @@ import {
   calculateMaxDailyValue,
   calculateTotals,
 } from "../../lib/accounting-utils";
+import { MarketingSection } from "@/components/accounting/MarketingSection";
 
 export default function AccountingPage() {
   const [activeSection, setActiveSection] = useState<AccountingSection>("dashboard");
@@ -512,6 +513,7 @@ export default function AccountingPage() {
           <StockWriteOff />
         )}
 
+
         {activeSection === "stockReport" && (
           <StockSection title="Звіт за рухом" subtitle="Аналіз руху товарів за період" />
         )}
@@ -530,6 +532,10 @@ export default function AccountingPage() {
 
         {activeSection === "stockPacking" && (
           <StockSection title="Фасування" subtitle="Упакування товарів" />
+        )}
+
+        {activeSection === "marketing" && (
+          <MarketingSection />
         )}
 
         {activeSection === "menuProducts" && (

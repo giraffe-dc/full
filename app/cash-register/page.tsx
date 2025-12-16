@@ -10,6 +10,7 @@ import { CashRegisterNav } from '@/components/cash-register/CashRegisterNav';
 import { StaffSchedulerModal } from '@/components/cash-register/StaffSchedulerModal';
 import { WaiterSelectorModal } from '@/components/cash-register/WaiterSelectorModal';
 import { CheckView } from "@/components/cash-register/CheckView";
+import { ApplyPromotionModal } from "../../components/cash-register/ApplyPromotionModal";
 
 type ViewState = 'departments' | 'tables' | 'check';
 
@@ -52,6 +53,9 @@ export default function CashRegisterPage() {
   const [currentShift, setCurrentShift] = useState<any | null>(null);
   const [shiftStartBalance, setShiftStartBalance] = useState("");
 
+  // --- Promotions State ---
+  const [showPromotionsModal, setShowPromotionsModal] = useState(false);
+
   // --- Initial Load ---
   useEffect(() => {
     fetchInitialData();
@@ -63,7 +67,7 @@ export default function CashRegisterPage() {
       fetchChecks();
     }
   }, [view]);
-  console.log("view", view);
+
   const fetchChecks = async () => {
     setIsLoading(true);
     try {
@@ -98,7 +102,7 @@ export default function CashRegisterPage() {
 
       if (prodData.success) {
         const services: Service[] = prodData.data.map((p: any) => ({
-          id: p.id || p._id,
+          id: p._id,
           name: p.name,
           category: p.category,
           price: p.sellingPrice,
@@ -127,7 +131,7 @@ export default function CashRegisterPage() {
       if (staffData) {
         const mappedStaff = staffData.data.map((s: any) => ({
           ...s,
-          id: s.id || s._id
+          id: s._id
         }));
         // console.log("mappedStaff", mappedStaff);
         setAllStaff(mappedStaff);
@@ -370,6 +374,7 @@ export default function CashRegisterPage() {
   // Debouncing would be good here, but for simplicity we'll trigger save on specific actions
   const saveCheck = async (check: Check) => {
     try {
+      console.log("Saving check", check);
       await fetch(`/api/cash-register/checks/${check.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -380,7 +385,9 @@ export default function CashRegisterPage() {
           total: check.total,
           customerId: check.customerId,
           customerName: check.customerName,
-          comment: check.comment
+          comment: check.comment,
+          discount: check.discount,
+          appliedPromotionId: check.appliedPromotionId
         })
       });
     } catch (e) {
@@ -504,13 +511,49 @@ export default function CashRegisterPage() {
 
   // --- Views ---
 
+  const handleApplyPromotion = (promotion: any, discountAmount: number, items?: CartItem[]) => {
+    if (!activeCheck) return;
+
+    if (!promotion) {
+      // Cancel promotion: Reset discount and items (clear discount field)
+      const resetItems = activeCheck.items.map(i => ({ ...i, discount: 0 }));
+
+      updateCheckState({
+        ...activeCheck,
+        items: resetItems,
+        discount: 0,
+        appliedPromotionId: undefined,
+        total: activeCheck.subtotal + activeCheck.tax // Revert to subtotal + tax
+      });
+    } else {
+      // Apply promotion
+      const checkItems = items || activeCheck.items;
+      const subtotal = checkItems.reduce((sum, i) => sum + i.subtotal, 0);
+      const tax = 0; // Or activeCheck.tax if logic exists
+      const total = Math.max(0, subtotal + tax - discountAmount);
+
+      updateCheckState({
+        ...activeCheck,
+        items: checkItems,
+        subtotal,
+        tax,
+        discount: discountAmount,
+        appliedPromotionId: promotion.id || promotion._id,
+        total
+      });
+    }
+    setShowPromotionsModal(false);
+  };
+
   if (view === 'departments') {
     return (
       <div className={styles.container}>
         <div className={styles.mainArea}>
-          <CashRegisterNav  setShowStaffModal={setShowStaffModal} activeStaffIds={activeStaffIds}/>
+          <CashRegisterNav
+            setShowStaffModal={setShowStaffModal}
+            activeStaffIds={activeStaffIds}
+          />
           {/* Header / Top Bar */}
-          
 
           <DepartmentSelector
             departments={departments}
@@ -518,174 +561,108 @@ export default function CashRegisterPage() {
             onSelect={handleSelectDepartment}
             onAdd={handleAddDepartment}
           />
-        </div>
-        <div style={{ position: 'fixed', bottom: 20, right: 20 }}>
-          {!currentShift ? (
-            <button className={styles.payButton} onClick={() => setShowShiftModal(true)}>
-              Відкрити зміну
-            </button>
-          ) : (
-            <button className={styles.payButton} style={{ background: '#4b5563' }} onClick={handleCloseShift}>
-              Закрити зміну
-            </button>
-          )}
-        </div>
-
-        {/* Shift Modal */}
-        <Modal
-          isOpen={showShiftModal}
-          onClose={() => setShowShiftModal(false)}
-          title="Відкриття зміни"
-          size="sm"
-        >
-          <div style={{ padding: 'var(--space-4) 0' }}>
-            <div className={styles.inputGroup}>
-              <label className={styles.inputLabel}>Початковий баланс каси (₴)</label>
-              <input
-                type="number"
-                className={styles.inputField}
-                value={shiftStartBalance}
-                onChange={(e) => setShiftStartBalance(e.target.value)}
-                placeholder="0.00"
-                autoFocus
-              />
-            </div>
-          </div>
-
-          <div className={styles.modalActions}>
-            <button className={styles.cancelButton} onClick={() => setShowShiftModal(false)}>Скасувати</button>
-            <button className={styles.payButton} onClick={() => handleOpenShift(Number(shiftStartBalance) || 0)}>Відкрити зміну</button>
-          </div>
-        </Modal>
-
-        {/* Staff Scheduler Modal */}
-        {showStaffModal && (
-          <StaffSchedulerModal
-            currentActiveIds={activeStaffIds}
-            onSave={handleUpdateShiftStaff}
-            onClose={() => setShowStaffModal(false)}
-          />
-        )}
-      </div>
-    );
-  }
-
-  if (view === 'tables') {
-    return (
-      <div className={styles.container}>
-        <div className={styles.mainArea}>
-          {/* Header / Top Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0 1rem' }}>
-            <div>{/* Empty or breadcrumbs */}</div>
-            <button
-              onClick={() => setShowStaffModal(true)}
-              style={{
-                background: 'white', border: '1px solid #e5e7eb', padding: '8px 16px',
-                borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#374151',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
-              👥 Зміна: {activeStaffIds.length}
+          <div style={{ marginTop: '2rem' }}>
+            <button onClick={() => setView('tables')} style={{ padding: '8px 16px', background: '#ccc', border: 'none', borderRadius: '4px' }}>
+              Перейти до столів
             </button>
           </div>
-          <TableSelector
-            tables={tables}
-            departmentName={selectedDepartment?.name || 'Зал'}
-            onSelect={handleTableClick}
-            onBack={handleBackToDepartments}
-            onAdd={handleAddTable}
-          />
 
-          {/* Staff Scheduler Modal */}
           {showStaffModal && (
             <StaffSchedulerModal
-              currentActiveIds={activeStaffIds}
-              onSave={handleUpdateShiftStaff}
+              shiftId={currentShift?.id || null}
+              activeStaffIds={activeStaffIds}
               onClose={() => setShowStaffModal(false)}
+              onSave={handleUpdateShiftStaff}
+              currentActiveIds={activeStaffIds}
             />
           )}
         </div>
-        {/* Waiter Selector Modal */}
-        {showWaiterModal && (
-          <WaiterSelectorModal
-            activeStaff={activeStaffList}
-            onSelect={(waiter) => {
-              setShowWaiterModal(false);
-              if (pendingTableForCheck) {
-                openCheckForTable(pendingTableForCheck, 1, waiter);
-                setPendingTableForCheck(null);
-              }
-            }}
-            onClose={() => {
-              setShowWaiterModal(false);
-              setPendingTableForCheck(null);
-            }}
-          />
-        )}
-
-        {/* Guest Count Modal */}
-        <Modal
-          isOpen={showGuestModal}
-          onClose={() => setShowGuestModal(false)}
-          title="Кількість гостей"
-          size="sm"
-        >
-          <div style={{ padding: '20px 0' }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px', fontSize: '1.2rem' }}>
-              Стіл: <strong>{pendingTable?.name}</strong>
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label className={styles.inputLabel} style={{ textAlign: 'center' }}>Скільки гостей?</label>
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
-                <button
-                  className={styles.qtyButton}
-                  style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}
-                  onClick={() => setGuestCountInput(prev => String(Math.max(1, Number(prev) - 1)))}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  className={styles.inputField}
-                  style={{ width: '80px', textAlign: 'center', fontSize: '1.5rem' }}
-                  value={guestCountInput}
-                  onChange={(e) => setGuestCountInput(e.target.value)}
-                  autoFocus
-                />
-                <button
-                  className={styles.qtyButton}
-                  style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}
-                  onClick={() => setGuestCountInput(prev => String(Number(prev) + 1))}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.modalActions}>
-            <button className={styles.cancelButton} onClick={() => setShowGuestModal(false)}>Скасувати</button>
-            <button className={styles.payButton} onClick={handleConfirmGuestCount}>Відкрити стіл</button>
-          </div>
-        </Modal>
       </div>
     );
   }
 
-  // --- Check View (POS) ---
+
+  const handleAddItem = async (item: CartItem) => {
+    if (!activeCheck) return;
+
+    // Check if item already exists
+    const existingItemIndex = activeCheck.items.findIndex(i =>
+      (i.productId && i.productId === item.productId) ||
+      (i.serviceId === item.serviceId)
+    );
+
+    let newItems = [...activeCheck.items];
+    if (existingItemIndex >= 0) {
+      newItems[existingItemIndex].quantity += item.quantity;
+      newItems[existingItemIndex].subtotal = newItems[existingItemIndex].quantity * newItems[existingItemIndex].price;
+    } else {
+      newItems.push(item);
+    }
+
+    // Recalculate totals
+    const subtotal = newItems.reduce((sum, i) => sum + i.subtotal, 0);
+    const tax = subtotal * 0; // Assuming 0 tax for now or implement logic
+    const total = Math.max(0, subtotal + tax - (activeCheck.discount || 0));
+
+    const updatedCheck: Check = {
+      ...activeCheck,
+      items: newItems,
+      subtotal,
+      tax,
+      total,
+      updatedAt: new Date().toISOString()
+    };
+
+    updateCheckState(updatedCheck);
+  };
+
+  const handleVoidCheck = async () => {
+    if (!activeCheck) return;
+    if (confirm("Ви впевнені, що хочете анулювати цей чек як помилковий? Це дію неможливо відмінити.")) {
+      try {
+        await fetch(`/api/cash-register/checks/${activeCheck.id}`, { method: 'DELETE' });
+
+        // Update local tables status
+        setTables(prev => prev.map(t =>
+          t.id === activeCheck.tableId ? { ...t, status: 'free' } : t
+        ));
+
+        setActiveCheck(null);
+        setView('tables');
+      } catch (e) {
+        console.error("Failed to void check", e);
+        alert("Помилка при анулюванні чеку");
+      }
+    }
+  };
+
+  // Check View Wrapper
   if (view === 'check' && activeCheck) {
     return (
-      <>
+      <div className={styles.container}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem' }}>
+          <div>{/* Empty or breadcrumbs */}</div>
+          <button
+            onClick={() => setShowPromotionsModal(true)}
+            style={{
+              background: 'white', border: '1px solid #e5e7eb', padding: '8px 16px',
+              borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#374151',
+              display: 'flex', alignItems: 'center', gap: '8px'
+            }}
+          >
+            👥 Акції:
+          </button>
+        </div>
         <CheckView
           check={activeCheck}
           products={products}
-          onUpdateCheck={updateCheckState}
           onBack={handleBackToTables}
+          onAddItem={handleAddItem}
           onPay={() => setShowPaymentModal(true)}
+          onVoid={handleVoidCheck}
+          onUpdateCheck={updateCheckState}
         />
 
-        {/* Modals reused from page state */}
         {showPaymentModal && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
@@ -748,9 +725,116 @@ export default function CashRegisterPage() {
             </div>
           </div>
         )}
-      </>
+
+        {showPromotionsModal && (
+          <ApplyPromotionModal
+            check={activeCheck}
+            onClose={() => setShowPromotionsModal(false)}
+            onApply={handleApplyPromotion}
+          />
+        )}
+      </div>
     );
   }
 
-  return <div>Loading...</div>;
+  // Tables View
+  return (
+    <div className={styles.container}>
+      <div className={styles.mainArea}>
+        <CashRegisterNav
+          setShowStaffModal={setShowStaffModal}
+          activeStaffIds={activeStaffIds}
+          onShowPromotions={() => {
+            alert("Спочатку відкрийте чек!");
+          }}
+        />
+
+
+
+        <TableSelector
+          tables={tables}
+          departmentName={selectedDepartment?.name || 'Зал'}
+          onSelect={handleTableClick}
+          onBack={handleBackToDepartments}
+          onAdd={handleAddTable}
+        />
+
+        {/* Staff Scheduler Modal */}
+        {showStaffModal && (
+          <StaffSchedulerModal
+            currentActiveIds={activeStaffIds}
+            onSave={handleUpdateShiftStaff}
+            onClose={() => setShowStaffModal(false)}
+            shiftId={currentShift?.id || ''}
+            activeStaffIds={activeStaffIds}
+          />
+        )}
+      </div>
+
+      {/* Waiter Selector Modal */}
+      {showWaiterModal && (
+        <WaiterSelectorModal
+          activeStaff={activeStaffList}
+          onSelect={(waiter) => {
+            setShowWaiterModal(false);
+            if (pendingTableForCheck) {
+              openCheckForTable(pendingTableForCheck, 1, waiter);
+              setPendingTableForCheck(null);
+            }
+          }}
+          onClose={() => {
+            setShowWaiterModal(false);
+            setPendingTableForCheck(null);
+          }}
+        />
+      )}
+
+      {/* Guest Count Modal */}
+      <Modal
+        isOpen={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+        title="Кількість гостей"
+        size="sm"
+      >
+        <div style={{ padding: '20px 0' }}>
+          <div style={{ textAlign: 'center', marginBottom: '20px', fontSize: '1.2rem' }}>
+            Стіл: <strong>{pendingTable?.name}</strong>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel} style={{ textAlign: 'center' }}>Скільки гостей?</label>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+              <button
+                className={styles.qtyButton}
+                style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}
+                onClick={() => setGuestCountInput(prev => String(Math.max(1, Number(prev) - 1)))}
+              >
+                -
+              </button>
+              <input
+                type="number"
+                className={styles.inputField}
+                style={{ width: '80px', textAlign: 'center', fontSize: '1.5rem' }}
+                value={guestCountInput}
+                onChange={(e) => setGuestCountInput(e.target.value)}
+                autoFocus
+              />
+              <button
+                className={styles.qtyButton}
+                style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}
+                onClick={() => setGuestCountInput(prev => String(Number(prev) + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.modalActions}>
+          <button className={styles.cancelButton} onClick={() => setShowGuestModal(false)}>Скасувати</button>
+          <button className={styles.payButton} onClick={handleConfirmGuestCount}>Відкрити стіл</button>
+        </div>
+      </Modal>
+    </div>
+  );
 }

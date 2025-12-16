@@ -12,6 +12,7 @@ export interface Service {
   icon?: string;
   code?: string;
   imageUrl?: string;
+  _id?: string;
 }
 
 // Клієнти
@@ -36,6 +37,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   subtotal: number;
+  discount?: number; // Discount amount for this item line
   guestId?: string; // For grouping items by guest
 }
 
@@ -182,6 +184,8 @@ export interface Check {
   items: CartItem[];
   status: 'open'; // Checks are always open. Once paid, they become Receipts
   subtotal: number;
+  discount?: number; // Calculated discount amount
+  appliedPromotionId?: string; // ID of the applied promotion
   tax: number;
   total: number;
   createdAt: string;

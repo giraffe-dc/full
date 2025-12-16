@@ -1,0 +1,195 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    width: 900px;
+    max-width: 95vw;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.content {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.sectionTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.label {
+    width: 200px;
+    font-weight: 500;
+    color: #4b5563;
+    font-size: 0.95rem;
+}
+
+.input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.venueButtons {
+    display: flex;
+}
+
+.venueBtn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    background: white;
+    cursor: pointer;
+    color: #374151;
+}
+
+.venueBtn:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.venueBtn:last-child {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-left: none;
+}
+
+.venueBtn.active {
+    background: #eef2ff;
+    color: #4f46e5;
+    border-color: #4f46e5;
+    z-index: 1;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    margin-left: 200px;
+}
+
+.checkboxRow input {
+    margin-right: 0.5rem;
+}
+
+.conditionRow {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 30px;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.miniLabel {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.daysRow {
+    display: flex;
+    gap: 1rem;
+    margin-left: 0;
+}
+
+.dayCheckbox {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+}
+
+.timeRange {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.saveButton {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.saveButton:hover {
+    background: #059669;
+}
+
+.removeBtn {
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1.2rem;
+    background: none;
+    border: none;
+}
