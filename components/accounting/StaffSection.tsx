@@ -26,9 +26,11 @@ interface StaffTotals {
 interface StaffSectionProps {
   rows: StaffRow[];
   totals: StaffTotals;
+  filters?: { startDate: string; endDate: string; };
+  onFilterChange?: (key: string, value: string) => void;
 }
 
-export function StaffSection({ rows, totals }: StaffSectionProps) {
+export function StaffSection({ rows, totals, filters, onFilterChange }: StaffSectionProps) {
   const [search, setSearch] = useState("");
 
   const filteredRows = useMemo(() => {
@@ -61,6 +63,23 @@ export function StaffSection({ rows, totals }: StaffSectionProps) {
 
       {/* Controls */}
       <div className={styles.controls}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginRight: 'auto' }}>
+          <input
+            type="date"
+            className={styles.searchInput}
+            style={{ width: 'auto' }}
+            value={filters?.startDate || ''}
+            onChange={(e) => onFilterChange?.('startDate', e.target.value)}
+          />
+          <span>—</span>
+          <input
+            type="date"
+            className={styles.searchInput}
+            style={{ width: 'auto' }}
+            value={filters?.endDate || ''}
+            onChange={(e) => onFilterChange?.('endDate', e.target.value)}
+          />
+        </div>
         <div className={styles.searchContainer}>
           <span className={styles.searchIcon}>🔍</span>
           <input

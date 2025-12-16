@@ -1,4 +1,4 @@
-import { NextResponse,NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import clientPromise from "../../../lib/mongodb";
 import jwt from "jsonwebtoken";
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
 
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
     let query: any = {};
 
     if (search) {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
     const result = await db.collection("staff").insertOne({
       name,
       email,

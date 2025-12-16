@@ -36,6 +36,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   subtotal: number;
+  guestId?: string; // For grouping items by guest
 }
 
 // Чек
@@ -67,6 +68,7 @@ export interface CashShift {
   totalExpenses: number;
   status: 'open' | 'closed';
   cashier: string;
+  activeStaffIds?: string[]; // IDs of staff currently on shift
   notes?: string;
 }
 
@@ -145,4 +147,43 @@ export interface CashRegisterState {
   zReports: ZReport[];
   lastReceiptNumber: number;
   lastShiftNumber: number;
+}
+
+// Departments & Tables
+export interface Department {
+  id: string; // MongoDB _id
+  name: string;
+  icon?: string;
+  status: 'active' | 'inactive';
+}
+
+export interface Table {
+  id: string; // MongoDB _id
+  departmentId: string;
+  name: string;
+  seats: number;
+  status: 'free' | 'busy' | 'reserved';
+  x?: number; // Coordinates for visual layout
+  y?: number;
+}
+
+export interface Check {
+  id: string; // MongoDB _id
+  tableId: string;
+  tableName: string;
+  departmentId: string;
+  shiftId: string;
+  waiterId?: string;
+  waiterName?: string;
+  customerId?: string;
+  customerName?: string;
+  comment?: string;
+  guestsCount: number;
+  items: CartItem[];
+  status: 'open'; // Checks are always open. Once paid, they become Receipts
+  subtotal: number;
+  tax: number;
+  total: number;
+  createdAt: string;
+  updatedAt: string;
 }

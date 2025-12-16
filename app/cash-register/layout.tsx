@@ -7,7 +7,7 @@ export default function CashRegisterLayout({
 }) {
   return (
     <>
-      <CashRegisterNav />
+      {/* <CashRegisterNav /> */}
       {children}
     </>
   );

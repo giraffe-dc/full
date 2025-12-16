@@ -116,7 +116,7 @@ export default function AccountingPage() {
 
   const receiptRows = MOCK_RECEIPT_ROWS;
   const invoiceRows = MOCK_INVOICE_ROWS;
- 
+
 
   // Використовуємо константи замість дублювання
   const categories = CATEGORIES;
@@ -187,7 +187,11 @@ export default function AccountingPage() {
 
   async function fetchStaff() {
     try {
-      const res = await fetch('/api/accounting/staff');
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
+
+      const res = await fetch(`/api/accounting/staff?${params.toString()}`);
       const data = await res.json();
       if (data.data) {
         setStaffData({ rows: data.data, totals: data.totals });
@@ -450,7 +454,12 @@ export default function AccountingPage() {
         )}
 
         {activeSection === "staff" && (
-          <StaffSection rows={staffData?.rows} totals={staffData?.totals} />
+          <StaffSection
+            rows={staffData?.rows}
+            totals={staffData?.totals}
+            filters={filters}
+            onFilterChange={(k, v) => setFilters(prev => ({ ...prev, [k]: v }))}
+          />
         )}
 
         {activeSection === "categories" && (

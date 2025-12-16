@@ -9,30 +9,56 @@ function formatDuration(ms: number): string {
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
     const client = await clientPromise;
     const db = client.db("giraffe");
+
+    // Time filter
+    let dateFilter: any = {};
+    let logsFilter: any = {};
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : new Date(0);
+      const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : new Date(); // End of day
+
+      dateFilter.createdAt = { $gte: start.toISOString(), $lte: end.toISOString() };
+
+      // For logs: either startTime or endTime falls within range, or covers range
+      // Simplified: startTime <= end AND (endTime >= start OR endTime is null)
+      logsFilter = {
+        startTime: { $lte: end },
+        $or: [
+          { endTime: { $gte: start } },
+          { endTime: null }
+        ]
+      };
+    }
 
     // 1. Fetch all staff members
     const staffRaw = await db.collection("staff").find({ status: { $ne: "inactive" } }).toArray();
 
-    // 2. Fetch receipts to calculate stats per waiter
-    const receipts = await db.collection("receipts").find({ waiter: { $exists: true, $ne: null } }).toArray();
+    // 2. Fetch receipts to calculate stats per waiter (Filtered)
+    const receiptsFilter = {
+      waiter: { $exists: true, $ne: null },
+      ...dateFilter
+    };
+    const receipts = await db.collection("receipts").find(receiptsFilter).toArray();
 
-    // 3. Fetch shifts to calculate worked time
-    const shifts = await db.collection("cash_shifts").find({
-      status: "closed",
-      cashier: { $exists: true, $ne: null }
-    }).toArray();
+    // 3. Fetch staff logs for time tracking (Filtered)
+    const staffLogs = await db.collection("staff_logs").find(logsFilter).toArray();
+
+    // Parse filter dates for precise duration calc
+    const filterStart = startDate ? new Date(startDate).getTime() : 0;
+    const filterEnd = endDate ? new Date(endDate + 'T23:59:59.999Z').getTime() : Date.now();
 
     const staff = staffRaw.map(s => {
       const sName = s.name;
+      const sId = s._id.toString();
 
       // Filter receipts for this waiter
       const sReceipts = receipts.filter(r => r.waiter === sName);
-
-      // Filter shifts for this cashier
-      // Note: 'cashier' in shifts might be 'Admin' or name. We try to match with sName.
-      const sShifts = shifts.filter(sh => sh.cashier === sName);
 
       // Financials
       const revenue = sReceipts.reduce((sum, r) => sum + r.total, 0);
@@ -41,21 +67,31 @@ export async function GET(req: NextRequest) {
       const avgCheck = receiptsCount > 0 ? revenue / receiptsCount : 0;
 
       // Time calculations
+      const sLogs = staffLogs.filter(l => l.staffId === sId);
       let totalTimeMs = 0;
-      sShifts.forEach(sh => {
-        if (sh.startTime && sh.endTime) {
-          const start = new Date(sh.startTime).getTime();
-          const end = new Date(sh.endTime).getTime();
-          totalTimeMs += (end - start);
+
+      sLogs.forEach(log => {
+        if (log.startTime) {
+          const logStart = new Date(log.startTime).getTime();
+          const logEnd = log.endTime ? new Date(log.endTime).getTime() : Date.now();
+
+          // Intersection with filter range
+          const calcStart = Math.max(logStart, filterStart);
+          const calcEnd = Math.min(logEnd, filterEnd);
+
+          if (calcEnd > calcStart) {
+            totalTimeMs += (calcEnd - calcStart);
+          }
         }
       });
 
       const workedTime = formatDuration(totalTimeMs);
-      const avgTimeMs = sShifts.length > 0 ? totalTimeMs / sShifts.length : 0;
+      // Avg time per shift (session)
+      const avgTimeMs = sLogs.length > 0 ? totalTimeMs / sLogs.length : 0;
       const avgTime = formatDuration(avgTimeMs);
 
       return {
-        id: s._id.toString(),
+        id: sId,
         name: s.name,
         position: s.position || "Офіціант",
         phone: s.phone || "",

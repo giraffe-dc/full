@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, paymentMethod, total, subtotal, tax, customerId, shiftId } = body;
+        const { items, paymentMethod, total, subtotal, tax, customerId, shiftId, waiterName, waiterId } = body;
 
         // Validate input
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -26,6 +26,8 @@ export async function POST(request: Request) {
                     receiptNumber: Date.now(), // Simple number generation for now
                     shiftId: shiftId ? new ObjectId(shiftId) : null, // Convert to ObjectId
                     customerId: customerId ? new ObjectId(customerId) : null,
+                    waiter: waiterName,
+                    waiterId: waiterId ? new ObjectId(waiterId) : null,
                     items: items,
                     subtotal,
                     tax,

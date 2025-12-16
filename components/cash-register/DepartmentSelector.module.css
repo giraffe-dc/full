@@ -1,0 +1,114 @@
+.container {
+    padding: 2rem;
+    height: 100%;
+    background-color: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+}
+
+.icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #eff6ff;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.addCard {
+    border: 2px dashed #d1d5db;
+    background: transparent;
+}
+
+.addCard:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.addCard .icon {
+    background: white;
+    color: #3b82f6;
+    border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 1.5rem;
+    }
+
+    .icon {
+        margin-bottom: 0;
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+        padding: 0.5rem;
+    }
+
+    .name {
+        font-size: 1.1rem;
+    }
+}

@@ -1,110 +1,140 @@
-
-
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import styles from "./page_v2.module.css";
-import { CashRegisterState, Service, Customer, CartItem, Receipt, CashShift, ServiceCategory } from "../../types/cash-register";
-import { MenuProduct, ProductCategory } from "../../types/accounting";
+import { CashRegisterState, Service, CartItem, Receipt, Department, Table, Check } from "../../types/cash-register";
 import { Modal } from "../../components/ui";
+import { DepartmentSelector } from "../../components/cash-register/DepartmentSelector";
+import { TableSelector } from "../../components/cash-register/TableSelector";
+import { CashRegisterNav } from '@/components/cash-register/CashRegisterNav';
+import { StaffSchedulerModal } from '@/components/cash-register/StaffSchedulerModal';
+import { WaiterSelectorModal } from '@/components/cash-register/WaiterSelectorModal';
+import { CheckView } from "@/components/cash-register/CheckView";
+
+type ViewState = 'departments' | 'tables' | 'check';
 
 export default function CashRegisterPage() {
+  // --- Global Data ---
   const [products, setProducts] = useState<Service[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
+
+  // --- Navigation State ---
+  const [view, setView] = useState<ViewState>('departments');
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [activeCheck, setActiveCheck] = useState<Check | null>(null);
+  const [orders, setOrders] = useState<Check[]>([]); // All open checks/orders
+
+  // Staff Logic
+  const [allStaff, setAllStaff] = useState<any[]>([]);
+  const [activeStaffIds, setActiveStaffIds] = useState<string[]>([]);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showWaiterModal, setShowWaiterModal] = useState(false);
+  const [pendingTableForCheck, setPendingTableForCheck] = useState<Table | null>(null);
+
+  // --- UI State ---
   const [isLoading, setIsLoading] = useState(true);
-
-  // State initialization
-  const [state, setState] = useState<CashRegisterState>({
-    currentShift: null,
-    currentCart: [],
-    customers: [],
-    services: [], // We'll populate this from API
-    receipts: [],
-    shifts: [],
-    zReports: [],
-    lastReceiptNumber: 0,
-    lastShiftNumber: 0,
-  });
-
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [lastReceipt, setLastReceipt] = useState<any | null>(null); // Using any for receipt temporarily to match API resp
   const [showShiftModal, setShowShiftModal] = useState(false);
-  const [shiftStartBalance, setShiftStartBalance] = useState("");
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed'>('cash');
   const [amountGiven, setAmountGiven] = useState("");
+  const [guestCountInput, setGuestCountInput] = useState("1");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [pendingTable, setPendingTable] = useState<Table | null>(null);
 
-  // Load Initial State and Data
+  // --- Shift State ---
+  const [currentShift, setCurrentShift] = useState<any | null>(null);
+  const [shiftStartBalance, setShiftStartBalance] = useState("");
+
+  // --- Initial Load ---
   useEffect(() => {
-    const savedState = localStorage.getItem("cashRegisterState");
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        // Restore shift if open
-        if (parsed.currentShift && parsed.currentShift.status === 'open') {
-          setState(prev => ({ ...prev, ...parsed }));
-        } else {
-          // Even if closed, we might want some history, but safe to just keep shift data
-          setState(prev => ({ ...prev, ...parsed }));
-        }
-      } catch (e) { console.error("State load error", e); }
-    }
+    fetchInitialData();
 
-    fetchData();
   }, []);
 
-  // Save State
   useEffect(() => {
-    localStorage.setItem("cashRegisterState", JSON.stringify(state));
-  }, [state]);
-
-  const fetchData = async () => {
+    if (view === 'tables') {
+      fetchChecks();
+    }
+  }, [view]);
+  console.log("view", view);
+  const fetchChecks = async () => {
     setIsLoading(true);
     try {
-      const [prodRes, catRes, shiftRes] = await Promise.all([
+      const res = await fetch('/api/cash-register/checks?status=open');
+      const data = await res.json();
+      if (data.success) {
+        setOrders(data.data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch checks", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const fetchInitialData = async () => {
+    setIsLoading(true);
+    try {
+      const [prodRes, deptRes, shiftRes, staffRes, checksRes] = await Promise.all([
         fetch('/api/accounting/products?status=active'),
-        fetch('/api/accounting/categories?status=active'),
-        fetch('/api/cash-register/shifts?status=open')
+        fetch('/api/cash-register/departments'),
+        fetch('/api/cash-register/shifts?status=open'),
+        fetch('/api/staff'),
+        fetch('/api/cash-register/checks?status=open')
       ]);
 
       const prodData = await prodRes.json();
-      const catData = await catRes.json();
+      const deptData = await deptRes.json();
       const shiftData = await shiftRes.json();
+      const staffData = await staffRes.json();
+      const checksData = await checksRes.json();
 
       if (prodData.success) {
-        // Map API products to Service type expected by UI
         const services: Service[] = prodData.data.map((p: any) => ({
           id: p.id || p._id,
           name: p.name,
-          category: p.category, // string
+          category: p.category,
           price: p.sellingPrice,
           code: p.code,
           imageUrl: p.imageUrl
         }));
-
         // Deduplicate
         const uniqueServices = Array.from(new Map(services.map(s => [s.id, s])).values());
-
         setProducts(uniqueServices);
-        setState(prev => ({ ...prev, services: uniqueServices }));
       }
 
-      if (catData.success) {
-        // Add 'All' category
-        setCategories([{ id: 'all', name: 'Всі' }, ...catData.data]);
+      if (deptData.success) {
+        setDepartments(deptData.data);
       }
 
       if (shiftData.success && shiftData.data.length > 0) {
-        const activeShift = shiftData.data[0];
-        setState(prev => ({
-          ...prev,
-          currentShift: {
-            ...activeShift,
-            receipts: [] // We don't load all receipts for performance, just the shift meta
-          }
+        const shift = shiftData.data[0];
+        setCurrentShift(shift);
+        if (shift.activeStaffIds) {
+          setActiveStaffIds(shift.activeStaffIds);
+        }
+      }
+
+      // console.log("staffData", staffData);
+
+      if (staffData) {
+        const mappedStaff = staffData.data.map((s: any) => ({
+          ...s,
+          id: s.id || s._id
         }));
+        // console.log("mappedStaff", mappedStaff);
+        setAllStaff(mappedStaff);
+      }
+
+      if (checksData.success) {
+        setOrders(checksData.data);
       }
 
     } catch (e) {
@@ -112,9 +142,258 @@ export default function CashRegisterPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+  const handleUpdateShiftStaff = async (ids: string[]) => {
+    if (!currentShift) return;
+    try {
+      await fetch('/api/cash-register/shifts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentShift.id, activeStaffIds: ids })
+      });
+      setActiveStaffIds(ids);
+      setShowStaffModal(false);
+    } catch (e) {
+      alert("Error updating shift staff");
+    }
+  };
+  const activeStaffList = allStaff.filter(s => activeStaffIds.includes(s.id));
+
+  // Debug logs removed
+
+  // --- Navigation Handlers ---
+
+  const handleSelectDepartment = async (dept: Department) => {
+    setSelectedDepartment(dept);
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/cash-register/tables?departmentId=${dept.id}`);
+      const data = await res.json();
+      if (data.success) {
+        setTables(data.data);
+        setView('tables');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // --- Handlers ---
+  const handleAddDepartment = async () => {
+    const name = prompt("Введіть назву нового залу:");
+    if (!name) return;
+
+    try {
+      const res = await fetch('/api/cash-register/departments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDepartments([...departments, data.data]);
+      } else {
+        alert("Помилка: " + data.error);
+      }
+    } catch (e) {
+      alert("Помилка при створенні залу");
+    }
+  };
+
+  const handleSelectTable = async (table: Table) => {
+    if (!currentShift) {
+      alert("Спочатку відкрийте зміну!");
+      setShowShiftModal(true);
+      return;
+    }
+
+    if (table.status === 'busy') {
+      // Open existing check immediately
+      openCheckForTable(table);
+    } else {
+      // Prompt for guests for new check
+      setPendingTable(table);
+      setGuestCountInput("1");
+      setShowGuestModal(true);
+    }
+  };
+
+  const handleAddTable = async () => {
+    if (!selectedDepartment) return;
+
+    const name = prompt("Введіть назву/номер нового столу:");
+    if (!name) return;
+
+    try {
+      const res = await fetch('/api/cash-register/tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, departmentId: selectedDepartment.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTables([...tables, data.data]);
+      } else {
+        alert("Помилка: " + data.error);
+      }
+    } catch (e) {
+      alert("Помилка при створенні столу");
+    }
+  };
+
+  const handleConfirmGuestCount = () => {
+    if (pendingTable) {
+      openCheckForTable(pendingTable, Number(guestCountInput) || 1);
+      setShowGuestModal(false);
+      setPendingTable(null);
+    }
+  };
+
+  const openCheckForTable = async (table: Table, guestsCount: number = 0, waiter?: { id: string, name: string }) => {
+    setSelectedTable(table);
+    setIsLoading(true);
+
+    // 1. Check if there is an existing open check for this table
+    const existingCheck = orders.find(o => o.tableId === table.id && o.status === 'open');
+    if (existingCheck) {
+      setActiveCheck(existingCheck);
+      setView('check');
+      setIsLoading(false);
+      return;
+    }
+
+    let waiterName = waiter?.name;
+    let waiterId = waiter?.id;
+
+    // Fallback if not provided (should not happen if we enforce selection)
+    if (!waiterName && activeStaffList.length === 1) {
+      waiterName = activeStaffList[0].name;
+      waiterId = activeStaffList[0].id;
+    }
+
+    if (table.status === 'free' && !waiterName && activeStaffIds.length > 0) {
+      // This case should be handled by UI interceptor (handleTableClick),
+      // but as a safety check, if we somehow get here without a waiter for a free table,
+      // we should prevent check creation.
+      alert("Будь ласка, виберіть офіціанта.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Create or get existing check
+      const res = await fetch('/api/cash-register/checks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId: table.id,
+          tableName: table.name,
+          departmentId: selectedDepartment?.id,
+          shiftId: currentShift.id,
+          guestsCount: guestsCount,
+          waiterId,
+          waiterName
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setActiveCheck(data.data);
+        setView('check');
+        // Update table status locally
+        const updatedTables = tables.map(t => t.id === table.id ? { ...t, status: 'busy' as const } : t);
+        setTables(updatedTables);
+        // Add to orders list
+        setOrders([...orders, data.data]);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при відкритті столу");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTableClick = (table: Table) => {
+    if (!currentShift) {
+      alert("Спочатку відкрийте зміну!");
+      setShowShiftModal(true);
+      return;
+    }
+
+    if (table.status === 'busy') {
+      // Go straight to check
+      openCheckForTable(table);
+    } else {
+
+      // Free table
+      if (activeStaffList.length === 0) {
+        alert("Нікого немає на зміні! Додайте співробітників.");
+        setShowStaffModal(true);
+        return;
+      }
+      if (activeStaffList.length === 1) {
+        // Auto select the only waiter
+        setPendingTable(table); // Set pending table for guest count modal
+        setGuestCountInput("1");
+        setShowGuestModal(true);
+        // The actual openCheckForTable will be called from handleConfirmGuestCount
+        // with the auto-selected waiter.
+      } else {
+        // Multiple waiters, show modal
+        setPendingTableForCheck(table);
+        setShowWaiterModal(true);
+      }
+    }
+  };
+
+  const handleBackToDepartments = () => {
+    setSelectedDepartment(null);
+    setView('departments');
+  };
+
+  const handleBackToTables = () => {
+    // Check is auto-saved, just navigate back
+    setActiveCheck(null);
+    setSelectedTable(null);
+    // Refresh tables to show status updates
+    if (selectedDepartment) {
+      handleSelectDepartment(selectedDepartment);
+    }
+    setView('tables');
+  };
+
+  // --- Cart/Check Management ---
+
+  // Auto-save check whenever activeCheck changes
+  // Debouncing would be good here, but for simplicity we'll trigger save on specific actions
+  const saveCheck = async (check: Check) => {
+    try {
+      await fetch(`/api/cash-register/checks/${check.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: check.items,
+          subtotal: check.subtotal,
+          tax: check.tax,
+          total: check.total,
+          customerId: check.customerId,
+          customerName: check.customerName,
+          comment: check.comment
+        })
+      });
+    } catch (e) {
+      console.error("Failed to save check", e);
+    }
+  };
+
+  const updateCheckState = (newCheck: Check) => {
+    setActiveCheck(newCheck);
+    saveCheck(newCheck);
+  };
+
+  // --- Handlers (Shift & Payment) ---
 
   const handleOpenShift = async (balance: number) => {
     try {
@@ -125,10 +404,7 @@ export default function CashRegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setState(prev => ({
-          ...prev,
-          currentShift: { ...data.data, receipts: [] }
-        }));
+        setCurrentShift({ ...data.data, receipts: [] });
         setShowShiftModal(false);
       } else {
         alert("Помилка: " + data.error);
@@ -139,7 +415,7 @@ export default function CashRegisterPage() {
   };
 
   const handleCloseShift = async () => {
-    if (!state.currentShift) return;
+    if (!currentShift) return;
     const endBalance = prompt("Введіть фактичну суму в касі:", "0");
     if (endBalance === null) return;
 
@@ -147,13 +423,14 @@ export default function CashRegisterPage() {
       const res = await fetch('/api/cash-register/shifts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: state.currentShift.id, endBalance: Number(endBalance) })
+        body: JSON.stringify({ id: currentShift.id, endBalance: Number(endBalance) })
       });
       const data = await res.json();
 
       if (data.success) {
         alert("Зміна закрита успішно!");
-        setState(prev => ({ ...prev, currentShift: null }));
+        setCurrentShift(null);
+        setView('departments');
       } else {
         alert("Помилка: " + data.error);
       }
@@ -162,82 +439,36 @@ export default function CashRegisterPage() {
     }
   };
 
-  const addToCart = (product: Service) => {
-    if (!state.currentShift) {
-      alert("Спочатку відкрийте зміну!");
-      setShowShiftModal(true);
-      return;
-    }
-
-    setState(prev => {
-      const existing = prev.currentCart.find(item => item.productId === product.id); // Use productId check logic
-      if (existing) {
-        return {
-          ...prev,
-          currentCart: prev.currentCart.map(item =>
-            item.productId === product.id
-              ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
-              : item
-          )
-        };
-      }
-      return {
-        ...prev,
-        currentCart: [...prev.currentCart, {
-          serviceId: `item-${Date.now()}`, // Temporary ID for cart logic
-          productId: product.id,
-          serviceName: product.name,
-          category: product.category,
-          price: product.price,
-          quantity: 1,
-          subtotal: product.price
-        }]
-      };
-    });
-  };
-
-  const updateQuantity = (productId: string, delta: number) => {
-    setState(prev => {
-      const newCart = prev.currentCart.map(item => {
-        if (item.productId === productId) {
-          const newQty = item.quantity + delta;
-          if (newQty <= 0) return null;
-          return { ...item, quantity: newQty, subtotal: newQty * item.price };
-        }
-        return item;
-      }).filter(Boolean) as CartItem[];
-      return { ...prev, currentCart: newCart };
-    });
-  };
-
-  const removeFromCart = (productId: string) => {
-    setState(prev => ({
-      ...prev,
-      currentCart: prev.currentCart.filter(item => item.productId !== productId)
-    }));
-  };
-
-  const getTotals = () => {
-    const subtotal = state.currentCart.reduce((sum, item) => sum + item.subtotal, 0);
-    const tax = 0; // Simplified for now
-    return { subtotal, tax, total: subtotal + tax };
-  };
-
   const handleCheckout = async () => {
-    if (!state.currentShift) return;
-    const { total, subtotal, tax } = getTotals();
+    if (!currentShift || !activeCheck) return;
+
+    // Use the existing checkout API but adapt payload
+    // Or better, creating a new endpoint for closing a check
+    // For MVP, we will use the existing checkout route but we also need to DELETE the open check
+
+    // Wait, the checkout route creates a Receipt and Transaction. 
+    // We should also delete the Check from 'checks' collection and update table status.
+
+    // Let's rely on the checkout API to accept 'checkId' if we modify it, OR just call DELETE check after success.
+    // For safety, let's call DELETE check separately for now or modify Check API.
+
+    // Actually, creating a new route `api/cash-register/checks/[id]/close` would be cleaner,
+    // but to save time, I will use `checkout` route and then `DELETE check`.
 
     const payload = {
-      items: state.currentCart,
+      items: activeCheck.items,
       paymentMethod,
-      total,
-      subtotal,
-      tax,
-      customerId: selectedCustomer?.id,
-      shiftId: state.currentShift.id
+      total: activeCheck.total,
+      subtotal: activeCheck.subtotal,
+      tax: activeCheck.tax,
+      customerId: null, // TODO: Add customer selection
+      shiftId: currentShift.id,
+      waiterName: activeCheck.waiterName,
+      waiterId: activeCheck.waiterId
     };
 
     try {
+      // 1. Process Payment & Create Receipt
       const res = await fetch('/api/cash-register/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -246,319 +477,280 @@ export default function CashRegisterPage() {
       const data = await res.json();
 
       if (data.success) {
-        // Success
-        const newReceipt: Receipt = {
-          id: data.receiptId || `local-${Date.now()}`,
-          receiptNumber: state.lastReceiptNumber + 1,
-          items: state.currentCart,
-          total,
-          subtotal,
-          tax,
-          paymentMethod,
-          createdAt: new Date().toISOString(),
-          shiftId: state.currentShift.id
-        };
+        // 2. Delete the open check
+        await fetch(`/api/cash-register/checks?id=${activeCheck.id}`, { method: 'DELETE' });
 
-        setLastReceipt(newReceipt);
-
-        // Clear Cart & Update State
-        setState(prev => ({
-          ...prev,
-          currentCart: [],
-          receipts: [...prev.receipts, newReceipt],
-          lastReceiptNumber: prev.lastReceiptNumber + 1,
-          currentShift: prev.currentShift ? {
-            ...prev.currentShift,
-            receipts: [...prev.currentShift.receipts, newReceipt],
-            totalSales: prev.currentShift.totalSales + total
-          } : null
-        }));
-
-        setShowPaymentModal(false);
-        setShowReceiptModal(true);
-        setAmountGiven(""); // Reset
+        // 3. Navigate back and refresh
+        alert("Оплата успішна!");
+        handleBackToTables();
       } else {
-        alert("Помилка при проведенні чеку: " + data.error);
+        alert("Помилка оплати: " + (data.error || "Unknown"));
+        setIsLoading(false);
       }
     } catch (e) {
-      alert("Помилка мережі");
       console.error(e);
+      alert("Помилка мережі при оплаті");
+      setIsLoading(false);
     }
   };
 
-
-  const [searchQuery, setSearchQuery] = useState("");
-
-
-  // Filtered Products
-  const filteredProducts = useMemo(() => {
-    let result = products;
-
-    // 1. Search Filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      result = result.filter(p => {
-        const name = p.name ? String(p.name).toLowerCase() : '';
-        const code = p.code ? String(p.code).toLowerCase() : '';
-        return name.includes(query) || code.includes(query);
-      });
-    }
-
-    // 2. Category Filter
-    if (selectedCategory !== 'all') {
-      result = result.filter(p => p.category === selectedCategory);
-    }
-
-    return result;
-  }, [products, selectedCategory, searchQuery]);
-
-  const { total } = getTotals();
-
-  // Helper to get category icon (random placeholder logic or map)
-  const getCategoryIcon = (catId: string, name: string) => {
-    if (catId === 'all') return '♾️';
-    if (name.toLowerCase().includes('кав')) return '☕';
-    if (name.toLowerCase().includes('десерт') || name.toLowerCase().includes('торт')) return '🍰';
-    if (name.toLowerCase().includes('бар') || name.toLowerCase().includes('напо')) return '🍹';
-    if (name.toLowerCase().includes('салат') || name.toLowerCase().includes('їжа')) return '🥗';
-    return '📦';
+  const handleFinishReceipt = () => {
+    setShowReceiptModal(false);
+    handleBackToTables(); // Return to table selection
   };
 
-  /* 
-   * V2 Redesign Layout (No Categories, Vibrant)
-   * Removing sidebar code.
-   */
+  // --- Render Helpers ---
+  // (Search logic moved to CheckView, but we keep products state here)
 
-  return (
-    <div className={styles.container}>
+  // --- Views ---
 
-      {/* 2. MAIN CONTENT (Header + Grid) */}
-      <div className={styles.mainContent}>
+  if (view === 'departments') {
+    return (
+      <div className={styles.container}>
+        <div className={styles.mainArea}>
+          <CashRegisterNav  setShowStaffModal={setShowStaffModal} activeStaffIds={activeStaffIds}/>
+          {/* Header / Top Bar */}
+          
 
-        {/* Header */}
-        <div className={styles.header}>
-          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-            {state.currentShift ? (
-              <div className={styles.statusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
-                🟢 Зміна #{state.currentShift.shiftNumber} ({state.currentShift.cashier})
-              </div>
-            ) : (
-              <div className={styles.statusBadge} style={{ background: '#fee2e2', color: '#991b1b' }}>
-                🔴 Каса закрита
-              </div>
-            )}
-          </div>
-
-          <div style={{ flex: 1, margin: '0 30px', position: 'relative' }}>
-            <input
-              className={styles.inputField}
-              style={{ width: '100%', paddingLeft: '46px', fontSize: '1.1rem' }}
-              placeholder="🔍 Пошук товару..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoFocus
-            />
-            <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '1.2rem' }}>🔍</span>
-          </div>
-
-          <div>
-            {!state.currentShift ? (
-              <button className={styles.payButton} style={{ width: 'auto', padding: '10px 24px', fontSize: '1rem' }} onClick={() => setShowShiftModal(true)}>
-                Відкрити зміну
-              </button>
-            ) : (
-              <button className={styles.payButton} style={{ width: 'auto', padding: '10px 24px', fontSize: '1rem', background: '#4b5563' }} onClick={handleCloseShift}>
-                Закрити зміну
-              </button>
-            )}
-          </div>
+          <DepartmentSelector
+            departments={departments}
+            activeId={selectedDepartment?.id || null}
+            onSelect={handleSelectDepartment}
+            onAdd={handleAddDepartment}
+          />
         </div>
-
-        {/* Product Grid */}
-        <div className={styles.productGrid}>
-          {filteredProducts.map(product => (
-            <div key={product.id} className={styles.productCard} onClick={() => addToCart(product)}>
-              <div className={styles.productImage}>
-                {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span>{product.name[0]}</span>
-                )}
-              </div>
-              <div className={styles.productInfo}>
-                <div className={styles.productName}>{product.name}</div>
-                <div className={styles.productPrice}>{product.price} ₴</div>
-              </div>
-            </div>
-          ))}
-          {filteredProducts.length === 0 && (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', marginTop: '50px', color: '#9ca3af' }}>
-              <h3>Товарів не знайдено 🔍</h3>
-              <p>Спробуйте змінити пошуковий запит</p>
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      {/* 3. CART PANEL (Right) */}
-      <div className={styles.cartPanel}>
-        <div className={styles.cartHeader}>
-          <div className={styles.cartTitle}>Замовлення</div>
-          <div className={styles.statusBadge} style={{ background: '#f3f4f6', color: '#4b5563' }}>
-            {state.currentCart.length} поз.
-          </div>
-        </div>
-
-        <div className={styles.cartItems}>
-          {state.currentCart.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: '80px', opacity: 0.6 }}>
-              <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🛒</div>
-              <p>Кошик порожній</p>
-            </div>
+        <div style={{ position: 'fixed', bottom: 20, right: 20 }}>
+          {!currentShift ? (
+            <button className={styles.payButton} onClick={() => setShowShiftModal(true)}>
+              Відкрити зміну
+            </button>
           ) : (
-            state.currentCart.map(item => (
-              <div key={item.serviceId} className={styles.cartItem}>
-                <div className={styles.cartItemInfo}>
-                  <div className={styles.cartItemName}>{item.serviceName}</div>
-                  <div className={styles.cartItemPrice}>{item.price} ₴</div>
-                </div>
-                <div className={styles.cartControls}>
-                  <button className={styles.qtyButton} onClick={() => updateQuantity(item.productId!, -1)}>−</button>
-                  <div className={styles.qtyValue}>{item.quantity}</div>
-                  <button className={styles.qtyButton} onClick={() => updateQuantity(item.productId!, 1)}>+</button>
-                </div>
-              </div>
-            ))
+            <button className={styles.payButton} style={{ background: '#4b5563' }} onClick={handleCloseShift}>
+              Закрити зміну
+            </button>
           )}
         </div>
 
-        <div className={styles.cartFooter}>
-          <div className={styles.summaryRow}>
-            <span>Знижка</span>
-            <span>0.00 ₴</span>
+        {/* Shift Modal */}
+        <Modal
+          isOpen={showShiftModal}
+          onClose={() => setShowShiftModal(false)}
+          title="Відкриття зміни"
+          size="sm"
+        >
+          <div style={{ padding: 'var(--space-4) 0' }}>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Початковий баланс каси (₴)</label>
+              <input
+                type="number"
+                className={styles.inputField}
+                value={shiftStartBalance}
+                onChange={(e) => setShiftStartBalance(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+              />
+            </div>
           </div>
-          <div className={styles.totalRow}>
-            <span>Разом</span>
-            <span style={{ color: '#2563eb' }}>{total} ₴</span>
+
+          <div className={styles.modalActions}>
+            <button className={styles.cancelButton} onClick={() => setShowShiftModal(false)}>Скасувати</button>
+            <button className={styles.payButton} onClick={() => handleOpenShift(Number(shiftStartBalance) || 0)}>Відкрити зміну</button>
           </div>
-          <button
-            className={styles.payButton}
-            disabled={state.currentCart.length === 0}
-            onClick={() => setShowPaymentModal(true)}
-          >
-            Оплатити ({total} ₴)
-          </button>
-        </div>
+        </Modal>
+
+        {/* Staff Scheduler Modal */}
+        {showStaffModal && (
+          <StaffSchedulerModal
+            currentActiveIds={activeStaffIds}
+            onSave={handleUpdateShiftStaff}
+            onClose={() => setShowStaffModal(false)}
+          />
+        )}
       </div>
+    );
+  }
 
-      {/* --- MODALS --- */}
+  if (view === 'tables') {
+    return (
+      <div className={styles.container}>
+        <div className={styles.mainArea}>
+          {/* Header / Top Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0 1rem' }}>
+            <div>{/* Empty or breadcrumbs */}</div>
+            <button
+              onClick={() => setShowStaffModal(true)}
+              style={{
+                background: 'white', border: '1px solid #e5e7eb', padding: '8px 16px',
+                borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#374151',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              👥 Зміна: {activeStaffIds.length}
+            </button>
+          </div>
+          <TableSelector
+            tables={tables}
+            departmentName={selectedDepartment?.name || 'Зал'}
+            onSelect={handleTableClick}
+            onBack={handleBackToDepartments}
+            onAdd={handleAddTable}
+          />
 
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Оплата</h2>
-            <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#2563eb', marginBottom: '30px', textAlign: 'center' }}>{total} ₴</div>
+          {/* Staff Scheduler Modal */}
+          {showStaffModal && (
+            <StaffSchedulerModal
+              currentActiveIds={activeStaffIds}
+              onSave={handleUpdateShiftStaff}
+              onClose={() => setShowStaffModal(false)}
+            />
+          )}
+        </div>
+        {/* Waiter Selector Modal */}
+        {showWaiterModal && (
+          <WaiterSelectorModal
+            activeStaff={activeStaffList}
+            onSelect={(waiter) => {
+              setShowWaiterModal(false);
+              if (pendingTableForCheck) {
+                openCheckForTable(pendingTableForCheck, 1, waiter);
+                setPendingTableForCheck(null);
+              }
+            }}
+            onClose={() => {
+              setShowWaiterModal(false);
+              setPendingTableForCheck(null);
+            }}
+          />
+        )}
 
-            <div className={styles.paymentOptions}>
-              <button
-                className={`${styles.paymentOption} ${paymentMethod === 'cash' ? styles.active : ''}`}
-                onClick={() => setPaymentMethod('cash')}
-              >
-                <span style={{ fontSize: '2rem' }}>💵</span>
-                Готівка
-              </button>
-              <button
-                className={`${styles.paymentOption} ${paymentMethod === 'card' ? styles.active : ''}`}
-                onClick={() => setPaymentMethod('card')}
-              >
-                <span style={{ fontSize: '2rem' }}>💳</span>
-                Карта
-              </button>
+        {/* Guest Count Modal */}
+        <Modal
+          isOpen={showGuestModal}
+          onClose={() => setShowGuestModal(false)}
+          title="Кількість гостей"
+          size="sm"
+        >
+          <div style={{ padding: '20px 0' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', fontSize: '1.2rem' }}>
+              Стіл: <strong>{pendingTable?.name}</strong>
             </div>
 
-            {paymentMethod === 'cash' && (
-              <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>Внесена сума</label>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel} style={{ textAlign: 'center' }}>Скільки гостей?</label>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                <button
+                  className={styles.qtyButton}
+                  style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}
+                  onClick={() => setGuestCountInput(prev => String(Math.max(1, Number(prev) - 1)))}
+                >
+                  -
+                </button>
                 <input
                   type="number"
                   className={styles.inputField}
-                  placeholder="0.00"
-                  value={amountGiven}
-                  onChange={(e) => setAmountGiven(e.target.value)}
+                  style={{ width: '80px', textAlign: 'center', fontSize: '1.5rem' }}
+                  value={guestCountInput}
+                  onChange={(e) => setGuestCountInput(e.target.value)}
                   autoFocus
-                  style={{ fontSize: '1.2rem' }}
                 />
-                {Number(amountGiven) > total && (
-                  <div style={{ marginTop: '10px', color: '#166534', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'right' }}>
-                    Решта: <span style={{ fontSize: '1.3rem' }}>{(Number(amountGiven) - total).toFixed(2)} ₴</span>
-                  </div>
-                )}
+                <button
+                  className={styles.qtyButton}
+                  style={{ width: '50px', height: '50px', fontSize: '1.5rem' }}
+                  onClick={() => setGuestCountInput(prev => String(Number(prev) + 1))}
+                >
+                  +
+                </button>
               </div>
-            )}
-
-            <div className={styles.modalActions}>
-              <button className={styles.cancelButton} onClick={() => setShowPaymentModal(false)}>Скасувати</button>
-              <button className={styles.payButton} onClick={handleCheckout}>Підтвердити</button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Shift Modal */}
-      {/* Shift Opening Modal */}
-      <Modal
-        isOpen={showShiftModal}
-        onClose={() => setShowShiftModal(false)}
-        title="Відкриття зміни"
-        size="sm"
-      >
-        <div style={{ padding: 'var(--space-4) 0' }}>
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Початковий баланс каси (₴)</label>
-            <input
-              type="number"
-              className={styles.inputField}
-              value={shiftStartBalance}
-              onChange={(e) => setShiftStartBalance(e.target.value)}
-              placeholder="0.00"
-              autoFocus
-            />
+          <div className={styles.modalActions}>
+            <button className={styles.cancelButton} onClick={() => setShowGuestModal(false)}>Скасувати</button>
+            <button className={styles.payButton} onClick={handleConfirmGuestCount}>Відкрити стіл</button>
           </div>
-        </div>
+        </Modal>
+      </div>
+    );
+  }
 
-        <div className={styles.modalActions}>
-          <button
-            className={styles.cancelButton}
-            onClick={() => setShowShiftModal(false)}
-          >
-            Скасувати
-          </button>
-          <button
-            className={styles.payButton}
-            onClick={() => handleOpenShift(Number(shiftStartBalance) || 0)}
-          >
-            Відкрити зміну
-          </button>
-        </div>
-      </Modal>
+  // --- Check View (POS) ---
+  if (view === 'check' && activeCheck) {
+    return (
+      <>
+        <CheckView
+          check={activeCheck}
+          products={products}
+          onUpdateCheck={updateCheckState}
+          onBack={handleBackToTables}
+          onPay={() => setShowPaymentModal(true)}
+        />
 
-      {/* Receipt Success Modal */}
-      {showReceiptModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent} style={{ textAlign: 'center', maxWidth: '400px' }}>
-            <div style={{ fontSize: '5rem', marginBottom: '20px', color: '#22c55e' }}>✅</div>
-            <h2 style={{ marginBottom: '10px' }}>Оплата успішна!</h2>
-            <p style={{ color: '#6b7280', marginBottom: '30px' }}>Чек #{lastReceipt?.receiptNumber} збережено.</p>
-            <button className={styles.payButton} onClick={() => setShowReceiptModal(false)}>
-              Нове замовлення
-            </button>
+        {/* Modals reused from page state */}
+        {showPaymentModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Оплата</h2>
+              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#2563eb', marginBottom: '30px', textAlign: 'center' }}>
+                {activeCheck?.total.toFixed(2)} ₴
+              </div>
+
+              <div className={styles.paymentOptions}>
+                <button
+                  className={`${styles.paymentOption} ${paymentMethod === 'cash' ? styles.active : ''}`}
+                  onClick={() => setPaymentMethod('cash')}
+                >
+                  <span style={{ fontSize: '2rem' }}>💵</span> Готівка
+                </button>
+                <button
+                  className={`${styles.paymentOption} ${paymentMethod === 'card' ? styles.active : ''}`}
+                  onClick={() => setPaymentMethod('card')}
+                >
+                  <span style={{ fontSize: '2rem' }}>💳</span> Карта
+                </button>
+              </div>
+
+              {paymentMethod === 'cash' && (
+                <div className={styles.inputGroup}>
+                  <label className={styles.inputLabel}>Внесена сума</label>
+                  <input
+                    type="number"
+                    className={styles.inputField}
+                    placeholder="0.00"
+                    value={amountGiven}
+                    onChange={(e) => setAmountGiven(e.target.value)}
+                    autoFocus
+                  />
+                  {Number(amountGiven) > (activeCheck?.total || 0) && (
+                    <div style={{ marginTop: '10px', color: '#166534', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'right' }}>
+                      Решта: <span style={{ fontSize: '1.3rem' }}>{(Number(amountGiven) - (activeCheck?.total || 0)).toFixed(2)} ₴</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className={styles.modalActions}>
+                <button className={styles.cancelButton} onClick={() => setShowPaymentModal(false)}>Скасувати</button>
+                <button className={styles.payButton} onClick={handleCheckout}>Підтвердити</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-    </div>
-  );
+        {showReceiptModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent} style={{ textAlign: 'center', maxWidth: '400px' }}>
+              <div style={{ fontSize: '5rem', marginBottom: '20px', color: '#22c55e' }}>✅</div>
+              <h2 style={{ marginBottom: '10px' }}>Оплата успішна!</h2>
+              <p style={{ color: '#6b7280', marginBottom: '30px' }}>Стіл {selectedTable?.name} звільнено.</p>
+              <button className={styles.payButton} onClick={handleFinishReceipt}>
+                ОК
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return <div>Loading...</div>;
 }
-

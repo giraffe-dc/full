@@ -8,7 +8,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
         const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 20;
-
+        // console.log(status, limit);
         const client = await clientPromise;
         const db = client.db("giraffe");
 
@@ -78,12 +78,53 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json();
-        const { id, endBalance } = body;
+        const { id, endBalance, activeStaffIds } = body;
 
         if (!id) return NextResponse.json({ error: "Shift ID required" }, { status: 400 });
 
         const client = await clientPromise;
         const db = client.db("giraffe");
+
+        // Handle Active Staff Update (Clock In/Out)
+        if (activeStaffIds) {
+            // 1. Fetch current active staff to determine added/removed
+            const currentShift = await db.collection("cash_shifts").findOne({ _id: new ObjectId(id) });
+            const currentIds: string[] = currentShift?.activeStaffIds || [];
+
+            // 2. Identify changes
+            const toAdd = activeStaffIds.filter((sid: string) => !currentIds.includes(sid));
+            const toRemove = currentIds.filter((sid: string) => !activeStaffIds.includes(sid));
+
+            // 3. Clock In (Add Log)
+            if (toAdd.length > 0) {
+                const newLogs = toAdd.map((sid: string) => ({
+                    staffId: sid,
+                    shiftId: new ObjectId(id),
+                    startTime: new Date(),
+                    endTime: null,
+                    createdAt: new Date()
+                }));
+                await db.collection("staff_logs").insertMany(newLogs);
+            }
+
+            // 4. Clock Out (Close Log)
+            if (toRemove.length > 0) {
+                await db.collection("staff_logs").updateMany(
+                    {
+                        shiftId: new ObjectId(id),
+                        staffId: { $in: toRemove },
+                        endTime: null
+                    },
+                    { $set: { endTime: new Date() } }
+                );
+            }
+
+            await db.collection("cash_shifts").updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { activeStaffIds, updatedAt: new Date() } }
+            );
+            return NextResponse.json({ success: true });
+        }
 
         // Calculate totals from receipts linked to this shift
         // Alternatively, we could rely on the frontend passing totals, but backend calculation is safer.
@@ -109,6 +150,12 @@ export async function PUT(request: Request) {
             cashDifference: cashDifference,
             updatedAt: new Date()
         };
+
+        // Close all open staff logs for this shift
+        await db.collection("staff_logs").updateMany(
+            { shiftId: new ObjectId(id), endTime: null },
+            { $set: { endTime: new Date() } }
+        );
 
         await db.collection("cash_shifts").updateOne(
             { _id: new ObjectId(id) },
