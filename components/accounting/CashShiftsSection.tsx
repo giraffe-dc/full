@@ -17,20 +17,23 @@ export interface CashShift {
   shiftNumber: string;
   startTime: string;
   endTime: string | null;
-  openingBalance: number;
+  startBalance: number;
   incasation: number;
-  currentCash: number; // In register
-  difference: number;
+  // totalSalesCash
+  // : number; // In register
+  cashDifference: number;
 
   // Detailed stats
   bookBalance: number;
   actualBalance: number;
-  cashRevenue: number;
-  cashlessRevenue: number;
+  totalSalesCash: number;
+  totalSalesCard
+  : number;
   income: number;
-  expenses: number;
+  totalExpenses: number;
 
-  transactions: ShiftTransaction[];
+
+  receipts: ShiftTransaction[];
   status: 'opened' | 'closed';
   cashier: string;
 }
@@ -56,6 +59,7 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
   };
 
   const formatMoney = (amount: number) => {
+    if (!amount) return "—";
     return new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount) + ' ₴';
   };
 
@@ -110,10 +114,10 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                     <td>{shift.shiftNumber}</td>
                     <td>{formatDate(shift.startTime)}</td>
                     <td>{shift.endTime ? formatDate(shift.endTime) : <span style={{ color: 'green' }}>Активна</span>}</td>
-                    <td className={styles.moneyCell}>{formatMoney(shift.openingBalance)}</td>
+                    <td className={styles.moneyCell}>{formatMoney(shift.startBalance)}</td>
                     <td className={styles.moneyCell}>{formatMoney(shift.incasation)}</td>
-                    <td className={styles.moneyCell} style={{ fontWeight: 'bold' }}>{formatMoney(shift.currentCash)}</td>
-                    <td className={styles.moneyCell} style={getDiffStyle(shift.difference)}>{formatMoney(shift.difference)}</td>
+                    <td className={styles.moneyCell} style={{ fontWeight: 'bold' }}>{formatMoney(shift.totalSalesCash)}</td>
+                    <td className={styles.moneyCell} style={getDiffStyle(shift.cashDifference)}>{formatMoney(shift.cashDifference)}</td>
                     <td style={{ textAlign: 'right', color: '#6b7280' }}>
                       {expandedId === shift.id ? '▲' : '▼'}
                     </td>
@@ -136,18 +140,19 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Різниця:</div>
-                              <div style={{ fontWeight: '600', fontSize: '1.1em', ...getDiffStyle(shift.difference) }}>{formatMoney(shift.difference)}</div>
+                              <div style={{ fontWeight: '600', fontSize: '1.1em', ...getDiffStyle(shift.cashDifference) }}>{formatMoney(shift.cashDifference)}</div>
                             </div>
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px dashed #e5e7eb' }}>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Готівковий виторг:</div>
-                              <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.cashRevenue)}</div>
+                              <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.totalSalesCash)}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Безготівковий виторг:</div>
-                              <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.cashlessRevenue)}</div>
+                              <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.totalSalesCard
+                              )}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Приходи:</div>
@@ -155,7 +160,8 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Витрати:</div>
-                              <div style={{ fontWeight: '600', color: '#dc2626' }}>{formatMoney(shift.expenses)}</div>
+                              <div style={{ fontWeight: '600', color: '#dc2626' }}>{formatMoney(shift.totalExpenses
+                              )}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Інкасація:</div>
@@ -184,8 +190,8 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                               </tr>
                             </thead>
                             <tbody>
-                              {shift.transactions && shift.transactions.length > 0 ? (
-                                shift.transactions.map((t, idx) => (
+                              {shift.receipts && shift.receipts.length > 0 ? (
+                                shift.receipts.map((t, idx) => (
                                   <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                     <td style={{ padding: '10px 0' }}>{t.category}</td>
                                     <td style={{ padding: '10px 0' }}>{t.time}</td>

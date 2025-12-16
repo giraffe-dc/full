@@ -402,16 +402,56 @@ export default function CashRegisterPage() {
 
   // --- Handlers (Shift & Payment) ---
 
-  const handleOpenShift = async (balance: number) => {
+  const handlePrepareOpenShift = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch last closed shift to get its end balance
+      const res = await fetch('/api/cash-register/shifts?status=closed&limit=1', { cache: 'no-store' });
+      const data = await res.json();
+
+      if (data.success && data.data.length > 0) {
+        const lastShift = data.data[0];
+        if (lastShift.endBalance) {
+          setShiftStartBalance(lastShift.endBalance.toString());
+        } else {
+          setShiftStartBalance("");
+        }
+      } else {
+        setShiftStartBalance("");
+      }
+      setShowShiftModal(true);
+    } catch (e) {
+      console.error("Failed to fetch last shift", e);
+      setShiftStartBalance("");
+      setShowShiftModal(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const [shiftOpenerId, setShiftOpenerId] = useState("");
+
+  const handleOpenShift = async (balance: number, cashierId: string) => {
+    if (!cashierId) {
+      alert("Оберіть співробітника, що відкриває зміну");
+      return;
+    }
+    const cashier = allStaff.find(s => s.id === cashierId);
+
     try {
       const res = await fetch('/api/cash-register/shifts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startBalance: balance, cashier: 'Admin' })
+        body: JSON.stringify({
+          startBalance: balance,
+          cashierId: cashier?.id,
+          cashierName: cashier?.name || 'Unknown'
+        })
       });
       const data = await res.json();
       if (data.success) {
         setCurrentShift({ ...data.data, receipts: [] });
+        setActiveStaffIds([cashierId]); // Update local active staff
         setShowShiftModal(false);
       } else {
         alert("Помилка: " + data.error);
@@ -421,22 +461,145 @@ export default function CashRegisterPage() {
     }
   };
 
-  const handleCloseShift = async () => {
+  // --- Shift Closing Logic ---
+  const [showCloseShiftModal, setShowCloseShiftModal] = useState(false);
+  const [closingShiftData, setClosingShiftData] = useState<{
+    startBalance: number;
+    totalSales: number;
+    totalSalesCash: number;
+    totalSalesCard: number;
+    totalExpenses: number;
+    totalIncome: number;
+    totalIncasation: number;
+    expectedBalance: number;
+  } | null>(null);
+  const [shiftEndBalance, setShiftEndBalance] = useState("");
+
+  // --- Transactions (Income/Expense/Incasation) ---
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'incasation'>('expense');
+  const [transactionAmount, setTransactionAmount] = useState("");
+  const [transactionCategory, setTransactionCategory] = useState("");
+  const [transactionComment, setTransactionComment] = useState("");
+
+  const handleCreateTransaction = async () => {
     if (!currentShift) return;
-    const endBalance = prompt("Введіть фактичну суму в касі:", "0");
-    if (endBalance === null) return;
+    if (!transactionAmount || Number(transactionAmount) <= 0) {
+      alert("Введіть коректну суму");
+      return;
+    }
+
+    // Auto-select author (first active staff or 'Admin')
+    const authorId = activeStaffIds.length > 0 ? activeStaffIds[0] : null;
+    const author = allStaff.find(s => s.id === authorId);
+
+    try {
+      const res = await fetch('/api/cash-register/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shiftId: currentShift.id,
+          type: transactionType,
+          category: transactionCategory,
+          amount: Number(transactionAmount),
+          comment: transactionComment,
+          authorId: author?.id,
+          authorName: author?.name || 'Admin'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Операцію успішно збережено");
+        setShowTransactionModal(false);
+        setTransactionAmount("");
+        setTransactionCategory("");
+        setTransactionComment("");
+        // Ideally refresh current shift data here to update totals immediately?
+        // currentShift is updated on load or close. Let's trigger a light refresh if possible or just rely on next action.
+      } else {
+        alert("Помилка: " + data.error);
+      }
+    } catch (e) {
+      alert("Помилка мережі");
+    }
+  };
+
+  const handleTransactionClick = (type: 'income' | 'expense' | 'incasation') => {
+    setTransactionType(type);
+    setTransactionAmount("");
+    setTransactionComment("");
+    setTransactionCategory(type === 'expense' ? 'Business Expenses' : '');
+    setShowTransactionModal(true);
+  };
+
+  const handleInitiateCloseShift = async () => {
+    console.log("Initiating close shift...", currentShift);
+    if (!currentShift) {
+      console.error("No current shift to close");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      // Fetch latest shift data to get up-to-date sales
+      const res = await fetch(`/api/cash-register/shifts?status=open`, { cache: 'no-store' });
+      const data = await res.json();
+      console.log("Shift data fetched:", data);
+
+      if (data.success && data.data.length > 0) {
+        const shift = data.data[0];
+        const start = shift.startBalance || 0;
+        const salesTotal = shift.totalSales || 0;
+        const salesCash = shift.totalSalesCash || 0;
+        const salesCard = shift.totalSalesCard || 0;
+        const expenses = shift.totalExpenses || 0;
+        const income = shift.totalIncome || 0;
+        const incasation = shift.totalIncasation || 0;
+
+        // Expected Cash Balance = Start + Cash Sales + Income - Expenses - Incasation
+        const expected = start + salesCash + income - expenses - incasation;
+
+        setClosingShiftData({
+          startBalance: start,
+          totalSales: salesTotal,
+          totalSalesCash: salesCash,
+          totalSalesCard: salesCard,
+          totalExpenses: expenses,
+          totalIncome: income, // Add to state type
+          totalIncasation: incasation, // Add to state type
+          expectedBalance: expected
+        });
+        setShiftEndBalance(expected.toString()); // Pre-fill with expected
+        setShowCloseShiftModal(true);
+      } else {
+        console.warn("No open shift found in API, but currentShift is set locally.");
+        // Fallback to local data if API fails to find it (should not happen usually)
+        // But to be safe, show modal with local start balance? 
+        // Better to alert user.
+        alert("Помилка: не знайдено відкриту зміну на сервері.");
+      }
+    } catch (e) {
+      console.error("Error fetching shift data", e);
+      alert("Не вдалося отримати дані зміни");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmCloseShift = async () => {
+    if (!currentShift) return;
 
     try {
       const res = await fetch('/api/cash-register/shifts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: currentShift.id, endBalance: Number(endBalance) })
+        body: JSON.stringify({ id: currentShift.id, endBalance: Number(shiftEndBalance) })
       });
       const data = await res.json();
 
       if (data.success) {
         alert("Зміна закрита успішно!");
         setCurrentShift(null);
+        setShowCloseShiftModal(false);
         setView('departments');
       } else {
         alert("Помилка: " + data.error);
@@ -552,6 +715,10 @@ export default function CashRegisterPage() {
           <CashRegisterNav
             setShowStaffModal={setShowStaffModal}
             activeStaffIds={activeStaffIds}
+            isShiftOpen={!!currentShift}
+            onOpenShift={handlePrepareOpenShift}
+            onCloseShift={handleInitiateCloseShift}
+            onCashOperation={handleTransactionClick}
           />
           {/* Header / Top Bar */}
 
@@ -567,6 +734,74 @@ export default function CashRegisterPage() {
             </button>
           </div>
 
+          {showTransactionModal && (
+            <Modal
+              isOpen={true}
+              title={
+                transactionType === 'income' ? '➕ Внесення коштів' :
+                  transactionType === 'expense' ? '➖ Витрати' : '🏦 Інкасація'
+              }
+              onClose={() => setShowTransactionModal(false)}
+            >
+              <div style={{ padding: '20px' }}>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Сума</label>
+                  <input
+                    type="number"
+                    value={transactionAmount}
+                    onChange={(e) => setTransactionAmount(e.target.value)}
+                    placeholder="0.00"
+                    style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}
+                    autoFocus
+                  />
+                </div>
+
+                {transactionType === 'expense' && (
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Категорія витрат</label>
+                    <select
+                      value={transactionCategory}
+                      onChange={(e) => setTransactionCategory(e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                    >
+                      <option value="Business Expenses">Господарські витрати</option>
+                      <option value="Supplier Payment">Оплата постачальникам</option>
+                      <option value="Utilities">Комунальні платежі</option>
+                      <option value="Other">Інше</option>
+                    </select>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Коментар</label>
+                  <textarea
+                    value={transactionComment}
+                    onChange={(e) => setTransactionComment(e.target.value)}
+                    placeholder={transactionType === 'expense' ? "На що витрачено..." : "Примітка..."}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', minHeight: '60px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button onClick={() => setShowTransactionModal(false)} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+                  <button
+                    onClick={handleCreateTransaction}
+                    style={{
+                      padding: '8px 16px',
+                      background: transactionType === 'income' ? '#22c55e' : transactionType === 'expense' ? '#ef4444' : '#a855f7',
+                      color: 'white',
+                      borderRadius: '4px',
+                      border: 'none',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Зберегти
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )}
+
           {showStaffModal && (
             <StaffSchedulerModal
               shiftId={currentShift?.id || null}
@@ -575,6 +810,96 @@ export default function CashRegisterPage() {
               onSave={handleUpdateShiftStaff}
               currentActiveIds={activeStaffIds}
             />
+          )}
+
+          {showShiftModal && (
+            <Modal isOpen={true} title="Відкриття зміни" onClose={() => setShowShiftModal(false)}>
+              <div style={{ padding: '20px' }}>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Хто відкриває зміну?</label>
+                  <select
+                    value={shiftOpenerId}
+                    onChange={(e) => setShiftOpenerId(e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                  >
+                    <option value="">-- Оберіть співробітника --</option>
+                    {allStaff.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <p style={{ marginBottom: '5px' }}>Введіть початкову суму в касі:</p>
+                <input
+                  type="number"
+                  value={shiftStartBalance}
+                  onChange={(e) => setShiftStartBalance(e.target.value)}
+                  style={{ width: '100%', padding: '8px', marginBottom: '20px', border: '1px solid #ccc', borderRadius: '4px' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button onClick={() => setShowShiftModal(false)} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+                  <button
+                    onClick={() => handleOpenShift(Number(shiftStartBalance), shiftOpenerId)}
+                    style={{ padding: '8px 16px', background: '#22c55e', color: 'white', borderRadius: '4px', border: 'none' }}
+                  >
+                    Відкрити зміну
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )}
+
+          {showCloseShiftModal && closingShiftData && (
+            <Modal isOpen={true} title="Закриття зміни" onClose={() => setShowCloseShiftModal(false)}>
+              <div style={{ padding: '20px', minWidth: '350px' }}>
+                <div style={{ marginBottom: '20px', background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span>Початковий залишок:</span>
+                    <b>{closingShiftData.startBalance.toFixed(2)} ₴</b>
+                  </div>
+                  <div style={{ marginBottom: '8px', paddingLeft: '10px', borderLeft: '3px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6b7280' }}>
+                      <span>💵 Готівка:</span>
+                      <span>{closingShiftData.totalSalesCash.toFixed(2)} ₴</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6b7280' }}>
+                      <span>💳 Карта:</span>
+                      <span>{closingShiftData.totalSalesCard.toFixed(2)} ₴</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span>Продажі (Всього):</span>
+                    <b style={{ color: '#16a34a' }}>+ {closingShiftData.totalSales.toFixed(2)} ₴</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span>Витрати:</span>
+                    <b style={{ color: '#dc2626' }}>- {closingShiftData.totalExpenses.toFixed(2)} ₴</b>
+                  </div>
+                  <hr style={{ margin: '10px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem' }}>
+                    <span>Розрахунковий залишок (Готівка):</span>
+                    <b>{closingShiftData.expectedBalance.toFixed(2)} ₴</b>
+                  </div>
+                </div>
+
+                <p style={{ marginBottom: '5px', fontSize: '0.9rem', color: '#6b7280' }}>Введіть фактичну суму в касі:</p>
+                <input
+                  type="number"
+                  value={shiftEndBalance}
+                  onChange={(e) => setShiftEndBalance(e.target.value)}
+                  style={{ width: '100%', padding: '10px', marginBottom: '20px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button onClick={() => setShowCloseShiftModal(false)} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+                  <button
+                    onClick={handleConfirmCloseShift}
+                    style={{ padding: '8px 16px', background: '#ef4444', color: 'white', borderRadius: '4px', border: 'none', fontWeight: 'bold' }}
+                  >
+                    Закрити зміну
+                  </button>
+                </div>
+              </div>
+            </Modal>
           )}
         </div>
       </div>
@@ -747,6 +1072,10 @@ export default function CashRegisterPage() {
           onShowPromotions={() => {
             alert("Спочатку відкрийте чек!");
           }}
+          isShiftOpen={!!currentShift}
+          onOpenShift={handlePrepareOpenShift}
+          onCloseShift={handleInitiateCloseShift}
+          onCashOperation={handleTransactionClick}
         />
 
 
@@ -758,6 +1087,74 @@ export default function CashRegisterPage() {
           onBack={handleBackToDepartments}
           onAdd={handleAddTable}
         />
+
+        {showTransactionModal && (
+          <Modal
+            isOpen={true}
+            title={
+              transactionType === 'income' ? '➕ Внесення коштів' :
+                transactionType === 'expense' ? '➖ Витрати' : '🏦 Інкасація'
+            }
+            onClose={() => setShowTransactionModal(false)}
+          >
+            <div style={{ padding: '20px' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Сума</label>
+                <input
+                  type="number"
+                  value={transactionAmount}
+                  onChange={(e) => setTransactionAmount(e.target.value)}
+                  placeholder="0.00"
+                  style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}
+                  autoFocus
+                />
+              </div>
+
+              {transactionType === 'expense' && (
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Категорія витрат</label>
+                  <select
+                    value={transactionCategory}
+                    onChange={(e) => setTransactionCategory(e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                  >
+                    <option value="Business Expenses">Господарські витрати</option>
+                    <option value="Supplier Payment">Оплата постачальникам</option>
+                    <option value="Utilities">Комунальні платежі</option>
+                    <option value="Other">Інше</option>
+                  </select>
+                </div>
+              )}
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Коментар</label>
+                <textarea
+                  value={transactionComment}
+                  onChange={(e) => setTransactionComment(e.target.value)}
+                  placeholder={transactionType === 'expense' ? "На що витрачено..." : "Примітка..."}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', minHeight: '60px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button onClick={() => setShowTransactionModal(false)} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+                <button
+                  onClick={handleCreateTransaction}
+                  style={{
+                    padding: '8px 16px',
+                    background: transactionType === 'income' ? '#22c55e' : transactionType === 'expense' ? '#ef4444' : '#a855f7',
+                    color: 'white',
+                    borderRadius: '4px',
+                    border: 'none',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Зберегти
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
 
         {/* Staff Scheduler Modal */}
         {showStaffModal && (
@@ -835,6 +1232,96 @@ export default function CashRegisterPage() {
           <button className={styles.payButton} onClick={handleConfirmGuestCount}>Відкрити стіл</button>
         </div>
       </Modal>
+
+      {showShiftModal && (
+        <Modal isOpen={true} title="Відкриття зміни" onClose={() => setShowShiftModal(false)}>
+          <div style={{ padding: '20px' }}>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Хто відкриває зміну?</label>
+              <select
+                value={shiftOpenerId}
+                onChange={(e) => setShiftOpenerId(e.target.value)}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              >
+                <option value="">-- Оберіть співробітника --</option>
+                {allStaff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                ))}
+              </select>
+            </div>
+
+            <p style={{ marginBottom: '5px' }}>Введіть початкову суму в касі:</p>
+            <input
+              type="number"
+              value={shiftStartBalance}
+              onChange={(e) => setShiftStartBalance(e.target.value)}
+              style={{ width: '100%', padding: '8px', marginBottom: '20px', border: '1px solid #ccc', borderRadius: '4px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setShowShiftModal(false)} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+              <button
+                onClick={() => handleOpenShift(Number(shiftStartBalance), shiftOpenerId)}
+                style={{ padding: '8px 16px', background: '#22c55e', color: 'white', borderRadius: '4px', border: 'none' }}
+              >
+                Відкрити зміну
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showCloseShiftModal && closingShiftData && (
+        <Modal isOpen={true} title="Закриття зміни" onClose={() => setShowCloseShiftModal(false)}>
+          <div style={{ padding: '20px', minWidth: '350px' }}>
+            <div style={{ marginBottom: '20px', background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>Початковий залишок:</span>
+                <b>{closingShiftData.startBalance.toFixed(2)} ₴</b>
+              </div>
+              <div style={{ marginBottom: '8px', paddingLeft: '10px', borderLeft: '3px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6b7280' }}>
+                  <span>💵 Готівка:</span>
+                  <span>{closingShiftData.totalSalesCash.toFixed(2)} ₴</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#6b7280' }}>
+                  <span>💳 Карта:</span>
+                  <span>{closingShiftData.totalSalesCard.toFixed(2)} ₴</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>Продажі (Всього):</span>
+                <b style={{ color: '#16a34a' }}>+ {closingShiftData.totalSales.toFixed(2)} ₴</b>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>Витрати:</span>
+                <b style={{ color: '#dc2626' }}>- {closingShiftData.totalExpenses.toFixed(2)} ₴</b>
+              </div>
+              <hr style={{ margin: '10px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem' }}>
+                <span>Розрахунковий залишок (Готівка):</span>
+                <b>{closingShiftData.expectedBalance.toFixed(2)} ₴</b>
+              </div>
+            </div>
+
+            <p style={{ marginBottom: '5px', fontSize: '0.9rem', color: '#6b7280' }}>Введіть фактичну суму в касі:</p>
+            <input
+              type="number"
+              value={shiftEndBalance}
+              onChange={(e) => setShiftEndBalance(e.target.value)}
+              style={{ width: '100%', padding: '10px', marginBottom: '20px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setShowCloseShiftModal(false)} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+              <button
+                onClick={handleConfirmCloseShift}
+                style={{ padding: '8px 16px', background: '#ef4444', color: 'white', borderRadius: '4px', border: 'none', fontWeight: 'bold' }}
+              >
+                Закрити зміну
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

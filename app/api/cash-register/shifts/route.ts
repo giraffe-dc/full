@@ -23,11 +23,51 @@ export async function GET(request: Request) {
             .limit(limit)
             .toArray();
 
-        // Convert _id to id
-        const data = shifts.map(shift => ({
-            ...shift,
-            id: shift._id.toString()
-        }));
+        // Aggregate sales for open shifts (or all shifts if performance allows)
+        // For MVP, doing it for the fetched shifts is fine
+        const shiftIds = shifts.map(s => s._id);
+        const receipts = await db.collection("receipts").find({ shiftId: { $in: shiftIds } }).toArray();
+        const transactions = await db.collection("cash_transactions").find({ shiftId: { $in: shiftIds } }).toArray();
+
+        const data = shifts.map(shift => {
+            const shiftReceipts = receipts.filter(r => r.shiftId.toString() === shift._id.toString());
+            const shiftTransactions = transactions.filter(t => t.shiftId.toString() === shift._id.toString());
+
+            const totalSales = shiftReceipts.reduce((sum, r) => sum + (r.total || 0), 0);
+
+            const totalSalesCash = shiftReceipts
+                .filter(r => r.paymentMethod === 'cash')
+                .reduce((sum, r) => sum + (r.total || 0), 0);
+
+            const totalSalesCard = shiftReceipts
+                .filter(r => r.paymentMethod === 'card')
+                .reduce((sum, r) => sum + (r.total || 0), 0);
+
+            const totalIncome = shiftTransactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+            const totalExpenses = shiftTransactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+            const totalIncasation = shiftTransactions
+                .filter(t => t.type === 'incasation')
+                .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+            return {
+                ...shift,
+                id: shift._id.toString(),
+                totalSales: shift.status === 'open' ? totalSales : (shift.totalSales || totalSales),
+                totalSalesCash: shift.status === 'open' ? totalSalesCash : (shift.totalSalesCash || totalSalesCash),
+                totalSalesCard: shift.status === 'open' ? totalSalesCard : (shift.totalSalesCard || totalSalesCard),
+                totalIncome: shift.status === 'open' ? totalIncome : (shift.totalIncome || totalIncome),
+                totalExpenses: shift.status === 'open' ? totalExpenses : (shift.totalExpenses || totalExpenses), // Now using real expenses
+                totalIncasation: shift.status === 'open' ? totalIncasation : (shift.totalIncasation || totalIncasation),
+                receipts: shiftReceipts,
+                transactions: shiftTransactions // New field
+            };
+        });
 
         return NextResponse.json({ success: true, data });
     } catch (error) {
@@ -38,7 +78,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { startBalance, cashier } = body;
+        const { startBalance, cashierId, cashierName } = body;
+
+        if (!cashierId) {
+            return NextResponse.json({ error: "Cashier (Staff) is required to open shift" }, { status: 400 });
+        }
 
         const client = await clientPromise;
         const db = client.db("giraffe");
@@ -58,16 +102,30 @@ export async function POST(request: Request) {
             startTime: new Date(),
             startBalance: Number(startBalance) || 0,
             status: "open",
-            cashier: cashier || "Default",
+            cashier: cashierName || "Unknown",
+            cashierId: cashierId,
+            activeStaffIds: [cashierId], // Auto-add opener to active staff
             totalSales: 0,
+            totalSalesCash: 0,
+            totalSalesCard: 0,
             createdAt: new Date()
         };
 
         const result = await db.collection("cash_shifts").insertOne(newShift);
+        const shiftId = result.insertedId;
+
+        // Auto-clock in the cashier
+        await db.collection("staff_logs").insertOne({
+            staffId: cashierId,
+            shiftId: shiftId,
+            startTime: new Date(),
+            endTime: null,
+            createdAt: new Date()
+        });
 
         return NextResponse.json({
             success: true,
-            data: { ...newShift, id: result.insertedId.toString() }
+            data: { ...newShift, id: shiftId.toString() }
         });
 
     } catch (error) {
@@ -131,13 +189,22 @@ export async function PUT(request: Request) {
         // Let's aggregate receipts.
 
         const receipts = await db.collection("receipts").find({ shiftId: new ObjectId(id) }).toArray();
+        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+
         const totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
+        const totalSalesCash = receipts.filter(r => r.paymentMethod === 'cash').reduce((sum, r) => sum + (r.total || 0), 0);
+        const totalSalesCard = receipts.filter(r => r.paymentMethod === 'card').reduce((sum, r) => sum + (r.total || 0), 0);
+
+        const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalIncasation = transactions.filter(t => t.type === 'incasation').reduce((sum, t) => sum + (t.amount || 0), 0);
 
         // Fetch current shift to get startBalance
         const shift = await db.collection("cash_shifts").findOne({ _id: new ObjectId(id) });
         if (!shift) return NextResponse.json({ error: "Shift not found" }, { status: 404 });
 
-        const expectedCash = (shift.startBalance || 0) + totalSales;
+        // Expected Cash = Start + Cash Sales + Income - Expenses - Incasation
+        const expectedCash = (shift.startBalance || 0) + totalSalesCash + totalIncome - totalExpenses - totalIncasation;
         const actualCash = Number(endBalance);
         const cashDifference = actualCash - expectedCash;
 
@@ -145,7 +212,12 @@ export async function PUT(request: Request) {
             status: "closed",
             endTime: new Date(),
             endBalance: actualCash,
-            totalSales: totalSales,
+            totalSales,
+            totalSalesCash,
+            totalSalesCard,
+            totalIncome,
+            totalExpenses,
+            totalIncasation,
             receiptsCount: receipts.length,
             cashDifference: cashDifference,
             updatedAt: new Date()

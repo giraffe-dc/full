@@ -39,75 +39,81 @@ export default function DocsEditor({
       }),
     ],
     content: '',
-  });
+  }, []); // Fix: Add dependency array to prevent re-creation on every render
 
   // Завантаження даних документа або чернетки для нового документа
+  const isLoadedRef = useRef(false);
+
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || isLoadedRef.current) return;
 
     if (document) {
       setTitle(document.title);
       setCategory(document.category || 'general');
       editor.commands.setContent(document.content);
+      isLoadedRef.current = true;
       return;
     }
 
-    // Новий документ: пробуємо підвантажити чернетку з localStorage (тільки в браузері)
+    // Новий документ: пробуємо підвантажити чернетку з localStorage
     if (typeof window !== 'undefined') {
       try {
         const raw = window.localStorage.getItem('giraffe_docs_draft');
         if (raw) {
-          const draft = JSON.parse(raw) as {
-            title?: string;
-            category?: string;
-            content?: string;
-          };
+          const draft = JSON.parse(raw);
           setTitle(draft.title || '');
           setCategory(draft.category || 'general');
           editor.commands.setContent(draft.content || '');
+          isLoadedRef.current = true;
           return;
         }
       } catch {
-        // ignore corrupted draft
+        // ignore
       }
     }
 
     setTitle('');
     setCategory('general');
     editor.commands.setContent('');
+    isLoadedRef.current = true;
   }, [document, editor]);
 
   // Autosave чернетки для нового документа
-  const unsubscribeRef = useRef<{ destroy: () => void }|null>(null);
   useEffect(() => {
-    if (!editor) return;
-    if (document) return; // редагування існуючого документа – без autosave у localStorage
-
+    if (!editor || document) return; // Autosave only for new docs
     if (typeof window === 'undefined') return;
 
-    const handler = () => {
-      const content = editor.getHTML();
-      const payload = {
-        title,
-        category,
-        content,
-      };
-      try {
-        window.localStorage.setItem('giraffe_docs_draft', JSON.stringify(payload));
-      } catch {
-        // ignore quota / storage errors
-      }
+    const payload = {
+      title,
+      category,
+      content: editor.getHTML(),
     };
 
-    // Store the unsubscribe function
-    const unsubscribe = editor.on('update', handler);
-    unsubscribeRef.current = unsubscribe;
-
-    // Cleanup function
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current.destroy();
+    const saveToStorage = () => {
+       try {
+        window.localStorage.setItem('giraffe_docs_draft', JSON.stringify(payload));
+      } catch {
+        // ignore
       }
+    };
+    
+    // Save immediately on title/category change
+    saveToStorage();
+
+    // Also listen for editor content changes
+    const handler = () => {
+       const currentContent = editor.getHTML();
+       const newPayload = { title, category, content: currentContent };
+       try {
+        window.localStorage.setItem('giraffe_docs_draft', JSON.stringify(newPayload));
+      } catch {}
+    };
+
+    editor.off('update'); // clear previous listeners to avoid duplicates
+    editor.on('update', handler);
+
+    return () => {
+      editor.off('update', handler);
     };
   }, [editor, document, title, category]);
 

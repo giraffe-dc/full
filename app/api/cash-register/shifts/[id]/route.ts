@@ -21,6 +21,7 @@ export async function GET(
 
         // Fetch receipts for this shift
         const receipts = await db.collection("receipts").find({ shiftId: new ObjectId(id) }).toArray();
+        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
 
         // Serialize ObjectIds
         const serializedShift = {
@@ -33,6 +34,13 @@ export async function GET(
                 _id: undefined,
                 shiftId: r.shiftId?.toString(),
                 customerId: r.customerId?.toString()
+            })),
+            transactions: transactions.map(t => ({
+                ...t,
+                id: t._id.toString(),
+                _id: undefined,
+                shiftId: t.shiftId?.toString(),
+                authorId: t.authorId?.toString()
             }))
         };
 

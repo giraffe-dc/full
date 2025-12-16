@@ -12,9 +12,30 @@ export async function GET(request: Request) {
         const db = client.db("giraffe");
 
         if (type === 'z-reports') {
+            const startDate = searchParams.get('startDate');
+            const endDate = searchParams.get('endDate');
+
+            const filter: any = { status: "closed" };
+
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+
+                // Assuming 'createdAt' or 'endTime' is the reference. Z-Report usually covers a shift. 
+                // Let's filter by 'endTime' (when it was closed) or 'createdAt'. 
+                // Using 'endTime' seems most appropriate for a closed shift "Z-Report date".
+                filter.endTime = {
+                    $gte: start,
+                    $lte: end
+                };
+            }
+
             const shifts = await db.collection("cash_shifts")
-                .find({ status: "closed" })
-                .sort({ closedAt: -1 }) // Changed from endTime to closedAt
+                .find(filter)
+                .sort({ endTime: -1 })
                 .limit(limit)
                 .toArray();
 

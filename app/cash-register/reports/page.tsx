@@ -50,7 +50,7 @@ export default function ReportsPage() {
       }
 
       if (reportType === 'z-report') {
-        const res = await fetch('/api/cash-register/reports?type=z-reports');
+        const res = await fetch(`/api/cash-register/reports?type=z-reports&startDate=${startDate}&endDate=${endDate}`);
         const data = await res.json();
         if (data.success) {
           setState(prev => ({
@@ -86,9 +86,13 @@ export default function ReportsPage() {
 
     const salesByCategory: Record<string, number> = {};
     let totalSales = 0;
+    let totalSalesCash = 0;
+    let totalSalesCard = 0;
 
     state.currentShift.receipts.forEach((receipt) => {
       totalSales += receipt.total || 0;
+      if (receipt.paymentMethod === 'cash') totalSalesCash += receipt.total || 0;
+      if (receipt.paymentMethod === 'card') totalSalesCard += receipt.total || 0;
 
       receipt.items.forEach((item) => {
         const category = item.category || 'other';
@@ -101,14 +105,28 @@ export default function ReportsPage() {
       });
     });
 
+    const transactions = state.currentShift.transactions || [];
+    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalIncasation = transactions.filter(t => t.type === 'incasation').reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // Calculate current cash balance
+    // Start + Sales(Cash) + Income - Expenses - Incasation
+    const currentBalance = state.currentShift.startBalance + totalSalesCash + totalIncome - totalExpenses - totalIncasation;
+
     return {
       shiftId: state.currentShift.id,
       shiftNumber: state.currentShift.shiftNumber,
       status: "open",
       createdAt: new Date().toISOString(),
       receiptsCount: state.currentShift.receipts.length,
-      totalSales: totalSales,
-      currentBalance: state.currentShift.startBalance + totalSales,
+      totalSales,
+      totalSalesCash,
+      totalSalesCard,
+      totalIncome,
+      totalExpenses,
+      totalIncasation,
+      currentBalance,
       salesByCategory: salesByCategory as Record<ServiceCategory, number>,
     };
   };
@@ -155,6 +173,27 @@ export default function ReportsPage() {
 
         {reportType === "z-report" && (
           <div className={styles.zReportsList}>
+            <div className={styles.dateRange}>
+              <label>
+                Від:
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </label>
+              <span>—</span>
+              <label>
+                До:
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </label>
+            </div>
             {state?.zReports && state.zReports.length > 0 ? (
               state.zReports
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

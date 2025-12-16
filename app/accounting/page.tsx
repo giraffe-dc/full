@@ -88,7 +88,7 @@ export default function AccountingPage() {
 
   async function fetchCashShifts() {
     try {
-      const res = await fetch('/api/accounting/cash-shifts');
+      const res = await fetch('/api/cash-register/shifts');
       const data = await res.json();
       if (data.data) {
         setCashShifts(data.data);

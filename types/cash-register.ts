@@ -57,6 +57,25 @@ export interface Receipt {
   notes?: string;
 }
 
+export type CashTransactionType = 'income' | 'expense' | 'incasation';
+
+export type CashTransactionCategory = 'Business Expenses' | 'Supplier Payment' | 'Utilities' | 'Other';
+// Or as a string for flexibility, but defined constants are better.
+// The user specified: "Господарські витрати, оплата поставщикам, комунальні платежі".
+// Let's use string for category to be flexible, but we can provide presets.
+
+export interface ShiftTransaction {
+  id: string;
+  shiftId: string;
+  type: CashTransactionType;
+  category?: string; // e.g. "Supplier Payment"
+  amount: number;
+  comment?: string;
+  createdAt: string;
+  authorId?: string; // Who created it
+  authorName?: string;
+}
+
 // Касова зміна
 export interface CashShift {
   id: string;
@@ -66,8 +85,13 @@ export interface CashShift {
   startBalance: number;
   endBalance?: number;
   receipts: Receipt[];
+  transactions: ShiftTransaction[]; // New field
   totalSales: number;
+  totalSalesCash: number;
+  totalSalesCard: number;
   totalExpenses: number;
+  totalIncome: number; // New field
+  totalIncasation: number; // New field
   status: 'open' | 'closed';
   cashier: string;
   activeStaffIds?: string[]; // IDs of staff currently on shift
@@ -83,6 +107,11 @@ export interface XReport {
   receiptsCount: number;
   totalSales: number;
   currentBalance: number;
+  totalSalesCash: number;
+  totalSalesCard: number;
+  totalIncome: number;
+  totalExpenses: number;
+  totalIncasation: number;
   salesByCategory: Record<ServiceCategory, number>;
 }
 
@@ -114,6 +143,8 @@ export interface ZReport {
 // Аналітика за період
 export interface PeriodAnalytics {
   startDate: string;
+  cashier: string;
+  cashierId?: string;
   endDate: string;
   totalRevenue: number;
   averageCheck: number;
