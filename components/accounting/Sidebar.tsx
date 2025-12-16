@@ -1,7 +1,8 @@
 "use client";
 
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import styles from "./Sidebar.module.css";
 
 export type AccountingSection =
@@ -10,7 +11,7 @@ export type AccountingSection =
   | "staff"
   | "categories"
   | "products"
-  | "receipts"
+  | "receipts" // redirects to /accounting/checks
   | "revenue"
   | "payments"
   | "taxes"
@@ -39,11 +40,6 @@ export type AccountingSection =
   | "menuProductCategories"
   | "menuIngredientCategories";
 
-interface AccountingSidebarProps {
-  activeSection: AccountingSection;
-  onChange: (section: AccountingSection) => void;
-}
-
 interface AccordionSection {
   id: string;
   label: string;
@@ -64,8 +60,23 @@ const Icons = {
   Service: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
 };
 
-export function AccountingSidebar({ activeSection, onChange }: AccountingSidebarProps) {
-  // Default expanded sections to keep navigation accessible
+export function AccountingSidebar() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentSection = searchParams.get('section') as AccountingSection || 'dashboard';
+
+  // Logic to determine active section
+  const isActive = (id: string) => {
+    if (id === 'receipts' && pathname.includes('/accounting/checks')) return true;
+    if (id !== 'receipts' && !pathname.includes('/accounting/checks') && currentSection === id) return true;
+    return false;
+  };
+
+  const getLink = (id: string) => {
+    if (id === 'receipts') return '/accounting/checks';
+    return `/accounting?section=${id}`;
+  };
+
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['stock', 'menu', 'statistics']));
 
   const toggleSection = (sectionId: string) => {
@@ -173,14 +184,13 @@ export function AccountingSidebar({ activeSection, onChange }: AccountingSidebar
             {expandedSections.has(section.id) && (
               <div className={styles.accordionContent}>
                 {section.items.map((item) => (
-                  <button
+                  <Link
                     key={item.id}
-                    type="button"
-                    className={`${styles.navItem} ${activeSection === item.id ? styles.navItemActive : ''}`}
-                    onClick={() => onChange(item.id)}
+                    href={getLink(item.id)}
+                    className={`${styles.navItem} ${isActive(item.id) ? styles.navItemActive : ''}`}
                   >
                     <span className={styles.navItemLabel}>{item.label}</span>
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
@@ -190,4 +200,3 @@ export function AccountingSidebar({ activeSection, onChange }: AccountingSidebar
     </aside>
   );
 }
-

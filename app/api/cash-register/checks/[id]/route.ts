@@ -7,10 +7,46 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     try {
         const { id } = await params;
         const body = await request.json();
-        const { items, subtotal, tax, total, customerId, customerName } = body;
+        const { items, subtotal, tax, total, customerId, customerName, user, guestsCount } = body;
 
         const client = await clientPromise;
         const db = client.db("giraffe");
+
+        const existingCheck = await db.collection("checks").findOne({ _id: new ObjectId(id) });
+
+        // History Logic
+        let historyEntries: any[] = [];
+        const author = user || existingCheck?.waiterName || 'System';
+
+        if (existingCheck) {
+            if (items && JSON.stringify(items) !== JSON.stringify(existingCheck.items)) {
+                historyEntries.push({
+                    action: 'update_items',
+                    changedBy: author,
+                    date: new Date().toISOString(),
+                    previousDetails: existingCheck.items,
+                    newDetails: items
+                });
+            }
+            // Check other fields
+            const checkField = (fieldName: string, label: string) => {
+                const val = body[fieldName];
+                const oldVal = existingCheck[fieldName];
+                if (val !== undefined && val !== oldVal) {
+                    historyEntries.push({
+                        action: `update_${fieldName}`,
+                        changedBy: author,
+                        date: new Date().toISOString(),
+                        previousValue: oldVal,
+                        newValue: val
+                    });
+                }
+            };
+
+            checkField('discount', 'discount');
+            checkField('comment', 'comment');
+            checkField('guestsCount', 'guests');
+        }
 
         await db.collection("checks").updateOne(
             { _id: new ObjectId(id) },
@@ -19,13 +55,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                     items,
                     tax,
                     total,
+                    subtotal,
                     customerId,
                     customerName,
                     discount: body.discount,
                     appliedPromotionId: body.appliedPromotionId,
                     comment: body.comment,
+                    guestsCount: guestsCount !== undefined ? guestsCount : existingCheck?.guestsCount,
                     updatedAt: new Date()
-                }
+                },
+                $push: {
+                    history: { $each: historyEntries }
+                } as any
             }
         );
 

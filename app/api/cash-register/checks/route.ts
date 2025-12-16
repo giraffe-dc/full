@@ -70,7 +70,13 @@ export async function POST(request: Request) {
             tax: 0,
             total: 0,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            history: [{
+                action: 'created',
+                changedBy: waiterName || 'Waiter',
+                date: new Date().toISOString(),
+                newValue: 'Check created'
+            }]
         };
 
         const result = await db.collection("checks").insertOne(newCheck);
@@ -95,12 +101,55 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json();
-        const { id, items, subtotal, tax, total, comment, customerId, customerName } = body;
+        const { id, items, subtotal, tax, total, comment, customerId, customerName, discount, appliedPromotionId, user, guestsCount } = body; // user can be passed for history
 
         if (!id) return NextResponse.json({ error: "Check ID required" }, { status: 400 });
 
         const client = await clientPromise;
         const db = client.db("giraffe");
+
+        const existingCheck = await db.collection("checks").findOne({ _id: new ObjectId(id) });
+
+        let historyEntries: any[] = [];
+        const author = user || existingCheck?.waiterName || 'System';
+
+        // Helper to add history
+        const addHistory = (action: string, prev: any, curr: any) => {
+            historyEntries.push({
+                action,
+                changedBy: author,
+                date: new Date().toISOString(),
+                previousValue: prev,
+                newValue: curr
+            });
+        };
+
+        if (existingCheck) {
+            if (items && JSON.stringify(items) !== JSON.stringify(existingCheck.items)) {
+                // We simplify log for items, user can expand if needed or we can diff
+                // For now, general update log
+                historyEntries.push({
+                    action: 'update_items',
+                    changedBy: author,
+                    date: new Date().toISOString(),
+                    previousDetails: existingCheck.items,
+                    newDetails: items
+                });
+            }
+            if (discount !== undefined && discount !== existingCheck.discount) {
+                addHistory('update_discount', existingCheck.discount || 0, discount);
+            }
+            if (comment !== undefined && comment !== existingCheck.comment) {
+                addHistory('update_comment', existingCheck.comment || '', comment);
+            }
+            if (guestsCount !== undefined && guestsCount !== existingCheck.guestsCount) {
+                addHistory('update_guests', existingCheck.guestsCount, guestsCount);
+            }
+        }
+
+        // If no specific changes detected (or just simple save), verify length
+        // But for safety, always adding to history might be spammy. 
+        // Let's rely on passed changes.
 
         await db.collection("checks").updateOne(
             { _id: new ObjectId(id) },
@@ -113,10 +162,13 @@ export async function PUT(request: Request) {
                     comment,
                     customerId,
                     customerName,
-                    discount: body.discount,
-                    appliedPromotionId: body.appliedPromotionId,
+                    discount: discount,
+                    appliedPromotionId: appliedPromotionId,
                     updatedAt: new Date().toISOString()
-                }
+                },
+                $push: {
+                    history: { $each: historyEntries }
+                } as any
             }
         );
 

@@ -631,7 +631,7 @@ export default function CashRegisterPage() {
       total: activeCheck.total,
       subtotal: activeCheck.subtotal,
       tax: activeCheck.tax,
-      customerId: null, // TODO: Add customer selection
+      customerId: activeCheck.customerId,
       shiftId: currentShift.id,
       waiterName: activeCheck.waiterName,
       waiterId: activeCheck.waiterId

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import styles from "./ClientsSection.module.css";
 import Link from "next/link";
+import { StaffDetailsModal } from "./StaffDetailsModal";
 
 export interface StaffRow {
   id?: string;
@@ -32,6 +33,7 @@ interface StaffSectionProps {
 
 export function StaffSection({ rows, totals, filters, onFilterChange }: StaffSectionProps) {
   const [search, setSearch] = useState("");
+  const [selectedStaffId, setSelectedStaffId] = useState<string | undefined>(undefined);
 
   const filteredRows = useMemo(() => {
     if (!search) return rows;
@@ -109,7 +111,7 @@ export function StaffSection({ rows, totals, filters, onFilterChange }: StaffSec
             </thead>
             <tbody>
               {filteredRows.map((r, i) => (
-                <tr key={r.id || i}>
+                <tr key={r.id || i} onClick={() => setSelectedStaffId(r.id)} style={{ cursor: 'pointer' }} className={styles.rowHoverable}>
                   <td className={styles.clientInfo}>
                     <h3>{r.name}</h3>
                     <p>{r.position}</p>
@@ -140,6 +142,14 @@ export function StaffSection({ rows, totals, filters, onFilterChange }: StaffSec
           {filteredRows.length === 0 && <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Працівників не знайдено</div>}
         </div>
       </div>
+
+      {selectedStaffId && (
+        <StaffDetailsModal
+          staffId={selectedStaffId}
+          dateRange={{ startDate: filters?.startDate || '', endDate: filters?.endDate || '' }}
+          onClose={() => setSelectedStaffId(undefined)}
+        />
+      )}
     </div>
   );
 }

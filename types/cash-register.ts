@@ -47,6 +47,9 @@ export interface Receipt {
   receiptNumber: number;
   customerId?: string;
   customerName?: string;
+  waiterId?: string;
+  waiterName?: string;
+  waiter: string;
   items: CartItem[];
   subtotal: number;
   tax: number;
@@ -55,6 +58,20 @@ export interface Receipt {
   createdAt: string;
   shiftId: string;
   notes?: string;
+  history?: {    
+    previousDetails: any;
+    newDetails: any;
+    action: string;
+    changedBy?: string;
+    date: string;
+    previousValue?: any;
+    newValue?: any;
+  }[];
+  paymentDetails?: {
+    cash?: number;
+    card?: number;
+    certificate?: number;
+  };
 }
 
 export type CashTransactionType = 'income' | 'expense' | 'incasation';

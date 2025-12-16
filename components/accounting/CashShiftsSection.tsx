@@ -4,10 +4,10 @@ import styles from './ClientsSection.module.css';
 
 export interface ShiftTransaction {
   id: string;
-  category: string;
-  time: string;
-  sum: number;
-  employee: string;
+  type: string;
+  createdAt: string;
+  amount: number;
+  authorName: string;
   comment?: string;
   editedBy?: string;
 }
@@ -18,22 +18,21 @@ export interface CashShift {
   startTime: string;
   endTime: string | null;
   startBalance: number;
-  incasation: number;
+  totalIncasation: number;
   // totalSalesCash
   // : number; // In register
   cashDifference: number;
 
   // Detailed stats
   bookBalance: number;
-  actualBalance: number;
+  endBalance: number;
   totalSalesCash: number;
-  totalSalesCard
-  : number;
-  income: number;
+  totalSalesCard: number;
+  totalIncome: number;
   totalExpenses: number;
 
 
-  receipts: ShiftTransaction[];
+  transactions: ShiftTransaction[];
   status: 'opened' | 'closed';
   cashier: string;
 }
@@ -115,7 +114,7 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                     <td>{formatDate(shift.startTime)}</td>
                     <td>{shift.endTime ? formatDate(shift.endTime) : <span style={{ color: 'green' }}>Активна</span>}</td>
                     <td className={styles.moneyCell}>{formatMoney(shift.startBalance)}</td>
-                    <td className={styles.moneyCell}>{formatMoney(shift.incasation)}</td>
+                    <td className={styles.moneyCell}>{formatMoney(shift.totalIncasation)}</td>
                     <td className={styles.moneyCell} style={{ fontWeight: 'bold' }}>{formatMoney(shift.totalSalesCash)}</td>
                     <td className={styles.moneyCell} style={getDiffStyle(shift.cashDifference)}>{formatMoney(shift.cashDifference)}</td>
                     <td style={{ textAlign: 'right', color: '#6b7280' }}>
@@ -132,11 +131,11 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Книжний баланс:</div>
-                              <div style={{ fontWeight: '600', fontSize: '1.1em' }}>{formatMoney(shift.bookBalance)}</div>
+                              <div style={{ fontWeight: '600', fontSize: '1.1em' }}>{formatMoney(shift.startBalance + shift.totalSalesCash - shift.totalIncasation - shift.totalExpenses)}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Фактичний баланс:</div>
-                              <div style={{ fontWeight: '600', fontSize: '1.1em' }}>{formatMoney(shift.actualBalance)}</div>
+                              <div style={{ fontWeight: '600', fontSize: '1.1em' }}>{formatMoney(shift.endBalance)}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Різниця:</div>
@@ -156,7 +155,7 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Приходи:</div>
-                              <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.income)}</div>
+                              <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.totalIncome)}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Витрати:</div>
@@ -165,7 +164,7 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                             </div>
                             <div>
                               <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Інкасація:</div>
-                              <div style={{ fontWeight: '600', color: '#d97706' }}>{formatMoney(shift.incasation)}</div>
+                              <div style={{ fontWeight: '600', color: '#d97706' }}>{formatMoney(shift.totalIncasation)}</div>
                             </div>
                           </div>
 
@@ -190,13 +189,13 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                               </tr>
                             </thead>
                             <tbody>
-                              {shift.receipts && shift.receipts.length > 0 ? (
-                                shift.receipts.map((t, idx) => (
+                              {shift.transactions && shift.transactions.length > 0 ? (
+                                shift.transactions.map((t, idx) => (
                                   <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                    <td style={{ padding: '10px 0' }}>{t.category}</td>
-                                    <td style={{ padding: '10px 0' }}>{t.time}</td>
-                                    <td style={{ padding: '10px 0' }}>{formatMoney(t.sum)}</td>
-                                    <td style={{ padding: '10px 0' }}>{t.employee}</td>
+                                    <td style={{ padding: '10px 0' }}>{t.type}</td>
+                                    <td style={{ padding: '10px 0' }}>{formatDate(t.createdAt)}</td>
+                                    <td style={{ padding: '10px 0' }}>{formatMoney(t.amount)}</td>
+                                    <td style={{ padding: '10px 0' }}>{t.authorName}</td>
                                     <td style={{ padding: '10px 0', color: '#6b7280' }}>{t.comment || '—'}</td>
                                     <td style={{ padding: '10px 0', color: '#6b7280' }}>{t.editedBy || '—'}</td>
                                     <td style={{ padding: '10px 0', textAlign: 'right' }}>

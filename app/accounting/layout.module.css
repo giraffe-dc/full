@@ -1,0 +1,13 @@
+.container {
+    display: flex;
+    min-height: calc(100vh - 64px);
+    /* Subtract header height if needed */
+    background-color: #f7fafc;
+}
+
+.main {
+    flex: 1;
+    overflow-x: hidden;
+    padding: 0;
+    /* Let pages handle their own padding if needed, or set default */
+}

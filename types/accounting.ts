@@ -230,3 +230,14 @@ export type MenuIngredient = {
   costPerUnit: number;
   status: 'active' | 'inactive';
 };
+
+export type MoneyAccount = {
+  id: string;
+  name: string;
+  type: string;
+  balance: number;
+  currency: string;
+  description: string;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+};

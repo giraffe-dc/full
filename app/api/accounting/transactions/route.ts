@@ -23,8 +23,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    // Other filters (type, category) applied POST-merge for simplicity or pre-fetch if possible.
-    // For now, let's fetch matching ranges and filter in memory since we are merging different collections.
+    const includePos = searchParams.get("includePos") === "true"; // Check for flag
 
     const client = await clientPromise;
     const db = client.db("giraffe");
@@ -36,38 +35,36 @@ export async function GET(req: NextRequest) {
 
     const matchDate = (field: string) => (Object.keys(dateFilter).length ? { [field]: dateFilter } : {});
 
-    // 1. Fetch Manual Transactions
+    // 1. Fetch Manual Transactions (excluding POS auto-generated ones if we have separate source)
     const txPromise = db.collection("transactions")
-      .find({ ...matchDate("date") })
+      .find({
+        ...matchDate("date"),
+        source: { $ne: "cash-register" }
+      })
       .toArray();
 
-    // 2. Fetch Receipts (Income)
-    const receiptsPromise = db.collection("receipts")
-      .find({ ...matchDate("createdAt") })
-      .toArray();
-
-    // 3. Fetch Stock Supplies (Expenses) - Only paid or fully paid
-    // Assuming 'paymentStatus' is 'paid' or we use 'paidAmount'
+    // 2. Fetch Stock Supplies (Expenses)
     const suppliesPromise = db.collection("stock_movements")
       .find({
         type: 'supply',
         ...matchDate("date"),
-        // For simplicity, let's assume we care about confirmed supplies. 
-        // If we strict check 'paid', we might miss partials. 
-        // Let's take those with paidAmount > 0
         paidAmount: { $gt: 0 }
       })
       .toArray();
 
-    const [txRaw, receiptsRaw, suppliesRaw] = await Promise.all([txPromise, receiptsPromise, suppliesPromise]);
+    // 3. Fetch Receipts (Income) - ONLY IF includePos is true
+    const receiptsPromise = includePos
+      ? db.collection("receipts").find({ ...matchDate("createdAt") }).toArray()
+      : Promise.resolve([]);
 
-    // Map to Transaction Interface
+    const [txRaw, suppliesRaw, receiptsRaw] = await Promise.all([txPromise, suppliesPromise, receiptsPromise]);
+
     const transactions = [
       // Manual
       ...txRaw.map(t => ({
         ...t,
         _id: t._id.toString(),
-        date: t.date, // Keep as date object for sorting, convert to string later if needed
+        date: t.date,
         category: t.category || "other",
         source: "manual",
         paymentMethod: t.paymentMethod || "cash",
@@ -77,7 +74,7 @@ export async function GET(req: NextRequest) {
       // Receipts -> Income
       ...receiptsRaw.map(r => ({
         _id: r._id.toString(),
-        date: r.createdAt, // Receipts use createdAt
+        date: r.createdAt,
         description: `Чек #${r.receiptNumber}`,
         amount: r.total,
         type: 'income',
@@ -92,9 +89,9 @@ export async function GET(req: NextRequest) {
         _id: s._id.toString(),
         date: s.date,
         description: `Постачання: ${s.supplierName || 'Unknown'}`,
-        amount: s.paidAmount || 0, // Use actual paid amount
+        amount: s.paidAmount || 0,
         type: 'expense',
-        category: 'stock', // General category for Stock
+        category: 'stock',
         paymentMethod: s.paymentMethod || 'cash',
         source: 'stock',
         createdAt: s.createdAt || s.date

@@ -73,12 +73,18 @@ export async function GET(req: NextRequest) {
 
     const clients = clientsRaw.map(c => {
       const cId = c._id.toString();
-      const cReceipts = receipts.filter(r => r.customerId === cId);
+      const cReceipts = receipts.filter(r => r.customerId && r.customerId.toString() === cId);
 
-      const cash = cReceipts.filter(r => r.paymentMethod === 'cash').reduce((sum, r) => sum + r.total, 0);
-      const card = cReceipts.filter(r => r.paymentMethod !== 'cash').reduce((sum, r) => sum + r.total, 0);
+      const cash = cReceipts.filter(r => r.paymentMethod === 'cash').reduce((sum, r) => sum + (r.total || 0), 0);
+      const card = cReceipts.filter(r => r.paymentMethod !== 'cash').reduce((sum, r) => sum + (r.total || 0), 0);
       const total = cash + card;
-      const profit = total; // Simplified: profit = revenue for now, unless we subtract cost
+
+      // Calculate parsed discount or derive it
+      // If discount is not explicitly saved, try: (subtotal + tax) - total
+      // But for now, let's sum 'discount' if it exists, otherwise 0.
+      const discountSum = cReceipts.reduce((sum, r) => sum + (r.discount || 0), 0);
+
+      const profit = total; // Revenue
 
       return {
         id: cId,
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
         phone: c.phone || "",
         email: c.email || "",
         address: c.address || "",
-        noDiscount: 0, // Logic for potential savings not implemented
+        noDiscount: discountSum,
         cash,
         card,
         profit,

@@ -1,0 +1,443 @@
+.container {
+    padding: 20px;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    color: #111827;
+}
+
+.datePicker {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.tableCard {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.table th {
+    text-align: left;
+    padding: 12px 16px;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+}
+
+.badgeGreen {
+    background-color: #dcfce7;
+    color: #166534;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badgeBlue {
+    background-color: #dbeafe;
+    color: #1e40af;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btnLink {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btnLink:hover {
+    text-decoration: underline;
+}
+
+.btnIcon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.btnIcon:hover {
+    background: #f3f4f6;
+}
+
+.btnIconDelete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+    border-radius: 4px;
+    color: #ef4444;
+}
+
+.btnIconDelete:hover {
+    background: #fee2e2;
+}
+
+/* Expanded Details */
+.expandedRow td {
+    background-color: #f9fafb;
+    padding: 0;
+}
+
+.detailsContainer {
+    padding: 20px;
+}
+
+.tabs {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 15px;
+}
+
+.activeTab {
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3b82f6;
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tab {
+    padding-bottom: 8px;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.itemsTable {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.itemsTable th {
+    background: none;
+    color: #9ca3af;
+    padding: 5px 0;
+    border: none;
+}
+
+.itemsTable td {
+    border: none;
+    padding: 5px 0;
+    font-weight: 500;
+}
+
+.historySection {
+    margin-top: 20px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.historySection h4 {
+    margin-top: 0;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.historySection ul {
+    padding-left: 20px;
+    margin: 0;
+    color: #6b7280;
+}
+
+.historySection li {
+    margin-bottom: 5px;
+}
+
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    padding: 0;
+    /* Changed padding */
+    border-radius: 8px;
+    width: 450px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.modalTotal {
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btnClose {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 0;
+    line-height: 1;
+}
+
+.btnClose:hover {
+    color: #4b5563;
+}
+
+.modalBody {
+    padding: 20px;
+}
+
+.inputGroup {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.inputGroup label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.inputWrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: #f9fafb;
+    width: 150px;
+}
+
+.inputWrapper input {
+    border: none;
+    background: white;
+    padding: 8px;
+    width: 100%;
+    text-align: right;
+    font-size: 1rem;
+    outline: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.currencySymbol {
+    padding: 0 10px;
+    color: #6b7280;
+    font-weight: 500;
+    border-left: 1px solid #d1d5db;
+    background: #f3f4f6;
+    height: 32px;
+    /* Match input height roughly */
+    display: flex;
+    align-items: center;
+    border-radius: 0 4px 4px 0;
+}
+
+.select {
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 20px;
+    background: #f3f4f6;
+    /* Gray bottom bar */
+    border-top: 1px solid #e5e7eb;
+}
+
+.btnCancel {
+    padding: 8px 20px;
+    background: #6b7280;
+    /* Darker gray for cancel */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btnCancel:hover {
+    background: #4b5563;
+}
+
+.btnSave {
+    padding: 8px 20px;
+    background: #10b981;
+    /* Green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btnSave:hover {
+    background: #059669;
+}
+
+/* History Improvements */
+.historyList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.historyItem {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 12px 0;
+}
+
+.historyItem:last-child {
+    border-bottom: none;
+}
+
+.historyHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.historyAuthor {
+    font-weight: 600;
+    color: #374151;
+}
+
+.historyBody {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.historyAction {
+    font-weight: 500;
+    color: #111827;
+}
+
+.historyDiff {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    background: #f9fafb;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: fit-content;
+}
+
+.historyDetails {
+    margin-top: 4px;
+    padding-left: 10px;
+    border-left: 2px solid #e5e7eb;
+}
+
+.diffAdded {
+    color: #059669;
+    font-size: 0.9rem;
+}
+
+.diffRemoved {
+    color: #dc2626;
+    font-size: 0.9rem;
+}
+
+.oldValue {
+    color: #ef4444;
+    text-decoration: line-through;
+}
+
+.newValue {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.arrow {
+    color: #9ca3af;
+}
+
+.historyNote {
+    color: #6b7280;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.emptyHistory {
+    text-align: center;
+    color: #9ca3af;
+    padding: 20px;
+    font-style: italic;
+}

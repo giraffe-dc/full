@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import styles from "./page.module.css";
 import { AccountingSidebar, type AccountingSection } from "../../components/accounting/Sidebar";
 import { ClientsSection } from "../../components/accounting/ClientsSection";
@@ -13,7 +13,7 @@ import { ProductsSection } from "../../components/accounting/ProductsSection";
 import { PaymentsSection } from "../../components/accounting/PaymentsSection";
 import { CashShiftsSection } from '../../components/accounting/CashShiftsSection';
 import { SalarySection } from '../../components/accounting/SalarySection';
-import { InvoicesSection } from '../../components/accounting/InvoicesSection';
+import { AccountsSection } from '../../components/accounting/AccountsSection';
 import { StockSection } from '../../components/accounting/StockSection';
 import { MenuProductsSection } from '../../components/accounting/MenuProductsSection';
 import { MenuRecipesSection } from '../../components/accounting/MenuRecipesSection';
@@ -26,7 +26,7 @@ import { StockSupply } from '../../components/accounting/stock/StockSupply';
 import { StockMovements } from '../../components/accounting/stock/StockMovements';
 import { StockWriteOff } from '../../components/accounting/stock/StockWriteOff';
 
-import type { Transaction, Totals, CashShift, SalaryRow } from "../../types/accounting";
+import type { Transaction, Totals, CashShift, SalaryRow, MoneyAccount } from "../../types/accounting";
 import {
   CATEGORY_LABELS,
   CATEGORIES,
@@ -57,8 +57,13 @@ import {
 } from "../../lib/accounting-utils";
 import { MarketingSection } from "@/components/accounting/MarketingSection";
 
-export default function AccountingPage() {
-  const [activeSection, setActiveSection] = useState<AccountingSection>("dashboard");
+import { useSearchParams } from "next/navigation";
+
+
+function AccountingContent() {
+  const searchParams = useSearchParams();
+  const activeSection = (searchParams.get("section") as AccountingSection) || "dashboard";
+
   const [tx, setTx] = useState<Transaction[]>([]);
   const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, balance: 0 });
   const [showForm, setShowForm] = useState(false);
@@ -164,6 +169,12 @@ export default function AccountingPage() {
     if (filters.category) params.append("category", filters.category);
     if (filters.paymentMethod) params.append("paymentMethod", filters.paymentMethod);
     if (filters.source) params.append("source", filters.source);
+
+    // For Dashboard, include POS receipts
+    if (activeSection === 'dashboard') {
+      params.append("includePos", "true");
+    }
+
     const res = await fetch(`/api/accounting/transactions?${params.toString()}`);
     const data = await res.json();
     setTx(data.data || []);
@@ -226,6 +237,19 @@ export default function AccountingPage() {
     } catch (e) { console.error(e); }
   }
 
+  // Money Accounts Data
+  const [accountsData, setAccountsData] = useState<MoneyAccount[]>([]);
+
+  async function fetchAccounts() {
+    try {
+      const res = await fetch('/api/accounting/accounts');
+      const data = await res.json();
+      if (data.data) {
+        setAccountsData(data.data);
+      }
+    } catch (e) { console.error(e); }
+  }
+
   useEffect(() => {
     fetchTx();
     if (activeSection === 'clients') fetchClients();
@@ -233,6 +257,7 @@ export default function AccountingPage() {
     if (activeSection === 'products') fetchProductsStats();
     if (activeSection === 'receipts') fetchReceipts();
     if (activeSection === 'cashShifts') fetchCashShifts();
+    if (activeSection === 'accounts') fetchAccounts();
   }, [filters, activeSection]);
 
   function resetForm() {
@@ -291,6 +316,21 @@ export default function AccountingPage() {
     } else {
       alert("Помилка видалення");
     }
+  }
+
+  function handleOpenNewForm() {
+    setFormData({
+      date: new Date().toISOString().split("T")[0],
+      description: "",
+      amount: "",
+      type: "income",
+      category: "other",
+      paymentMethod: "cash",
+      source: "onsite",
+      visits: "",
+    });
+    setEditingTx(null);
+    setShowForm(true);
   }
 
   const handleAddShift = () => {
@@ -401,7 +441,7 @@ export default function AccountingPage() {
 
   return (
     <div className={styles.container}>
-      <AccountingSidebar activeSection={activeSection} onChange={setActiveSection} />
+      {/* Sidebar is now in layout */}
 
       <div className={styles.main}>
         <h1 className={styles.pageTitle}>{sectionTitle}</h1>
@@ -440,7 +480,7 @@ export default function AccountingPage() {
             categoryLabels={categoryLabels}
             showForm={showForm}
             onCloseForm={() => setShowForm(false)}
-            onOpenForm={() => setShowForm(true)}
+            onOpenForm={handleOpenNewForm}
             form={formData}
             onFormChange={setFormData}
             onSubmit={handleSubmit}
@@ -489,11 +529,9 @@ export default function AccountingPage() {
         )}
 
         {activeSection === "accounts" && (
-          <InvoicesSection
-            rows={invoiceRows}
-            onAddInvoice={() => console.log('Add invoice')}
-            onEditInvoice={(id) => console.log('Edit invoice', id)}
-            onDeleteInvoice={(id) => console.log('Delete invoice', id)}
+          <AccountsSection
+            rows={accountsData}
+            onRefresh={fetchAccounts}
           />
         )}
 
@@ -561,6 +599,14 @@ export default function AccountingPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function AccountingPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '24px' }}>Завантаження...</div>}>
+      <AccountingContent />
+    </Suspense>
   );
 }
 
