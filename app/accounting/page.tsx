@@ -56,6 +56,7 @@ import {
   calculateTotals,
 } from "../../lib/accounting-utils";
 import { MarketingSection } from "@/components/accounting/MarketingSection";
+import { FinanceSettings } from "@/components/accounting/FinanceSettings";
 
 import { useSearchParams } from "next/navigation";
 
@@ -85,6 +86,7 @@ function AccountingContent() {
     paymentMethod: "cash",
     source: "onsite",
     visits: "",
+    moneyAccountId: "",
   });
 
   // Detailed mock shifts matching new UI
@@ -257,7 +259,7 @@ function AccountingContent() {
     if (activeSection === 'products') fetchProductsStats();
     if (activeSection === 'receipts') fetchReceipts();
     if (activeSection === 'cashShifts') fetchCashShifts();
-    if (activeSection === 'accounts') fetchAccounts();
+    fetchAccounts();
   }, [filters, activeSection]);
 
   function resetForm() {
@@ -270,6 +272,7 @@ function AccountingContent() {
       paymentMethod: "cash",
       source: "onsite",
       visits: "",
+      moneyAccountId: "",
     });
     setEditingTx(null);
     setShowForm(false);
@@ -286,6 +289,7 @@ function AccountingContent() {
       paymentMethod: t.paymentMethod || "cash",
       source: t.source || "onsite",
       visits: t.visits !== undefined ? String(t.visits) : "",
+      moneyAccountId: t.moneyAccountId || "",
     });
     setShowForm(true);
   }
@@ -328,6 +332,7 @@ function AccountingContent() {
       paymentMethod: "cash",
       source: "onsite",
       visits: "",
+      moneyAccountId: "",
     });
     setEditingTx(null);
     setShowForm(true);
@@ -436,7 +441,7 @@ function AccountingContent() {
                               : activeSection === "venues"
                                 ? "Мережа закладів та їхні показники. (планується)"
                                 : activeSection === "settings"
-                                  ? "Налаштування фінансових параметрів. (планується)"
+                                  ? "Налаштування фінансових параметрів."
                                   : "";
 
   return (
@@ -446,6 +451,10 @@ function AccountingContent() {
       <div className={styles.main}>
         <h1 className={styles.pageTitle}>{sectionTitle}</h1>
         <p className={styles.lead}>{sectionDescription}</p>
+
+        {activeSection === "settings" && (
+          <FinanceSettings />
+        )}
 
 
         {activeSection === "dashboard" && (
@@ -487,6 +496,7 @@ function AccountingContent() {
             tx={tx}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            accounts={accountsData}
           />
         )}
 

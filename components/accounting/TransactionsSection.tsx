@@ -3,6 +3,8 @@
 import React from "react";
 import styles from "../../app/accounting/page.module.css";
 
+import { MoneyAccount } from "../../types/accounting";
+
 interface Filters {
   startDate: string;
   endDate: string;
@@ -30,11 +32,13 @@ interface TransactionsSectionProps {
     paymentMethod: string,
     source: string,
     visits: string,
+    moneyAccountId: string,
   };
   onFormChange: (next: TransactionsSectionProps["form"]) => void;
   onSubmit: (e: React.FormEvent) => void;
   // використовуємо any, щоб не дублювати точний тип Transaction із сторінки
   tx: any[];
+  accounts: MoneyAccount[];
   onEdit: (t: any) => void;
   onDelete: (id: string) => void;
 }
@@ -52,11 +56,12 @@ export function TransactionsSection({
   onFormChange,
   onSubmit,
   tx,
+  accounts,
   onEdit,
   onDelete,
 }: TransactionsSectionProps) {
   if (!active) return null;
-
+  console.log(accounts);
   return (
     <section className={styles.card}>
       <div className={styles.clientsHeaderRow}>
@@ -252,6 +257,25 @@ export function TransactionsSection({
               </div>
             </div>
 
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '0.85em', color: '#4b5563', marginBottom: '4px' }}>Рахунок (Гаманець)</label>
+              <select
+                value={form.moneyAccountId}
+                onChange={(e) => onFormChange({ ...form, moneyAccountId: e.target.value })}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+              >
+                <option value="">-- Не обрано (або авто-вибір) --</option>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.balance} {acc.currency})
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.75em', color: '#6b7280', marginTop: '4px' }}>
+                Якщо не обрано, система спробує використати рахунок за замовчуванням для методу оплати.
+              </div>
+            </div>
+
             <div className={styles.formActions} style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button type="button" onClick={onCloseForm} className={styles.cancelBtn} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>
                 Скасувати
@@ -261,8 +285,9 @@ export function TransactionsSection({
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </div >
+      )
+      }
 
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
@@ -334,6 +359,6 @@ export function TransactionsSection({
           </tbody>
         </table>
       </div>
-    </section>
+    </section >
   );
 }

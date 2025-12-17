@@ -11,6 +11,7 @@ export type Transaction = {
   source?: string;
   visits?: number;
   createdAt: string;
+  moneyAccountId?: string;
 };
 
 export type Totals = {

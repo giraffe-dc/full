@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../lib/mongodb";
 import jwt from "jsonwebtoken";
+import { ObjectId } from "mongodb";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
@@ -147,7 +148,6 @@ export async function POST(req: NextRequest) {
     const user = await getUserFromReq(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await req.json();
     const {
       date,
       description,
@@ -155,9 +155,10 @@ export async function POST(req: NextRequest) {
       type = "income",
       category = "other",
       paymentMethod = "cash",
-      source = "onsite",
+      source = "manual",
       visits,
-    } = body;
+      moneyAccountId, // Optional: Explicitly selected account
+    } = await req.json();
 
     if (!description || amount === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -165,21 +166,69 @@ export async function POST(req: NextRequest) {
 
     const client = await clientPromise;
     const db = client.db("giraffe");
-    const result = await db.collection("transactions").insertOne({
-      date: date ? new Date(date) : new Date(),
-      description,
-      amount: Number(amount),
-      type,
-      category,
-      paymentMethod,
-      source,
-      visits: visits !== undefined ? Number(visits) || 0 : undefined,
-      createdBy: user.sub,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
 
-    return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
+    let targetAccountId: ObjectId | null = null;
+
+    // 1. Resolve Account
+    if (moneyAccountId) {
+      try { targetAccountId = new ObjectId(moneyAccountId); } catch (e) { }
+    }
+
+    // 2. If no explicit account, try defaults from Settings
+    if (!targetAccountId) {
+      const settings = await db.collection("settings").findOne({ type: "global" });
+      if (settings && settings.finance) {
+        if (paymentMethod === 'cash' && settings.finance.cashAccountId) {
+          try { targetAccountId = new ObjectId(settings.finance.cashAccountId); } catch (e) { }
+        } else if (paymentMethod === 'card' && settings.finance.cardAccountId) {
+          try { targetAccountId = new ObjectId(settings.finance.cardAccountId); } catch (e) { }
+        }
+      }
+    }
+
+    const session = client.startSession();
+    let insertId;
+
+    try {
+      await session.withTransaction(async () => {
+        const numericAmount = Number(amount);
+
+        // 3. Create Transaction
+        const result = await db.collection("transactions").insertOne({
+          date: date ? new Date(date) : new Date(),
+          description,
+          amount: numericAmount,
+          type,
+          category,
+          paymentMethod,
+          source,
+          visits: visits !== undefined ? Number(visits) || 0 : undefined,
+          createdBy: user.sub,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          moneyAccountId: targetAccountId ? targetAccountId.toString() : null
+        }, { session });
+
+        insertId = result.insertedId;
+
+        // 4. Update Account Balance if linked
+        if (targetAccountId) {
+          const balanceChange = type === 'income' ? numericAmount : -numericAmount;
+          await db.collection("money_accounts").updateOne(
+            { _id: targetAccountId },
+            {
+              $inc: { balance: balanceChange },
+              $set: { updatedAt: new Date() }
+            },
+            { session }
+          );
+        }
+      });
+    } finally {
+      await session.endSession();
+    }
+
+    return NextResponse.json({ ok: true, id: insertId }, { status: 201 });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);

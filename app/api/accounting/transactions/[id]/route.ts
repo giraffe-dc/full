@@ -78,22 +78,47 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     const client = await clientPromise;
     const db = client.db("giraffe");
+    const session = client.startSession();
 
-    // 1. Try deleting from 'transactions'
-    const result = await db
-      .collection("transactions")
-      .deleteOne({ _id: new ObjectId(id) });
+    let deleted = false;
 
-    if (result.deletedCount > 0) {
-      return NextResponse.json({ ok: true });
+    try {
+      await session.withTransaction(async () => {
+        // 1. Fetch Transaction
+        const tx = await db.collection("transactions").findOne({ _id: new ObjectId(id) }, { session });
+
+        if (tx) {
+          // 2. Reverse Balance Impact
+          if (tx.moneyAccountId) {
+            const accountId = new ObjectId(tx.moneyAccountId);
+            const amount = Number(tx.amount);
+            // If income, we added it, so now subtract. If expense, we subtracted, so now add.
+            const reverser = tx.type === 'income' ? -amount : amount;
+
+            await db.collection("money_accounts").updateOne(
+              { _id: accountId },
+              { $inc: { balance: reverser }, $set: { updatedAt: new Date() } },
+              { session }
+            );
+          }
+
+          // 3. Delete
+          await db.collection("transactions").deleteOne({ _id: new ObjectId(id) }, { session });
+          deleted = true;
+        } else {
+          // Try deleting stock movement if not found in transactions (fallback legacy logic)
+          const sm = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
+          if (sm) {
+            await db.collection("stock_movements").deleteOne({ _id: new ObjectId(id) }, { session });
+            deleted = true;
+          }
+        }
+      });
+    } finally {
+      await session.endSession();
     }
 
-    // 2. Try deleting from 'stock_movements'
-    const resultStock = await db
-      .collection("stock_movements")
-      .deleteOne({ _id: new ObjectId(id) });
-
-    if (resultStock.deletedCount > 0) {
+    if (deleted) {
       return NextResponse.json({ ok: true });
     }
 

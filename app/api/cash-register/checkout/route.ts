@@ -39,6 +39,18 @@ export async function POST(request: Request) {
                 const receiptResult = await db.collection("receipts").insertOne(receipt, { session });
                 receiptId = receiptResult.insertedId;
 
+                // Match Account based on Settings
+                let accountId: ObjectId | null = null;
+                const settings = await db.collection("settings").findOne({ type: "global" }, { session });
+
+                if (settings && settings.finance) {
+                    if (paymentMethod === 'cash' && settings.finance.cashAccountId) {
+                        try { accountId = new ObjectId(settings.finance.cashAccountId); } catch (e) { }
+                    } else if (paymentMethod === 'card' && settings.finance.cardAccountId) {
+                        try { accountId = new ObjectId(settings.finance.cardAccountId); } catch (e) { }
+                    }
+                }
+
                 // 2. Create Accounting Transaction (Revenue)
                 const transaction = {
                     date: new Date(),
@@ -49,9 +61,22 @@ export async function POST(request: Request) {
                     source: "cash-register",
                     referenceId: receiptId,
                     paymentMethod: paymentMethod,
-                    status: "completed"
+                    status: "completed",
+                    moneyAccountId: accountId ? accountId.toString() : null // Link to Account
                 };
                 await db.collection("transactions").insertOne(transaction, { session });
+
+                // 2.1 Update Money Account Balance
+                if (accountId) {
+                    await db.collection("money_accounts").updateOne(
+                        { _id: accountId },
+                        {
+                            $inc: { balance: total },
+                            $set: { updatedAt: new Date() }
+                        },
+                        { session }
+                    );
+                }
 
                 // 3. Stock Deduction (Complex: Product -> Recipe -> Ingredients)
                 // Optimization: Fetch all necessary data first to avoid N+1 queries ideally, 
