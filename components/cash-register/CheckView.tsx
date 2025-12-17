@@ -294,6 +294,7 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                 <ClientSelectorModal
                     onClose={() => setShowClientModal(false)}
                     onSelect={handleSelectClient}
+                    selectedClientId={check.customerId}
                 />
             )}
         </div>

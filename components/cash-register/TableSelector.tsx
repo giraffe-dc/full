@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table } from '../../types/cash-register';
+import { Table, Check } from '../../types/cash-register';
 import styles from './TableSelector.module.css';
 
 interface TableSelectorProps {
@@ -8,9 +8,19 @@ interface TableSelectorProps {
     onBack: () => void;
     departmentName: string;
     onAdd?: () => void;
+    orders?: Check[];
 }
 
-export function TableSelector({ tables, onSelect, onBack, departmentName, onAdd }: TableSelectorProps) {
+export function TableSelector({ tables, onSelect, onBack, departmentName, onAdd, orders = [] }: TableSelectorProps) {
+    // Знайти коментар для столу
+    const getTableComment = (tableId: string) => {
+        const check = orders.find(order => order.tableId === tableId);
+        if (check && check.comment) {
+            return check.comment.substring(0, 10) + (check.comment.length > 10 ? '...' : '');
+        }
+        return null;
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -19,19 +29,35 @@ export function TableSelector({ tables, onSelect, onBack, departmentName, onAdd 
             </div>
 
             <div className={styles.grid}>
-                {tables.map(table => (
-                    <button
-                        key={table.id}
-                        className={`${styles.card} ${styles[table.status]}`}
-                        onClick={() => onSelect(table)}
-                    >
-                        <div className={styles.tableNumber}>{table.name}</div>
-                        <div className={styles.seats}>👥 {table.seats}</div>
-                        <div className={styles.statusLabel}>
-                            {table.status === 'free' ? 'Вільний' : table.status === 'busy' ? 'Зайнятий' : 'Резерв'}
-                        </div>
-                    </button>
-                ))}
+                {tables.map(table => {
+                    const comment = getTableComment(table.id);
+                    return (
+                        <button
+                            key={table.id}
+                            className={`${styles.card} ${styles[table.status]}`}
+                            onClick={() => onSelect(table)}
+                        >
+                            <div className={styles.tableNumber}>{table.name}</div>
+                            <div className={styles.seats}>👥 {table.seats}</div>
+                            {comment && (
+                                <div style={{
+                                    fontSize: '0.75rem',
+                                    color: '#6b7280',
+                                    marginTop: '4px',
+                                    fontStyle: 'italic',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {comment}
+                                </div>
+                            )}
+                            <div className={styles.statusLabel}>
+                                {table.status === 'free' ? 'Вільний' : table.status === 'busy' ? 'Зайнятий' : 'Резерв'}
+                            </div>
+                        </button>
+                    );
+                })}
 
                 {onAdd && (
                     <button className={`${styles.card} ${styles.addCard}`} onClick={onAdd}>

@@ -83,6 +83,22 @@
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
     }
 
+    .textarea {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+        resize: vertical;
+    }
+
+    .textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
     .footer {
         padding: 20px;
         border-top: 1px solid #e5e7eb;

@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ClientSelectorModal.module.css';
 import { ClientFormModal } from '../accounting/ClientFormModal';
+import { ClientRow } from '../accounting/ClientsSection';
 
-interface Client {
-    id: string;
-    name: string;
-    phone: string;
-    email?: string;
-    discount?: number;
-}
+// interface Client {
+//     id: string;
+//     name: string;
+//     phone: string;
+//     email?: string;
+//     discount?: number;
+// }
 
 interface ClientSelectorModalProps {
     onClose: () => void;
-    onSelect: (client: Client) => void;
+    onSelect: (client: ClientRow) => void;
+    onSave?: (client: Partial<ClientRow>) => Promise<boolean>;
+    selectedClientId?: string;
 }
 
-export function ClientSelectorModal({ onClose, onSelect }: ClientSelectorModalProps) {
-    const [clients, setClients] = useState<Client[]>([]);
+export function ClientSelectorModal({ onClose, onSelect, selectedClientId }: ClientSelectorModalProps) {
+    const [clients, setClients] = useState<ClientRow[]>([]);
     const [search, setSearch] = useState("");
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -44,7 +47,7 @@ export function ClientSelectorModal({ onClose, onSelect }: ClientSelectorModalPr
         }
     };
 
-    const handleCreateClient = async (clientData: any) => {
+    const handleCreateClient = async (clientData: Partial<ClientRow>): Promise<boolean> => {
         try {
             const res = await fetch('/api/accounting/clients', {
                 method: 'POST',
@@ -54,15 +57,24 @@ export function ClientSelectorModal({ onClose, onSelect }: ClientSelectorModalPr
             const data = await res.json();
 
             if (data.success) {
+
+                fetchClients();
                 // Select the new client immediately
                 const newClient = { ...clientData, id: data.id };
-                onSelect(newClient);
-                onClose(); // Close both modals effectively
+                // onSelect(newClient);
+                // onClose(); // Close both modals effectively
+                return true;
             } else {
-                alert("Помилка створення: " + data.error);
+                if (data.error === 'duplicate_phone') {
+                    alert(`❌ Помилка: ${data.message}`);
+                } else {
+                    alert("❌ Помилка збереження клієнта");
+                }
+                return false; // Повертаємо false при помилці
             }
         } catch (e) {
             alert("Помилка сервера");
+            return false;
         }
     };
 
@@ -104,16 +116,24 @@ export function ClientSelectorModal({ onClose, onSelect }: ClientSelectorModalPr
                     ) : filteredClients.length === 0 ? (
                         <div style={{ padding: 16, textAlign: 'center', color: '#6b7280' }}>Клієнтів не знайдено</div>
                     ) : (
-                        filteredClients.map(client => (
-                            <div
-                                key={client.id}
-                                className={styles.clientItem}
-                                onClick={() => onSelect(client)}
-                            >
-                                <div className={styles.clientName}>{client.name}</div>
-                                {client.phone && <div className={styles.clientInfo}>{client.phone}</div>}
-                            </div>
-                        ))
+                        filteredClients.map(client => {
+                            const isSelected = selectedClientId && client.id === selectedClientId;
+                            return (
+                                <div
+                                    key={client.id}
+                                    className={`${styles.clientItem} ${isSelected ? styles.selected : ''}`}
+                                    onClick={() => onSelect(client)}
+                                >
+                                    <div className={styles.clientName}>{client.name}</div>
+                                    {client.phone && <div className={styles.clientInfo}>{client.phone}</div>}
+                                    {client.comment && (
+                                        <div className={styles.clientComment}>
+                                            💬 {client.comment}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
                     )}
                 </div>
 

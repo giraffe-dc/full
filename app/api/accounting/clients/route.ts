@@ -92,6 +92,7 @@ export async function GET(req: NextRequest) {
         phone: c.phone || "",
         email: c.email || "",
         address: c.address || "",
+        comment: c.comment || "",
         noDiscount: discountSum,
         cash,
         card,
@@ -121,22 +122,59 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, email, address } = body;
+    const { name, phone, email, address, comment, id } = body;
 
     const client = await clientPromise;
     const db = client.db("giraffe");
 
+    // Перевірка унікальності телефону
+    if (phone) {
+      const existingClient = await db.collection("clients").findOne({
+        phone,
+        status: { $ne: "inactive" },
+        ...(id ? { _id: { $ne: new ObjectId(id) } } : {}) // Виключити поточного клієнта при редагуванні
+      });
+
+      if (existingClient) {
+        return NextResponse.json({
+          error: "duplicate_phone",
+          message: `Клієнт з номером ${phone} вже існує: ${existingClient.name}`
+        }, { status: 400 });
+      }
+    }
+
+    // Якщо є ID - це редагування
+    if (id) {
+      await db.collection("clients").updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            name,
+            phone,
+            email,
+            address,
+            comment,
+            updatedAt: new Date()
+          }
+        }
+      );
+      return NextResponse.json({ success: true, id });
+    }
+
+    // Інакше - створення нового
     const result = await db.collection("clients").insertOne({
       name,
       phone,
       email,
       address,
+      comment,
       status: 'active',
       createdAt: new Date()
     });
 
     return NextResponse.json({ success: true, id: result.insertedId });
   } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: "Creation failed" }, { status: 500 });
   }
 }

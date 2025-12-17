@@ -5,7 +5,7 @@ import { ClientRow } from "./ClientsSection";
 
 interface ClientFormModalProps {
     onClose: () => void;
-    onSave: (client: Partial<ClientRow>) => Promise<void>;
+    onSave: (client: Partial<ClientRow>) => Promise<boolean>;
     client?: ClientRow;
 }
 
@@ -14,7 +14,8 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
         name: "",
         phone: "",
         email: "",
-        address: ""
+        address: "",
+        comment: ""
     });
 
     useEffect(() => {
@@ -23,15 +24,19 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                 name: client.name || "",
                 phone: client.phone || "",
                 email: client.email || "",
-                address: client.address || ""
+                address: client.address || "",
+                comment: client.comment || ""
             });
         }
     }, [client]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await onSave(formData);
-        onClose();
+        const success = await onSave(formData);
+        // Закриваємо модалку тільки якщо збереження успішне
+        if (success) {
+            onClose();
+        }
     };
 
     return (
@@ -44,7 +49,7 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
 
                 <form className={styles.form} onSubmit={handleSubmit}>
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>Ім'я / Назва</label>
+                        <label className={styles.label}>Ім'я / Назва *</label>
                         <input
                             className={styles.input}
                             value={formData.name}
@@ -55,12 +60,13 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>Телефон</label>
+                        <label className={styles.label}>Телефон *</label>
                         <input
                             className={styles.input}
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             placeholder="+380..."
+                            required
                         />
                     </div>
 
@@ -82,6 +88,17 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                             placeholder="м. Київ, вул..."
+                        />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Коментар</label>
+                        <textarea
+                            className={styles.textarea}
+                            value={formData.comment}
+                            onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                            placeholder="Додаткова інформація про клієнта..."
+                            rows={3}
                         />
                     </div>
 

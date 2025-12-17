@@ -168,6 +168,11 @@ export default function CashRegisterPage() {
   // --- Navigation Handlers ---
 
   const handleSelectDepartment = async (dept: Department) => {
+    if (!currentShift) {
+      alert("Спочатку відкрийте зміну!");
+      // setShowShiftModal(true);
+      return;
+    }
     setSelectedDepartment(dept);
     setIsLoading(true);
     try {
@@ -320,11 +325,7 @@ export default function CashRegisterPage() {
   };
 
   const handleTableClick = (table: Table) => {
-    if (!currentShift) {
-      alert("Спочатку відкрийте зміну!");
-      setShowShiftModal(true);
-      return;
-    }
+
 
     if (table.status === 'busy') {
       // Go straight to check
@@ -727,6 +728,7 @@ export default function CashRegisterPage() {
             activeId={selectedDepartment?.id || null}
             onSelect={handleSelectDepartment}
             onAdd={handleAddDepartment}
+            orders={orders}
           />
           <div style={{ marginTop: '2rem' }}>
             <button onClick={() => setView('tables')} style={{ padding: '8px 16px', background: '#ccc', border: 'none', borderRadius: '4px' }}>
@@ -1086,6 +1088,7 @@ export default function CashRegisterPage() {
           onSelect={handleTableClick}
           onBack={handleBackToDepartments}
           onAdd={handleAddTable}
+          orders={orders}
         />
 
         {showTransactionModal && (

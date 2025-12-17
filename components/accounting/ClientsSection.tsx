@@ -9,6 +9,7 @@ export interface ClientRow {
   phone: string;
   email?: string;
   address?: string;
+  comment?: string;
   noDiscount: number;
   cash: number;
   card: number;
@@ -33,6 +34,8 @@ interface ClientsSectionProps {
 export function ClientsSection({ rows, totals }: ClientsSectionProps) {
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<ClientRow | undefined>(undefined);
+  const [selectedClient, setSelectedClient] = useState<ClientRow | undefined>(undefined);
 
   const filteredRows = useMemo(() => {
     if (!search) return rows;
@@ -44,23 +47,51 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
     );
   }, [rows, search]);
 
-  const handleSaveClient = async (client: Partial<ClientRow>) => {
+  const handleEditClient = (client: ClientRow, e: React.MouseEvent) => {
+    e.stopPropagation(); // Запобігаємо спрацюванню onClick на рядку
+    setEditingClient(client);
+    setIsModalOpen(true);
+  };
+
+  const handleViewClient = (client: ClientRow) => {
+    setSelectedClient(client);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingClient(undefined);
+  };
+
+  const handleSaveClient = async (client: Partial<ClientRow>): Promise<boolean> => {
     try {
       const res = await fetch('/api/accounting/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(client)
+        body: JSON.stringify({
+          ...client,
+          id: editingClient?.id // Додаємо id якщо редагуємо
+        })
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         // Should refresh data here. 
         // Since we don't have refresh callback, we'll reload simple way or rely on SWR later.
         window.location.reload();
+        return true;
       } else {
-        alert("Error saving client");
+        if (data.error === 'duplicate_phone') {
+          alert(`❌ Помилка: ${data.message}`);
+        } else {
+          alert("❌ Помилка збереження клієнта");
+        }
+        return false; // Повертаємо false при помилці
       }
     } catch (e) {
       console.error(e);
-      alert("Error saving client");
+      alert("❌ Помилка збереження клієнта");
+      return false; // Повертаємо false при помилці
     }
   };
 
@@ -122,11 +153,16 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
                 <th>Прибуток</th>
                 <th>Чеки</th>
                 <th>Середній чек</th>
+                <th>Дії</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map((c, i) => (
-                <tr key={c.id || i}>
+                <tr
+                  key={c.id || i}
+                  onClick={() => handleViewClient(c)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <td className={styles.clientInfo}>
                     <h3>{c.name}</h3>
                     {c.address && <p>{c.address}</p>}
@@ -138,6 +174,15 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
                   <td className={`${styles.moneyCell} ${styles.profitCell}`}>{c.profit.toFixed(2)} ₴</td>
                   <td>{c.receipts} шт.</td>
                   <td className={styles.moneyCell}>{c.avgCheck.toFixed(2)} ₴</td>
+                  <td>
+                    <button
+                      onClick={(e) => handleEditClient(c, e)}
+                      className={styles.editButton}
+                      title="Редагувати клієнта"
+                    >
+                      ✏️
+                    </button>
+                  </td>
                 </tr>
               ))}
               {filteredRows.length > 0 && (
@@ -150,6 +195,7 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
                   <td>{totals.profit.toFixed(2)} ₴</td>
                   <td>{totals.receipts} шт.</td>
                   <td></td>
+                  <td></td>
                 </tr>
               )}
             </tbody>
@@ -160,9 +206,92 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
 
       {isModalOpen && (
         <ClientFormModal
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleCloseModal}
           onSave={handleSaveClient}
+          client={editingClient}
         />
+      )}
+
+      {selectedClient && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedClient(undefined)}>
+          <div className={styles.detailsModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.detailsHeader}>
+              <h2>Деталі клієнта</h2>
+              <button className={styles.closeButton} onClick={() => setSelectedClient(undefined)}>×</button>
+            </div>
+
+            <div className={styles.detailsContent}>
+              <div className={styles.detailsSection}>
+                <h3>Основна інформація</h3>
+                <div className={styles.detailsGrid}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Ім'я:</span>
+                    <span className={styles.detailValue}>{selectedClient.name}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Телефон:</span>
+                    <span className={styles.detailValue}>{selectedClient.phone || "—"}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Email:</span>
+                    <span className={styles.detailValue}>{selectedClient.email || "—"}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Адреса:</span>
+                    <span className={styles.detailValue}>{selectedClient.address || "—"}</span>
+                  </div>
+                  {selectedClient.comment && (
+                    <div className={styles.detailItem} style={{ gridColumn: '1 / -1' }}>
+                      <span className={styles.detailLabel}>Коментар:</span>
+                      <span className={styles.detailValue}>{selectedClient.comment}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.detailsSection}>
+                <h3>Статистика покупок</h3>
+                <div className={styles.statsGrid}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Всього чеків</div>
+                    <div className={styles.statValue}>{selectedClient.receipts}</div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Середній чек</div>
+                    <div className={styles.statValue}>{selectedClient.avgCheck.toFixed(2)} ₴</div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Готівкою</div>
+                    <div className={styles.statValue}>{selectedClient.cash.toFixed(2)} ₴</div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Карткою</div>
+                    <div className={styles.statValue}>{selectedClient.card.toFixed(2)} ₴</div>
+                  </div>
+                  <div className={styles.statCard} style={{ gridColumn: '1 / -1' }}>
+                    <div className={styles.statLabel}>Загальний прибуток</div>
+                    <div className={styles.statValue} style={{ color: '#059669', fontSize: '1.5rem' }}>
+                      {selectedClient.profit.toFixed(2)} ₴
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.detailsActions}>
+                <button
+                  className={styles.editButtonLarge}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedClient(undefined);
+                    handleEditClient(selectedClient, e as any);
+                  }}
+                >
+                  ✏️ Редагувати
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
