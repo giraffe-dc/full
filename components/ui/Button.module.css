@@ -3,14 +3,147 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    font-family: var(--font-sans);
-    font-weight: var(--font-medium);
+    font-family: var(--font-heading);
+    font-weight: 500;
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all var(--transition-fast);
     position: relative;
     overflow: hidden;
+    user-select: none;
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.button:not(:disabled):active {
+    transform: scale(0.96);
+}
+
+/* Ripple effect placeholder - can be done with JS, or CSS pseudo-element for hover shine */
+.button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: 0.5s;
+    transform: skewX(-20deg);
+}
+
+.button:not(:disabled):hover::after {
+    left: 100%;
+    transition: 0.5s;
+}
+
+/* Sizes */
+.sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-height: 32px;
+}
+
+.md {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    min-height: 40px;
+}
+
+.lg {
+    padding: 0.8rem 1.6rem;
+    font-size: 1.1rem;
+    min-height: 48px;
+}
+
+/* Variants */
+.primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
+    border: 1px solid transparent;
+}
+
+.primary:not(:disabled):hover {
+    box-shadow: 0 6px 12px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.secondary {
+    background: white;
+    color: var(--primary-700);
+    border: 1px solid var(--primary-200);
+    box-shadow: var(--shadow-sm);
+}
+
+.secondary:not(:disabled):hover {
+    background: var(--primary-50);
+    border-color: var(--primary-300);
+    transform: translateY(-1px);
+}
+
+.ghost {
+    background: transparent;
+    color: var(--gray-600);
+}
+
+.ghost:not(:disabled):hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-600);
+}
+
+.danger {
+    background: linear-gradient(135deg, var(--error-main), #be123c);
+    color: white;
+    box-shadow: 0 4px 6px rgba(244, 63, 94, 0.25);
+}
+
+.danger:not(:disabled):hover {
+    box-shadow: 0 6px 12px rgba(244, 63, 94, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinnerIcon {
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}
+
+.spinnerCircle {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 60;
+    stroke-dashoffset: 15;
+}
+
+/* Icon */
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .button:disabled {

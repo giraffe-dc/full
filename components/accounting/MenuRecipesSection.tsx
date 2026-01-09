@@ -9,7 +9,7 @@ import styles from './MenuRecipesSection.module.css';
 interface MenuRecipesSectionProps {
   rows?: MenuRecipe[];
   categories?: string[];
-  ingredients?: string[];
+  ingredients?: import('../../types/accounting').MenuIngredient[];
   onAddRecipe?: (recipe: MenuRecipe) => void;
   onEditRecipe?: (recipe: MenuRecipe) => void;
   onDeleteRecipe?: (id: string) => void;
@@ -25,7 +25,7 @@ export function MenuRecipesSection({
 }: MenuRecipesSectionProps) {
   const [recipes, setRecipes] = useState<MenuRecipe[]>(initialRows || []);
   const [categories, setCategories] = useState<string[]>(initialCategories || []);
-  const [ingredientsList, setIngredientsList] = useState<string[]>(initialIngredients || []);
+  const [ingredientsList, setIngredientsList] = useState<import('../../types/accounting').MenuIngredient[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export function MenuRecipesSection({
       if (!initialIngredients || initialIngredients.length === 0) {
         try {
           const ings = await getIngredients();
-          setIngredientsList(ings.map(i => i.name));
+          setIngredientsList(ings);
         } catch (e) { console.error('Failed to load ingredients', e); }
       }
 

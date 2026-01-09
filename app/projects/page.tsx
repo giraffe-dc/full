@@ -39,15 +39,15 @@ export default function ProjectsPage() {
   }
 
   useEffect(() => {
-      fetch("/api/auth/me")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.authenticated) {
-            setUserRole(data.user.role);
-          }
-        })
-        .catch(() => setUserRole(null));
-    }, []);
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setUserRole(data.user.role);
+        }
+      })
+      .catch(() => setUserRole(null));
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -107,8 +107,10 @@ export default function ProjectsPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Проекти</h1>
-      <p className={styles.lead}>Управління інтерактивними сайтами та додатковими проектами центру.</p>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Проекти</h1>
+        <p className={styles.lead}>Управління інтерактивними сайтами та додатковими проектами центру.</p>
+      </div>
 
       <div className={styles.filters}>
         <input

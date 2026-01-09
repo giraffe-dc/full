@@ -146,8 +146,10 @@ export default function DocsPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Документація центру</h1>
-      <p className={styles.lead}>Сценарії, чеклисти, інструкції та інші документи.</p>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Документація центру</h1>
+        <p className={styles.lead}>Сценарії, чеклисти, інструкції та інші документи.</p>
+      </div>
 
       <div className={styles.filters}>
         <input

@@ -1,12 +1,171 @@
 /* ============================================
-   MAIN PAGE - MODERN DESIGN
+   MAIN PAGE - VIBRANT FLOW DESIGN
    ============================================ */
 
 .page {
   min-height: 100vh;
-  padding: var(--space-8);
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--primary-50) 100%);
-  animation: fadeIn var(--transition-base) ease-out;
+  padding: 32px;
+  background: var(--bg-app);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding: 64px 24px;
+  animation: slideUp 0.3s ease-out;
+}
+
+.title {
+  font-size: 4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary-600), var(--accent-main));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
+  font-family: var(--font-heading);
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  color: var(--gray-500);
+  margin-bottom: 32px;
+  font-weight: 400;
+}
+
+/* Cards Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--gray-100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-500), var(--accent-main));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-200);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.cardIcon {
+  font-size: 48px;
+  margin-bottom: 24px;
+  background: var(--bg-app);
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s;
+}
+
+.card:hover .cardIcon {
+  transform: scale(1.1) rotate(5deg);
+  background: var(--primary-50);
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 12px;
+}
+
+.cardDescription {
+  font-size: 1rem;
+  color: var(--gray-500);
+  line-height: 1.6;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .title {
+    font-size: 3rem;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 32px 16px;
+  }
 }
 
 .main {
@@ -49,6 +208,8 @@
   gap: var(--space-6);
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 2rem;
 }
 
 .card {
@@ -61,6 +222,7 @@
   position: relative;
   overflow: hidden;
   animation: fadeIn var(--transition-base) ease-out;
+  margin-bottom: 2rem;
 }
 
 .card::before {
