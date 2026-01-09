@@ -449,8 +449,8 @@ function AccountingContent() {
       {/* Sidebar is now in layout */}
 
       <div className={styles.main}>
-        <h1 className={styles.pageTitle}>{sectionTitle}</h1>
-        <p className={styles.lead}>{sectionDescription}</p>
+        {/* <h1 className={styles.pageTitle}>{sectionTitle}</h1>
+        <p className={styles.lead}>{sectionDescription}</p> */}
 
         {activeSection === "settings" && (
           <FinanceSettings />

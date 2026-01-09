@@ -153,7 +153,8 @@
 .card {
   padding: var(--space-6);
   border-radius: var(--radius-lg);
-  background: var(--bg-primary);
+  background: white;
+  border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-base);
   animation: fadeIn var(--transition-base) ease-out;
@@ -162,6 +163,7 @@
 .card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+  border-color: var(--primary-200);
 }
 
 .card h2 {

@@ -1,9 +1,225 @@
 .container {
-    padding: 2rem;
+    padding: 32px;
     height: 100%;
-    background-color: #f9fafb;
+    background: var(--bg-app);
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.backButton {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--gray-700);
+    margin-right: 24px;
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    transition: all 0.2s;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backButton:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: var(--primary-600);
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    padding-bottom: 40px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    border-radius: var(--radius-xl);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-height: 180px;
+    box-shadow: var(--shadow-md);
+    background: white;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Status variants */
+.free {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.free:hover {
+    background: white;
+    border-color: var(--success-main);
+}
+
+.free .tableNumber {
+    color: var(--gray-800);
+}
+
+.free .statusLabel {
+    color: var(--success-700);
+    background: var(--success-bg);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.busy {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--primary-300);
+    box-shadow: 0 0 0 4px var(--primary-50);
+}
+
+.busy:hover {
+    border-color: var(--primary-500);
+    background: white;
+}
+
+.busy .tableNumber {
+    color: var(--primary-700);
+}
+
+.busy .statusLabel {
+    color: var(--primary-700);
+    background: var(--primary-50);
+    border: 1px solid var(--primary-200);
+}
+
+.reserved {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px dashed var(--warning-main);
+}
+
+.reserved:hover {
+    border-style: solid;
+    background: var(--warning-bg);
+}
+
+.reserved .statusLabel {
+    color: var(--warning-text);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.tableNumber {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    font-family: var(--font-heading);
+}
+
+.seats {
+    font-size: 0.9rem;
+    color: var(--gray-500);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.statusLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+}
+
+.addCard {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    box-shadow: none;
+    backdrop-filter: blur(4px);
+}
+
+.addCard:hover {
+    border-color: var(--primary-300);
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateY(-4px);
+}
+
+.addCard .tableNumber {
+    font-size: 3rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: start;
+        gap: 16px;
+    }
+
+    .backButton {
+        width: 100%;
+        justify-content: center;
+        margin: 0;
+    }
+
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .card {
+        padding: 20px;
+        min-height: 140px;
+    }
+
+    .tableNumber {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .header {
