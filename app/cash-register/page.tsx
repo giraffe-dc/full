@@ -86,12 +86,13 @@ export default function CashRegisterPage() {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [prodRes, deptRes, shiftRes, staffRes, checksRes] = await Promise.all([
-        fetch('/api/accounting/products?status=active'),
+      const [prodRes, deptRes, shiftRes, staffRes, checksRes, recipesRes] = await Promise.all([
+        fetch('/api/accounting/products?status=active'),        
         fetch('/api/cash-register/departments'),
         fetch('/api/cash-register/shifts?status=open'),
         fetch('/api/staff'),
-        fetch('/api/cash-register/checks?status=open')
+        fetch('/api/cash-register/checks?status=open'),
+        fetch('/api/accounting/recipes?status=active'),
       ]);
 
       const prodData = await prodRes.json();
@@ -99,6 +100,7 @@ export default function CashRegisterPage() {
       const shiftData = await shiftRes.json();
       const staffData = await staffRes.json();
       const checksData = await checksRes.json();
+      const recipesData = await recipesRes.json();
 
       if (prodData.success) {
         const services: Service[] = prodData.data.map((p: any) => ({
@@ -109,9 +111,19 @@ export default function CashRegisterPage() {
           code: p.code,
           imageUrl: p.imageUrl
         }));
+        const recipes: Service[] = recipesData.data.map((r: any) => ({
+          id: r._id,
+          name: r.name,
+          category: r.category,
+          price: r.sellingPrice,
+          code: r.code,
+          imageUrl: r.imageUrl
+        }));
         // Deduplicate
         const uniqueServices = Array.from(new Map(services.map(s => [s.id, s])).values());
-        setProducts(uniqueServices);
+        const uniqueRecipes = Array.from(new Map(recipes.map(r => [r.id, r])).values());
+        setProducts([...uniqueServices, ...uniqueRecipes]);
+        // setProducts([...uniqueServices]);
       }
 
       if (deptData.success) {
