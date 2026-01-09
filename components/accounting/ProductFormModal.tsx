@@ -108,85 +108,80 @@ export function ProductFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <button className={styles.backButton} onClick={onClose}>
-            ‹
-          </button>
-          <h2 className={styles.title}>
-            {product ? 'Редагування товару' : 'Додавання товару'}
-          </h2>
+          <div className={styles.headerLeft}>
+            <h2 className={styles.title}>
+              {product ? 'Редагування товару' : 'Додавання товару'}
+            </h2>
+          </div>
+          <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
 
         <div className={styles.content}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Назва</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Введіть назву товару"
-            />
-          </div>
+          <div className={styles.row}>
+            <div className={styles.col}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Назва</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name || ''}
+                  onChange={handleInputChange}
+                  className={styles.input}
+                  placeholder="Наприклад: Капучіно"
+                  autoFocus
+                />
+              </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Категорія</label>
-            <select
-              name="category"
-              value={formData.category || ''}
-              onChange={handleInputChange}
-              className={styles.select}
-            >
-              <option value="">Виберіть категорію</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Категорія</label>
+                <select
+                  name="category"
+                  value={formData.category || ''}
+                  onChange={handleInputChange}
+                  className={styles.select}
+                >
+                  <option value="">Виберіть категорію</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Ціна приготування</label>
-            <input
-              type="number"
-              name="costPerUnit"
-              value={formData.costPerUnit || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Обкладинка</label>
-            <div className={styles.imagePlaceholder}></div>
+            <div className={styles.col}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Обкладинка</label>
+                <div className={styles.imagePlaceholder}>БЧ</div>
+              </div>
+            </div>
           </div>
 
           <div className={styles.formGroup}>
             <label className={styles.checkboxLabel}>
               <input type="checkbox" />
-              <span>Ватовий товар</span>
+              <span>Ваговий товар</span>
             </label>
-            <a href="#" className={styles.helpLink}>
-              Що таке ватовий товар?
-            </a>
           </div>
 
           <div className={styles.formGroup}>
             <label className={styles.checkboxLabel}>
-              <input type="checkbox" />
+              <input
+                type="checkbox"
+                name="status" // Тимчасово, так як немає поля "isDiscountExcluded" в інтерфейсі
+              />
               <span>Не бере участь в знижках</span>
             </label>
-            <a href="#" className={styles.helpLink}>
-              Копи товар не бере участі у знижках?
-            </a>
           </div>
 
+          <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '24px 0' }} />
+
           <div className={styles.formGroup}>
-            <label className={styles.label}>Ціна за штрихкод</label>
+            <label className={styles.label} style={{ marginBottom: 16 }}>Ціноутворення</label>
 
             <div className={styles.radioGroup}>
               <label className={styles.radioLabel}>
@@ -197,58 +192,9 @@ export function ProductFormModal({
                   checked={!showModifications}
                   onChange={() => setShowModifications(false)}
                 />
-                <span>Без модифікацій</span>
-                <span className={styles.hint}>(Один вид товару)</span>
+                <span>Один вид товару (без модифікацій)</span>
               </label>
-            </div>
 
-            {!showModifications && (
-              <div className={styles.priceInputs}>
-                <div className={styles.priceField}>
-                  <input
-                    type="number"
-                    name="costPerUnit"
-                    value={formData.costPerUnit || 0}
-                    onChange={handleInputChange}
-                    className={styles.priceInput}
-                    placeholder="0"
-                  />
-                  <span className={styles.currency}>₴</span>
-                </div>
-
-                <button className={styles.plusButton} type="button">
-                  +
-                </button>
-
-                <div className={styles.priceField}>
-                  <input
-                    type="number"
-                    name="markup"
-                    value={formData.markup || 0}
-                    onChange={handleInputChange}
-                    className={styles.priceInput}
-                    placeholder="0"
-                  />
-                  <span className={styles.currency}>%</span>
-                </div>
-
-                <span className={styles.equals}>=</span>
-
-                <div className={styles.priceField}>
-                  <input
-                    type="number"
-                    name="sellingPrice"
-                    value={formData.sellingPrice || 0}
-                    onChange={handleInputChange}
-                    className={styles.priceInput}
-                    placeholder="0"
-                  />
-                  <span className={styles.currency}>₴</span>
-                </div>
-              </div>
-            )}
-
-            <div className={styles.radioGroup}>
               <label className={styles.radioLabel}>
                 <input
                   type="radio"
@@ -257,35 +203,80 @@ export function ProductFormModal({
                   checked={showModifications}
                   onChange={() => setShowModifications(true)}
                 />
-                <span>З модифікаціями</span>
-                <span className={styles.hint}>(Декілька видів товару)</span>
+                <span>З модифікаціями (різні об'єми/види)</span>
               </label>
             </div>
 
+            {!showModifications && (
+              <div className={styles.priceInputs}>
+                <div className={styles.priceField}>
+                  <div style={{ width: '100%' }}>
+                    <label className={styles.label} style={{ fontSize: 11, marginBottom: 4 }}>Собівартість</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="number"
+                        name="costPerUnit"
+                        value={formData.costPerUnit || 0}
+                        onChange={handleInputChange}
+                        className={styles.priceInput}
+                        placeholder="0"
+                      />
+                      <span className={styles.currency}>₴</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.plusButton}>+</div>
+
+                <div className={styles.priceField}>
+                  <div style={{ width: '100%' }}>
+                    <label className={styles.label} style={{ fontSize: 11, marginBottom: 4 }}>Націнка</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="number"
+                        name="markup"
+                        value={formData.markup ? Math.round(formData.markup) : 0}
+                        onChange={handleInputChange}
+                        className={styles.priceInput}
+                        placeholder="0"
+                      />
+                      <span className={styles.currency}>%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <span className={styles.equals}>=</span>
+
+                <div className={styles.priceField}>
+                  <div style={{ width: '100%' }}>
+                    <label className={styles.label} style={{ fontSize: 11, marginBottom: 4, color: '#059669' }}>Ціна продажу</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="number"
+                        name="sellingPrice"
+                        value={formData.sellingPrice || 0}
+                        onChange={handleInputChange}
+                        className={styles.priceInput}
+                        placeholder="0"
+                        style={{ borderColor: '#10b981', color: '#047857', fontWeight: 700 }}
+                      />
+                      <span className={styles.currency}>₴</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showModifications && (
               <div className={styles.modificationsInfo}>
-                <p>Модифікації можна додати після створення товару</p>
+                <span style={{ fontSize: 24 }}>ℹ️</span>
+                <div>
+                  <p style={{ fontWeight: 600, marginBottom: 4 }}>Режим модифікацій</p>
+                  <p style={{ fontWeight: 400 }}>Ви зможете додати різні варіанти цього товару (наприклад: 250мл, 400мл) після створення картки.</p>
+                </div>
               </div>
             )}
           </div>
-
-          {/* <div className={styles.helpLinks}>
-            <a href="#" className={styles.helpLink}>
-              Що таке ватовий товар?
-            </a>
-            <a href="#" className={styles.helpLink}>
-              Копи товар не бере участі у знижках?
-            </a>
-            <a href="#" className={styles.helpLink}>
-              Як змінити собівартість?
-            </a>
-            <a href="#" className={styles.helpLink}>
-              Як додати штрихкод товару?
-            </a>
-            <a href="#" className={styles.helpLink}>
-              Що таке модифікації?
-            </a>
-          </div> */}
         </div>
 
         <div className={styles.footer}>
@@ -293,7 +284,7 @@ export function ProductFormModal({
             Зберегти
           </button>
           <button className={styles.saveContinueButton} onClick={handleSave}>
-            Зберегти та створити ще
+            Зберегти та додати ще
           </button>
         </div>
       </div>

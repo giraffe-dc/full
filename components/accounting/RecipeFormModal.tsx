@@ -6,7 +6,7 @@ interface RecipeFormModalProps {
   isOpen: boolean;
   recipe?: MenuRecipe;
   categories: string[];
-  ingredients: string[]; // This might need to be full objects to get cost, but for now simple string
+  ingredients: import('../../types/accounting').MenuIngredient[];
   onClose: () => void;
   onSave: (recipe: MenuRecipe) => void;
 }
@@ -38,13 +38,6 @@ export function RecipeFormModal({
   });
 
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
-  // Local state for adding/editing ingredients not strictly needed if we edit inline or via a small form row.
-  // Design shows an "Add Ingredient" button at bottom, implying inline or a new row appears.
-  // For simplicity, let's keep the separate inputs for adding but style them to look integrated or just append empty row.
-  // Let's try appending empty row approach for better UX if possible, or keep the top inputs.
-  // The screenshot shows a list with input fields. So we should render the list as inputs!
-
-  // Checking ingredient autocompletion - for now simple select/datalist
 
   useEffect(() => {
     if (recipe) {
@@ -98,8 +91,6 @@ export function RecipeFormModal({
 
     // Handle checkbox
     if (type === 'checkbox') {
-      // For now ignoring specialized checkboxes logic storage as per TS interface limitations 
-      // unless we add them to interface. Sticking to basic fields.
       return;
     }
 
@@ -113,9 +104,6 @@ export function RecipeFormModal({
         }
       }
 
-      // If markup changes -> update selling price
-      // (Not implementing reverse logic here to avoid conflict, usually one dir is primary)
-
       return newData;
     });
   };
@@ -124,19 +112,22 @@ export function RecipeFormModal({
     setRecipeIngredients(prev => prev.map(ing => {
       if (ing.id !== id) return ing;
 
-      const updated = { ...ing, [field]: value };
+      let updated = { ...ing, [field]: value };
+
+      if (field === 'name') {
+        // Look up the selected ingredient
+        const selectedIngredient = ingredients.find(i => i.name === value);
+        if (selectedIngredient) {
+          updated.unit = selectedIngredient.unit;
+          updated.costPerUnit = selectedIngredient.costPerUnit;
+          // Optionally reset gross/net if needed, or keep as is.
+          // Recalculate cost immediately based on new costPerUnit
+          updated.totalCost = (Number(updated.costPerUnit) || 0) * (Number(updated.gross) || 0);
+        }
+      }
 
       // Recalculate logic
       if (field === 'gross' || field === 'net') {
-        // Simple cost logic: assuming costPerUnit is per 1 unit (e.g. kg or L)
-        // We need the ACTUAL cost of the ingredient from DB to calc totalCost.
-        // Since we only have strings in `ingredients` prop, we can't look up cost here easily 
-        // without fetching or having rich objects.
-        // For this task, we'll assume user enters cost manually or we stick to existing logic.
-        // Wait, existing logic was: costPerUnit input * quantity.
-        // Let's keep it simple: We need `costPerUnit` (of ingredient) to be known.
-        // I'll add a 'costPerUnit' field to the row so user can adjust it if not fetched.
-
         // totalCost = costPerUnit * gross (usually you pay for gross)
         updated.totalCost = (Number(updated.costPerUnit) || 0) * (Number(updated.gross) || 0);
       }
@@ -327,7 +318,7 @@ export function RecipeFormModal({
                         onChange={(e) => handleIngredientChange(ing.id, 'net', parseFloat(e.target.value))}
                         className={styles.numberInput}
                       />
-                      <span className={styles.unitLabel}>{ing.unit}</span>
+                      <span className={styles.unitLabel}>{"г"}</span>
                     </div>
                   </div>
                   <div className={styles.colCost}>
@@ -353,15 +344,15 @@ export function RecipeFormModal({
           </div>
 
           <datalist id="ingredients-list">
-            {ingredients.map(ing => <option key={ing} value={ing} />)}
+            {ingredients.map(ing => <option key={ing.id} value={ing.name} />)}
           </datalist>
 
           {/* Modifiers placeholder */}
-          <div className={styles.modifiersSection}>
+          {/* <div className={styles.modifiersSection}>
             <h3 className={styles.sectionTitle}>Модифікатори</h3>
             <p className={styles.sectionSubtitle}>Вибір серед різновидів або з можливістю додати додаткові інгредієнти</p>
             <button className={styles.addModifierBtn}>+ Додати набір модифікаторів...</button>
-          </div>
+          </div> */}
 
         </div>
 

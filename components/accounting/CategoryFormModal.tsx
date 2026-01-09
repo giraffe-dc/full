@@ -66,16 +66,18 @@ export function CategoryFormModal({
 
   if (!isOpen) return null;
 
+
+
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <button className={styles.backButton} onClick={onClose}>
-            ‹
-          </button>
-          <h2 className={styles.title}>
-            {category ? 'Редагування категорії товарів та тех. карток' : 'Додавання категорії товарів та тех. карток'}
-          </h2>
+          <div className={styles.headerLeft}>
+            <h2 className={styles.title}>
+              {category ? 'Редагування категорії' : 'Додавання категорії'}
+            </h2>
+          </div>
+          <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
 
         <div className={styles.content}>
@@ -87,12 +89,13 @@ export function CategoryFormModal({
               value={formData.name || ''}
               onChange={handleInputChange}
               className={styles.input}
-              placeholder="Напрклад, «Холодні напої» або «Салати»"
+              placeholder="Наприклад: Гарячі напої"
+              autoFocus
             />
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>Категорія</label>
+            <label className={styles.label}>Батьківська категорія</label>
             <select
               name="parentCategory"
               value={formData.parentCategory || ''}
@@ -112,7 +115,7 @@ export function CategoryFormModal({
 
           {/* <div className={styles.formGroup}>
             <label className={styles.label}>Обкладинка</label>
-            <div className={styles.imagePlaceholder}></div>
+            <div className={styles.imagePlaceholder}>БЧ</div>
           </div> */}
         </div>
 

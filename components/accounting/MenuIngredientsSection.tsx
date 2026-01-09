@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styles from './MenuIngredientsSection.module.css';
 import { MenuIngredient } from '@/types/accounting';
+import { IngredientFormModal } from './IngredientFormModal';
 import {
     getIngredients,
     createIngredient,
@@ -312,16 +313,19 @@ export function MenuIngredientsSection() {
                 </div>
             </section>
 
-            {/* Placeholder for IngredientFormModal - reusing inline logic or need new component? 
-          For now let's assume we might need a simple form modal or similar to ProductFormModal.
-          I'll skip implementing the Form Modal fully here as it wasn't strictly requested to create NEW form modal, 
-          but "Full implementation" implies editing works. 
-          However, I can reuse ProductFormModal if adapted, or better create IngredientFormModal.
-          The user wanted "Functional", so I should probably have a way to add/edit.
-          I'll assume IngredientFormModal exists or I should create it too?
-          Wait, I didn't verify if ProductFormModal is generic.
-          Let's verify ProductFormModal. If not, I'll need to create IngredientFormModal.
-      */}
+            <IngredientFormModal
+                isOpen={isFormOpen}
+                ingredient={editingIngredient}
+                categories={categories}
+                onClose={() => setIsFormOpen(false)}
+                onSave={(ingredient) => {
+                    if (editingIngredient) {
+                        handleEditIngredient(ingredient);
+                    } else {
+                        handleAddIngredient(ingredient);
+                    }
+                }}
+            />
 
             <ImportModal
                 isOpen={isImportModalOpen}
