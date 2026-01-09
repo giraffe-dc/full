@@ -2,9 +2,11 @@ const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 
 async function run() {
+  // const uri =
+  //     'mongodb+srv://pustovitfor:pustovitfor123@cluster0.jh2k0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
   const uri =
-      'mongodb+srv://pustovitfor:pustovitfor123@cluster0.jh2k0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
-  console.log('uri', process.env.MONGODB_URI)
+    'mongodb+srv://giraffeteplik_db_user:5ytboFBWoTuZ490s@ful.0dhrgnk.mongodb.net/?appName=ful'
+  // console.log('uri', process.env.MONGODB_URI)
   if (!uri) {
     console.error('Please set MONGODB_URI in env');
     process.exit(1);
@@ -15,8 +17,11 @@ async function run() {
     const db = client.db();
     const users = db.collection('users');
 
-    const adminEmail =  'admin@giraffe.local';
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123';
+    // const adminEmail =  'admin@giraffe.local';
+    // const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123';
+
+    const adminEmail = 'giraffe.teplik@gmail.com';
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'GiraFFe2026';
 
     const existing = await users.findOne({ email: adminEmail });
     if (existing) {

@@ -1,9 +1,82 @@
 .card {
-    background: var(--bg-primary);
+    background: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    transition: all var(--transition-base);
-    animation: fadeIn var(--transition-base) ease-out;
+    border: 1px solid var(--border-light);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.hover {
+    cursor: pointer;
+}
+
+.hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    border-color: var(--primary-200);
+}
+
+.hover:active {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Glass Variant */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Padding variants */
+.padding-none {
+    padding: 0;
+}
+
+.padding-sm {
+    padding: 16px;
+}
+
+.padding-md {
+    padding: 24px;
+}
+
+.padding-lg {
+    padding: 32px;
+}
+
+/* Card sections */
+.header {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--gray-100);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    font-family: var(--font-heading);
+}
+
+.body {
+    flex: 1;
+}
+
+.footer {
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-100);
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
 }
 
 .hover {

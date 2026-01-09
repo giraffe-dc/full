@@ -1,6 +1,6 @@
 // components/accounting/SalarySection.tsx
 import React from 'react';
-import styles from '../../app/accounting/page.module.css';
+import styles from './SalarySection.module.css';
 
 interface SalaryRow {
   id: string;
@@ -42,11 +42,11 @@ export function SalarySection({ rows, onPay, onView, onExport }: SalarySectionPr
 
   return (
     <section className={styles.card}>
-      <div className={styles.clientsHeaderRow}>
-        <div className={styles.clientsTitleBlock}>
-          <h2 className={styles.clientsTitle}>Зарплата</h2>
+      <div className={styles.headerRow}>
+        <div className={styles.titleBlock}>
+          <h2 className={styles.title}>Зарплата</h2>
         </div>
-        <div className={styles.clientsToolbarRight}>
+        <div className={styles.toolbarRight}>
           <button className={styles.toolbarButton} type="button" onClick={onExport}>
             Експорт
           </button>
@@ -60,12 +60,12 @@ export function SalarySection({ rows, onPay, onView, onExport }: SalarySectionPr
         </div>
       </div>
 
-      <div className={styles.clientsToolbarRow}>
-        <input 
-          className={styles.quickSearch} 
-          placeholder="Швидкий пошук" 
+      <div className={styles.toolbarRow}>
+        <input
+          className={styles.quickSearch}
+          placeholder="Швидкий пошук"
         />
-        <div className={styles.clientsToolbarLeftButtons}>
+        <div className={styles.toolbarLeftButtons}>
           <button className={styles.toolbarLink} type="button">
             Статус
           </button>
@@ -109,14 +109,14 @@ export function SalarySection({ rows, onPay, onView, onExport }: SalarySectionPr
                   <td>
                     <div className={styles.actions}>
                       {row.status !== 'paid' && (
-                        <button 
+                        <button
                           className={styles.actionButton}
                           onClick={() => onPay(row.id)}
                         >
                           Виплатити
                         </button>
                       )}
-                      <button 
+                      <button
                         className={`${styles.actionButton} ${styles.secondaryButton}`}
                         onClick={() => onView(row.id)}
                       >

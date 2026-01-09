@@ -54,15 +54,15 @@ export default function StaffPage() {
   }
 
   useEffect(() => {
-      fetch("/api/auth/me")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.authenticated) {
-            setUserRole(data.user.role);
-          }
-        })
-        .catch(() => setUserRole(null));
-    }, []);
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setUserRole(data.user.role);
+        }
+      })
+      .catch(() => setUserRole(null));
+  }, []);
 
   useEffect(() => {
     fetchStaff();
@@ -126,8 +126,10 @@ export default function StaffPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Персонал</h1>
-      <p className={styles.lead}>Управління співробітниками, графіками роботи та відпустками.</p>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Персонал</h1>
+        <p className={styles.lead}>Управління співробітниками, графіками роботи та відпустками.</p>
+      </div>
 
       <div className={styles.filters}>
         <input
@@ -275,7 +277,7 @@ export default function StaffPage() {
                 </div>
               </div>
               <div className={styles.cardFooter}>
-               {userRole === "admin" && ( <div className={styles.actions}>
+                {userRole === "admin" && (<div className={styles.actions}>
                   <button onClick={() => handleEdit(member)} className={styles.editBtn}>
                     Редагувати
                   </button>

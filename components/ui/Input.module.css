@@ -1,7 +1,108 @@
 .wrapper {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: 6px;
+    width: 100%;
+}
+
+.fullWidth {
+    width: 100%;
+}
+
+.label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-left: 2px;
+}
+
+.required {
+    color: var(--error-main);
+    margin-left: 4px;
+}
+
+.input,
+.select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    color: var(--gray-900);
+    background: var(--bg-surface);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-xs);
+}
+
+.input:focus,
+.select:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-100);
+    background: white;
+}
+
+.input:hover,
+.select:hover {
+    border-color: var(--gray-400);
+}
+
+.input:disabled,
+.select:disabled {
+    background: var(--gray-100);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    border-color: var(--gray-200);
+}
+
+.inputError {
+    border-color: var(--error-main);
+    background: var(--error-bg);
+}
+
+.inputError:focus {
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.2);
+    border-color: var(--error-main);
+}
+
+.error {
+    font-size: 0.8rem;
+    color: var(--error-main);
+    animation: slideInUp 0.2s ease-out;
+    margin-left: 2px;
+}
+
+.helperText {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-left: 2px;
+}
+
+/* Select specific */
+.select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .fullWidth {
