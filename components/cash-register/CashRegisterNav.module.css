@@ -97,7 +97,7 @@
 
 .openShiftBtn {
   background: var(--success-500);
-  color: white;
+  /* color: white; */
   border: none;
   box-shadow: var(--shadow-md);
 }

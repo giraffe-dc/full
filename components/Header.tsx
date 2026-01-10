@@ -63,7 +63,12 @@ export default function Header() {
                 {/* Navigation */}
                 {user && (
                     <nav className={styles.nav}>
-                        {navItems.map((item) => {
+                        {navItems.filter(item => {
+                            if (user.role === 'user') {
+                                return ['/', '/cash-register', '/projects'].includes(item.href);
+                            }
+                            return true;
+                        }).map((item) => {
                             const isActive = pathname === item.href ||
                                 (item.href !== '/' && pathname.startsWith(item.href));
 
