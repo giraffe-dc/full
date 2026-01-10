@@ -36,6 +36,7 @@ export function StockSupply() {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [ingredients, setIngredients] = useState<any[]>([]);
+    const [accounts, setAccounts] = useState<any[]>([]); // Added accounts state
 
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
@@ -48,7 +49,9 @@ export function StockSupply() {
         supplierId: '',
         description: '',
         paymentStatus: 'unpaid',
-        paidAmount: 0
+        paidAmount: 0,
+        paymentMethod: 'cash', // Added
+        moneyAccountId: '' // Added
     });
 
     const [items, setItems] = useState<SupplyItem[]>([]);
@@ -60,26 +63,10 @@ export function StockSupply() {
         fetchSuppliers();
         fetchIngredients();
         fetchSupplies();
+        fetchAccounts(); // Fetch accounts
     }, []);
 
-    useEffect(() => {
-        if (mode === 'trash') {
-            fetchDeletedSupplies();
-        } else {
-            fetchSupplies();
-        }
-    }, [mode]);
-
-    useEffect(() => {
-        if (ingredientSearch.length > 1) {
-            const results = ingredients.filter(i =>
-                i.name.toLowerCase().includes(ingredientSearch.toLowerCase())
-            );
-            setSearchResults(results.slice(0, 10));
-        } else {
-            setSearchResults([]);
-        }
-    }, [ingredientSearch, ingredients]);
+    // ... existing useEffects ...
 
     // Data Fetching
     const fetchSupplies = async () => {
@@ -112,6 +99,12 @@ export function StockSupply() {
         if (data.data) setIngredients(data.data);
     };
 
+    const fetchAccounts = async () => {
+        const res = await fetch('/api/accounting/accounts');
+        const data = await res.json();
+        if (data.data) setAccounts(data.data);
+    };
+
     const getName = (list: any[], id: string) => list.find(i => i._id === id)?.name || 'Unknown';
 
     // --- Form Logic ---
@@ -127,7 +120,11 @@ export function StockSupply() {
             supplierId: sup.supplierId,
             description: sup.description,
             paymentStatus: sup.paymentStatus,
-            paidAmount: sup.paidAmount
+            paidAmount: sup.paidAmount,
+            // @ts-ignore
+            paymentMethod: sup.paymentMethod || 'cash',
+            // @ts-ignore
+            moneyAccountId: sup.moneyAccountId || ''
         });
         setItems(sup.items.map((i: any) => ({
             id: Math.random().toString(36),
@@ -141,6 +138,7 @@ export function StockSupply() {
         setShowModal(true);
     };
 
+    // ... existing addItem, updateItem, removeItem, totalSum ...
     const addItem = (ingredient: any) => {
         setItems([...items, {
             id: Math.random().toString(36),
@@ -186,7 +184,9 @@ export function StockSupply() {
             totalCost: totalSum,
             description: formData.description,
             paymentStatus: formData.paymentStatus,
-            paidAmount: formData.paymentStatus === 'paid' ? totalSum : Number(formData.paidAmount)
+            paidAmount: formData.paymentStatus === 'paid' ? totalSum : Number(formData.paidAmount),
+            paymentMethod: formData.paymentMethod, // Send to API
+            moneyAccountId: formData.moneyAccountId // Send to API
         };
 
         try {
@@ -217,6 +217,7 @@ export function StockSupply() {
         }
     };
 
+    // ... existing handlers ...
     const handleDelete = async (id: string) => {
         if (!confirm('Ви впевнені, що хочете видалити це постачання? Товари будуть списані.')) return;
         try {
@@ -237,7 +238,6 @@ export function StockSupply() {
         } catch (e) { console.error(e); }
     };
 
-
     const resetForm = () => {
         setItems([]);
         setFormData({
@@ -246,7 +246,9 @@ export function StockSupply() {
             supplierId: '',
             description: '',
             paymentStatus: 'unpaid',
-            paidAmount: 0
+            paidAmount: 0,
+            paymentMethod: 'cash',
+            moneyAccountId: ''
         });
         setEditingId(null);
     };
@@ -427,20 +429,48 @@ export function StockSupply() {
                                                 <option value="partial">Часткова оплата</option>
                                             </select>
                                         </div>
-                                        {formData.paymentStatus === 'partial' && (
-                                            <div className={styles.formGroup} style={{ marginBottom: 0 }}>
-                                                <label className={styles.label}>Сплачена сума</label>
-                                                <input
-                                                    type="number"
-                                                    value={formData.paidAmount}
-                                                    onChange={e => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) })}
-                                                    className={styles.input}
-                                                />
-                                            </div>
+                                        {formData.paymentStatus !== 'unpaid' && (
+                                            <>
+                                                {formData.paymentStatus === 'partial' && (
+                                                    <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                                                        <label className={styles.label}>Сплачена сума</label>
+                                                        <input
+                                                            type="number"
+                                                            value={formData.paidAmount}
+                                                            onChange={e => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) })}
+                                                            className={styles.input}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                                                    <label className={styles.label}>Метод оплати</label>
+                                                    <select
+                                                        value={formData.paymentMethod}
+                                                        onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}
+                                                        className={styles.select}
+                                                    >
+                                                        <option value="cash">Готівка</option>
+                                                        <option value="card">Карта</option>
+                                                        <option value="bank">Банк</option>
+                                                    </select>
+                                                </div>
+                                                <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+                                                    <label className={styles.label}>З рахунку (опційно)</label>
+                                                    <select
+                                                        value={formData.moneyAccountId}
+                                                        onChange={e => setFormData({ ...formData, moneyAccountId: e.target.value })}
+                                                        className={styles.select}
+                                                    >
+                                                        <option value="">Авто-вибір (Налаштування)</option>
+                                                        {accounts.map(acc => (
+                                                            <option key={acc.id} value={acc.id}>
+                                                                {acc.name} ({acc.balance} {acc.currency})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </>
                                         )}
-                                        <div className={styles.formGroup} style={{ marginBottom: 0, flex: 1 }}>
-                                            {/* Spacer or other info */}
-                                        </div>
                                     </div>
                                 </div>
 

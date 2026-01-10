@@ -19,7 +19,7 @@ export function AccountsSection({
     const [formData, setFormData] = useState({
         name: '',
         type: 'cash',
-        balance: '',
+        initialBalance: '',
         currency: 'UAH',
         description: ''
     });
@@ -48,7 +48,7 @@ export function AccountsSection({
         setFormData({
             name: '',
             type: 'cash',
-            balance: '0',
+            initialBalance: '0',
             currency: 'UAH',
             description: ''
         });
@@ -60,7 +60,8 @@ export function AccountsSection({
         setFormData({
             name: account.name,
             type: account.type,
-            balance: String(account.balance),
+            // @ts-ignore - initialBalance might be missing in type def yet, but API returns it
+            initialBalance: String(account.initialBalance !== undefined ? account.initialBalance : account.balance),
             currency: account.currency || 'UAH',
             description: account.description || ''
         });
@@ -181,14 +182,17 @@ export function AccountsSection({
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.85em', color: '#4b5563', marginBottom: '4px' }}>Початковий баланс</label>
+                                <label style={{ display: 'block', fontSize: '0.85em', color: '#4b5563', marginBottom: '4px' }}>Початковий баланс (Старт)</label>
                                 <input
                                     type="number"
                                     step="0.01"
-                                    value={formData.balance}
-                                    onChange={e => setFormData({ ...formData, balance: e.target.value })}
+                                    value={formData.initialBalance}
+                                    onChange={e => setFormData({ ...formData, initialBalance: e.target.value })}
                                     style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
                                 />
+                                <div style={{ fontSize: '0.7em', color: '#9ca3af', marginTop: '4px' }}>
+                                    Ця сума буде додана до розрахованого балансу
+                                </div>
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85em', color: '#4b5563', marginBottom: '4px' }}>Валюта</label>

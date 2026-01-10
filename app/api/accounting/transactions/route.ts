@@ -212,6 +212,9 @@ export async function POST(req: NextRequest) {
         insertId = result.insertedId;
 
         // 4. Update Account Balance if linked
+        // REMOVED: Balance is now calculated dynamically. 
+        // We do NOT update money_accounts.balance here anymore.
+        /*
         if (targetAccountId) {
           const balanceChange = type === 'income' ? numericAmount : -numericAmount;
           await db.collection("money_accounts").updateOne(
@@ -223,6 +226,7 @@ export async function POST(req: NextRequest) {
             { session }
           );
         }
+        */
       });
     } finally {
       await session.endSession();

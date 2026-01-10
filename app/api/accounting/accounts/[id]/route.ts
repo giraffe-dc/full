@@ -22,14 +22,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const user = await getUserFromReq(req);
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const { name, type, balance, description, currency, status } = await req.json();
+        const { name, type, initialBalance, description, currency, status } = await req.json();
         const client = await clientPromise;
         const db = client.db("giraffe");
 
         const updateData: any = { updatedAt: new Date() };
         if (name !== undefined) updateData.name = name;
         if (type !== undefined) updateData.type = type;
-        if (balance !== undefined) updateData.balance = Number(balance);
+        if (initialBalance !== undefined) {
+            updateData.initialBalance = Number(initialBalance);
+            updateData.balance = Number(initialBalance); // Keep legacy field in sync
+        }
         if (description !== undefined) updateData.description = description;
         if (currency !== undefined) updateData.currency = currency;
         if (status !== undefined) updateData.status = status;

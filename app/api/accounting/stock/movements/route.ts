@@ -92,7 +92,8 @@ export async function PUT(req: NextRequest) {
             await revertBalances(db, oldDoc, session);
 
             // 3. Update Document
-            const updateDoc = {
+            // 3. Update Document
+            const updateDoc: any = {
                 date: new Date(body.date),
                 warehouseId: body.warehouseId,
                 toWarehouseId: body.toWarehouseId,
@@ -102,6 +103,9 @@ export async function PUT(req: NextRequest) {
                 paymentStatus: body.paymentStatus || 'unpaid',
                 paidAmount: body.paidAmount || 0,
                 description: body.description || "",
+                // Preserve or update new fields
+                paymentMethod: body.paymentMethod || oldDoc.paymentMethod,
+                moneyAccountId: body.moneyAccountId || oldDoc.moneyAccountId,
                 updatedAt: new Date()
             };
 
@@ -187,6 +191,8 @@ async function processTransaction(db: any, body: any, session: any) {
         paymentStatus: body.paymentStatus || 'unpaid',
         paidAmount: body.paidAmount || 0,
         description: body.description || "",
+        paymentMethod: body.paymentMethod, // Save to DB
+        moneyAccountId: body.moneyAccountId, // Save to DB
         createdAt: new Date(),
         isDeleted: false
     };
@@ -194,7 +200,7 @@ async function processTransaction(db: any, body: any, session: any) {
     const insertRes = await db.collection("stock_movements").insertOne(movementDoc, { session });
 
     // 2. Apply Balances
-    await applyBalances(db, body, session);
+    const applied = await applyBalances(db, body, session);
 
     return insertRes.insertedId;
 }
