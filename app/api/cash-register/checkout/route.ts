@@ -6,7 +6,26 @@ import { ObjectId } from "mongodb";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, paymentMethod, paymentDetails, total, subtotal, tax, customerId, shiftId, waiterName, waiterId } = body;
+        const {
+            items,
+            paymentMethod,
+            paymentDetails,
+            total,
+            subtotal,
+            tax,
+            customerId,
+            shiftId,
+            waiterName,
+            waiterId,
+            // New fields to preserve from check
+            createdAt: originalCreatedAt,
+            history: originalHistory,
+            tableName,
+            customerName,
+            guestsCount,
+            departmentId,
+            comment
+        } = body;
 
         // Validate input
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -21,6 +40,17 @@ export async function POST(request: Request) {
 
         try {
             await session.withTransaction(async () => {
+                // Prepare history
+                const history = Array.isArray(originalHistory) ? [...originalHistory] : [];
+                history.push({
+                    action: 'update_payment',
+                    changedBy: waiterName || 'System',
+                    date: new Date().toISOString(),
+                    previousValue: 'unpaid',
+                    newValue: paymentMethod,
+                    paymentDetails
+                });
+
                 // 1. Create Receipt
                 const receipt = {
                     receiptNumber: Date.now(), // Simple number generation for now
@@ -34,8 +64,15 @@ export async function POST(request: Request) {
                     total,
                     paymentMethod,
                     paymentDetails, // Added details
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+                    createdAt: originalCreatedAt ? new Date(originalCreatedAt) : new Date(),
+                    updatedAt: new Date(),
+                    // Preserved metadata
+                    history,
+                    tableName,
+                    customerName,
+                    guestsCount: guestsCount || 0,
+                    departmentId: departmentId ? new ObjectId(departmentId) : null,
+                    comment
                 };
 
                 const receiptResult = await db.collection("receipts").insertOne(receipt, { session });

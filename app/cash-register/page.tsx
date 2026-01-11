@@ -640,16 +640,11 @@ export default function CashRegisterPage() {
     // but to save time, I will use `checkout` route and then `DELETE check`.
 
     const payload = {
+      ...activeCheck, // Include all fields (id, history, createdAt, etc.)
       items: activeCheck.items,
       paymentMethod,
       paymentDetails: paymentMethod === 'mixed' ? paymentAmounts : (paymentMethod === 'cash' ? { cash: activeCheck.total, card: 0 } : { cash: 0, card: activeCheck.total }),
-      total: activeCheck.total,
-      subtotal: activeCheck.subtotal,
-      tax: activeCheck.tax,
-      customerId: activeCheck.customerId,
       shiftId: currentShift.id,
-      waiterName: activeCheck.waiterName,
-      waiterId: activeCheck.waiterId
     };
 
     try {
