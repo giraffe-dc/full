@@ -11,10 +11,14 @@ export async function GET(req: NextRequest) {
         // For MVP, fetch all. Optimization: filter fields project.
         const receipts = await db.collection("receipts").find({}).toArray();
 
-        // 2. Fetch products for fallback info (category, cost)
+        // 2. Fetch products and recipes for fallback info (category, cost)
         const productsRaw = await db.collection("products").find({}).toArray();
-        const productMap = new Map(productsRaw.map(p => [p._id.toString(), p])); // Map by _id
-        const productMapById = new Map(productsRaw.map(p => [p.id, p])); // Map by id (string)
+        const recipesRaw = await db.collection("recipes").find({}).toArray();
+
+        const allItemsRaw = [...productsRaw, ...recipesRaw];
+
+        const productMap = new Map(allItemsRaw.map(p => [p._id.toString(), p])); // Map by _id
+        const productMapById = new Map(allItemsRaw.map(p => [p.id, p])); // Map by id (string)
 
         // 3. Aggregate
         const statsMap = new Map<string, any>();
@@ -29,9 +33,9 @@ export async function GET(req: NextRequest) {
                 if (!statsMap.has(id)) {
                     // Find product details
                     let details = productMap.get(id) || productMapById.get(id);
-                    // If not found by ID, maybe try finding by name in productMap?
+                    // If not found by ID, maybe try finding by name in allItemsRaw?
                     if (!details) {
-                        details = productsRaw.find(p => p.name === item.name);
+                        details = allItemsRaw.find(p => p.name === item.name);
                     }
 
                     statsMap.set(id, {
@@ -56,7 +60,7 @@ export async function GET(req: NextRequest) {
                 // 2. Else use current product cost.
                 let unitCost = Number(item.cost || 0);
                 if (!unitCost) {
-                    const details = productMap.get(id) || productMapById.get(id) || productsRaw.find(p => p.name === item.name);
+                    const details = productMap.get(id) || productMapById.get(id) || allItemsRaw.find(p => p.name === item.name);
                     unitCost = Number(details?.costPerUnit || 0);
                 }
 
