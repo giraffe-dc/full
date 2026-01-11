@@ -50,12 +50,16 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
 
         // Validations
-        if (!body.type || !['supply', 'writeoff', 'move'].includes(body.type)) {
+        if (!body.type || !['supply', 'writeoff', 'move', 'sale', 'inventory'].includes(body.type)) {
             return NextResponse.json({ error: "Invalid type" }, { status: 400 });
         }
         if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
             return NextResponse.json({ error: "Items are required" }, { status: 400 });
         }
+
+        // 0. Check Period Lock
+        const lockError = await checkInventoryLock(db, body.warehouseId, body.date);
+        if (lockError) return NextResponse.json({ error: lockError }, { status: 403 });
 
         const session = client.startSession();
         let result;
@@ -87,6 +91,13 @@ export async function PUT(req: NextRequest) {
             // 1. Get Old Document
             const oldDoc = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
             if (!oldDoc) throw new Error("Document not found");
+
+            // 1.5 Check Period Lock for both OLD and NEW dates/warehouses
+            const oldLock = await checkInventoryLock(db, oldDoc.warehouseId, oldDoc.date);
+            if (oldLock) throw new Error(`Період заблоковано: ${oldLock}`);
+
+            const newLock = await checkInventoryLock(db, body.warehouseId, body.date);
+            if (newLock) throw new Error(`Нова дата заблокована: ${newLock}`);
 
             // 2. Revert Old Balances
             await revertBalances(db, oldDoc, session);
@@ -143,6 +154,10 @@ export async function DELETE(req: NextRequest) {
         await session.withTransaction(async () => {
             const doc = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
             if (!doc) throw new Error("Document not found");
+
+            // Check Period Lock
+            const lock = await checkInventoryLock(db, doc.warehouseId, doc.date);
+            if (lock) throw new Error(`Період заблоковано інвентаризацією: ${lock}`);
 
             if (restore === 'true') {
                 // RESTORE: Apply balances again, set isDeleted = false
@@ -225,7 +240,7 @@ async function applyBalances(db: any, data: any, session: any) {
                 },
                 { upsert: true, session }
             );
-        } else if (data.type === 'writeoff') {
+        } else if (data.type === 'writeoff' || data.type === 'sale') {
             await db.collection("stock_balances").updateOne(
                 { warehouseId: data.warehouseId, itemId: item.itemId },
                 { $inc: { quantity: -qty }, $set: { updatedAt: new Date() } },
@@ -245,6 +260,23 @@ async function applyBalances(db: any, data: any, session: any) {
                 },
                 { upsert: true, session }
             );
+        } else if (data.type === 'inventory') {
+            // For inventory, qty is the DELTA (Actual - Theoretical)
+            await db.collection("stock_balances").updateOne(
+                { warehouseId: data.warehouseId, itemId: item.itemId },
+                {
+                    $inc: { quantity: qty },
+                    $set: {
+                        itemName: item.itemName,
+                        unit: item.unit,
+                        updatedAt: new Date(),
+                        // Store the last inventory metadata if needed
+                        lastInventoryDate: new Date(data.date),
+                        lastInventoryQty: item.actualQty // If provided 
+                    }
+                },
+                { upsert: true, session }
+            );
         }
     }
 }
@@ -261,8 +293,8 @@ async function revertBalances(db: any, data: any, session: any) {
                 { $inc: { quantity: -qty } },
                 { session }
             );
-        } else if (data.type === 'writeoff') {
-            // Revert Writeoff: Increase Balance
+        } else if (data.type === 'writeoff' || data.type === 'sale') {
+            // Revert Writeoff/Sale: Increase Balance
             await db.collection("stock_balances").updateOne(
                 { warehouseId: data.warehouseId, itemId: item.itemId },
                 { $inc: { quantity: qty } },
@@ -280,6 +312,33 @@ async function revertBalances(db: any, data: any, session: any) {
                 { $inc: { quantity: -qty } },
                 { session }
             );
+        } else if (data.type === 'inventory') {
+            await db.collection("stock_balances").updateOne(
+                { warehouseId: data.warehouseId, itemId: item.itemId },
+                { $inc: { quantity: -qty } }, // Revert delta
+                { session }
+            );
         }
     }
+}
+
+async function checkInventoryLock(db: any, warehouseId: string, date: any) {
+    if (!warehouseId || !date) return null;
+    const docDate = new Date(date);
+
+    // Find the latest inventory for this warehouse
+    const lastInventory = await db.collection("stock_movements").findOne(
+        {
+            warehouseId,
+            type: 'inventory',
+            isDeleted: { $ne: true }
+        },
+        { sort: { date: -1 } }
+    );
+
+    if (lastInventory && docDate <= new Date(lastInventory.date)) {
+        return `Дата (${docDate.toLocaleDateString()}) заблокована останньою інвентаризацією від ${new Date(lastInventory.date).toLocaleDateString()}`;
+    }
+
+    return null;
 }

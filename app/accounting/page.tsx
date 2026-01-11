@@ -25,6 +25,7 @@ import { StockBalances } from '../../components/accounting/stock/StockBalances';
 import { StockSupply } from '../../components/accounting/stock/StockSupply';
 import { StockMovements } from '../../components/accounting/stock/StockMovements';
 import { StockWriteOff } from '../../components/accounting/stock/StockWriteOff';
+import { StockInventory } from '../../components/accounting/stock/StockInventory';
 
 import type { Transaction, Totals, CashShift, SalaryRow, MoneyAccount } from "../../types/accounting";
 import {
@@ -567,7 +568,7 @@ function AccountingContent() {
         )}
 
         {activeSection === "stockInventory" && (
-          <StockSection title="Інвентаризації" subtitle="Перевірка залишків товарів" />
+          <StockInventory />
         )}
 
         {activeSection === "stockSuppliers" && (

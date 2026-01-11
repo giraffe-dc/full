@@ -36,7 +36,9 @@ export function StockSupply() {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [ingredients, setIngredients] = useState<any[]>([]);
-    const [accounts, setAccounts] = useState<any[]>([]); // Added accounts state
+    const [products, setProducts] = useState<any[]>([]); // Added
+    const [recipes, setRecipes] = useState<any[]>([]); // Added
+    const [accounts, setAccounts] = useState<any[]>([]);
 
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
@@ -62,11 +64,32 @@ export function StockSupply() {
         fetchWarehouses();
         fetchSuppliers();
         fetchIngredients();
+        fetchProducts(); // Added
+        fetchRecipes(); // Added
         fetchSupplies();
-        fetchAccounts(); // Fetch accounts
+        fetchAccounts();
     }, []);
 
-    // ... existing useEffects ...
+    useEffect(() => {
+        if (!ingredientSearch.trim()) {
+            setSearchResults([]);
+            return;
+        }
+        const lower = ingredientSearch.toLowerCase();
+
+        // Combine all searchable items
+        const allItems = [
+            ...ingredients.map(i => ({ ...i, type: 'ingredient' })),
+            ...products.map(p => ({ ...p, type: 'product' })),
+            ...recipes.map(r => ({ ...r, type: 'recipe' }))
+        ];
+
+        const filtered = allItems.filter(item =>
+            item.name.toLowerCase().includes(lower) ||
+            (item.code && item.code.toLowerCase().includes(lower))
+        );
+        setSearchResults(filtered.slice(0, 10)); // Limit results
+    }, [ingredientSearch, ingredients, products, recipes]);
 
     // Data Fetching
     const fetchSupplies = async () => {
@@ -97,6 +120,18 @@ export function StockSupply() {
         const res = await fetch('/api/accounting/ingredients');
         const data = await res.json();
         if (data.data) setIngredients(data.data);
+    };
+
+    const fetchProducts = async () => {
+        const res = await fetch('/api/accounting/products');
+        const data = await res.json();
+        if (data.data) setProducts(data.data);
+    };
+
+    const fetchRecipes = async () => {
+        const res = await fetch('/api/accounting/recipes');
+        const data = await res.json();
+        if (data.data) setRecipes(data.data);
     };
 
     const fetchAccounts = async () => {
@@ -138,22 +173,32 @@ export function StockSupply() {
         setShowModal(true);
     };
 
-    // ... existing addItem, updateItem, removeItem, totalSum ...
-    const addItem = (ingredient: any) => {
+    const addItem = (item: any) => {
         setItems([...items, {
             id: Math.random().toString(36),
-            itemId: ingredient._id,
-            itemName: ingredient.name,
+            itemId: item._id || item.id,
+            itemName: item.name,
             qty: 0,
-            cost: 0,
-            unit: ingredient.unit
+            cost: item.costPerUnit || 0,
+            unit: item.unit || item.yieldUnit || 'шт'
         }]);
         setIngredientSearch('');
         setSearchResults([]);
     };
 
-    const updateItem = (id: string, field: keyof SupplyItem, value: any) => {
-        setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
+    const updateItem = (id: string, field: keyof SupplyItem | 'total', value: any) => {
+        setItems(items.map(i => {
+            if (i.id !== id) return i;
+
+            if (field === 'total') {
+                const total = parseFloat(value) || 0;
+                const cost = i.qty > 0 ? total / i.qty : 0;
+                return { ...i, cost };
+            }
+
+            const updated = { ...i, [field]: value };
+            return updated;
+        }));
     };
 
     const removeItem = (id: string) => {
@@ -217,7 +262,6 @@ export function StockSupply() {
         }
     };
 
-    // ... existing handlers ...
     const handleDelete = async (id: string) => {
         if (!confirm('Ви впевнені, що хочете видалити це постачання? Товари будуть списані.')) return;
         try {
@@ -261,7 +305,6 @@ export function StockSupply() {
         }
     };
 
-    // Filtering
     const filterList = (list: SupplyRecord[]) => {
         if (!searchTerm) return list;
         const lower = searchTerm.toLowerCase();
@@ -487,11 +530,21 @@ export function StockSupply() {
                                         <div className={styles.searchResults}>
                                             {searchResults.map(item => (
                                                 <div
-                                                    key={item._id}
+                                                    key={item._id || item.id}
                                                     onClick={() => addItem(item)}
                                                     className={styles.searchItem}
+                                                    style={{ display: 'flex', justifyContent: 'space-between' }}
                                                 >
-                                                    {item.name} ({item.unit})
+                                                    <span>{item.name} <small style={{ color: '#666' }}>({item.unit || item.yieldUnit || 'шт'})</small></span>
+                                                    <span style={{
+                                                        fontSize: '10px',
+                                                        background: '#eee',
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        textTransform: 'uppercase'
+                                                    }}>
+                                                        {item.type === 'product' ? 'Товар' : item.type === 'recipe' ? 'ТК' : 'Інгредієнт'}
+                                                    </span>
                                                 </div>
                                             ))}
                                         </div>
@@ -533,7 +586,15 @@ export function StockSupply() {
                                                             style={{ padding: '4px' }}
                                                         />
                                                     </td>
-                                                    <td>{(Number(item.qty) * Number(item.cost)).toFixed(2)}</td>
+                                                    <td>
+                                                        <input
+                                                            type="number" step="0.01"
+                                                            value={(Number(item.qty) * Number(item.cost)).toFixed(2)}
+                                                            onChange={e => updateItem(item.id, 'total', e.target.value)}
+                                                            className={styles.input}
+                                                            style={{ padding: '4px' }}
+                                                        />
+                                                    </td>
                                                     <td>
                                                         <button type="button" onClick={() => removeItem(item.id)} className={styles.actionDelete}>✕</button>
                                                     </td>

@@ -197,7 +197,7 @@ export async function POST(request: Request) {
 
                                 // Also log a movement for traceability
                                 await db.collection("stock_movements").insertOne({
-                                    type: "writeoff", // or 'sale'
+                                    type: "sale", // Changed from 'writeoff' to 'sale'
                                     date: new Date(),
                                     warehouseId: defaultWarehouse._id.toString(),
                                     items: [{
