@@ -56,9 +56,10 @@ export interface Receipt {
   total: number;
   paymentMethod: 'cash' | 'card' | 'mixed';
   createdAt: string;
+  updatedAt?: string;
   shiftId: string;
   notes?: string;
-  history?: {    
+  history?: {
     previousDetails: any;
     newDetails: any;
     action: string;

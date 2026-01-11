@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { DateRangePicker } from '../../../components/ui/DateRangePicker';
 import { Receipt } from '../../../types/cash-register';
 import styles from './page.module.css';
 
 export default function AccountingChecksPage() {
     const [receipts, setReceipts] = useState<Receipt[]>([]);
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [loading, setLoading] = useState(false);
     const [expandedRow, setExpandedRow] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'receipt' | 'history'>('receipt');
-    const [statusFilter, setStatusFilter] = useState<'open' | 'paid'>('paid');
+    const [statusFilter, setStatusFilter] = useState<'open' | 'paid' | 'all'>('all');
 
     // Edit State
     const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
@@ -18,12 +20,12 @@ export default function AccountingChecksPage() {
 
     useEffect(() => {
         fetchReceipts();
-    }, [date, statusFilter]);
+    }, [startDate, endDate, statusFilter]);
 
     const fetchReceipts = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/accounting/checks?date=${date}&status=${statusFilter}`);
+            const res = await fetch(`/api/accounting/checks?startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
             const data = await res.json();
             if (data.success) {
                 setReceipts(data.data);
@@ -110,6 +112,18 @@ export default function AccountingChecksPage() {
         }
     }
 
+    const totals = useMemo(() => {
+        const net = receipts.reduce((acc, r) => acc + ((r as any).status === 'open' ? 0 : r.total), 0);
+        const discount = receipts.reduce((acc, r) => acc + (r.items?.reduce((sum, item) => sum + (item.discount || 0), 0) || 0), 0);
+        const gross = net + discount;
+
+        const card = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'card').reduce((acc, r) => acc + r.total, 0);
+        const cash = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'cash').reduce((acc, r) => acc + r.total, 0);
+        const mixed = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'mixed').reduce((acc, r) => acc + r.total, 0);
+
+        return { net, discount, gross, card, cash, mixed };
+    }, [receipts]);
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -125,12 +139,48 @@ export default function AccountingChecksPage() {
                         <option value="open">Не оплачені</option>
                         <option value="paid">Оплачені</option>
                     </select>
-                    <input
-                        type="date"
-                        value={date}
-                        onChange={e => setDate(e.target.value)}
-                        className={styles.datePicker}
+                    <DateRangePicker
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(s, e) => {
+                            setStartDate(s);
+                            setEndDate(e);
+                        }}
                     />
+                </div>
+            </div>
+
+            <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Всього оплачено</span>
+                    <span className={styles.statValue}>{totals.net.toFixed(2)} ₴</span>
+                </div>
+                <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Всього прибуто</span>
+                    <span className={styles.statValue} style={{ color: '#2563eb' }}>{totals.gross.toFixed(2)} ₴</span>
+                </div>
+                <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Знижка</span>
+                    <span className={styles.statValue} style={{ color: '#dc2626' }}>{totals.discount.toFixed(2)} ₴</span>
+                </div>
+                <div className={styles.statCard}>
+                    <span className={styles.statLabel}>По типах оплати</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                            <span style={{ color: '#6b7280' }}>Готівка:</span>
+                            <span style={{ fontWeight: 600 }}>{totals.cash.toFixed(2)} ₴</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                            <span style={{ color: '#6b7280' }}>Картка:</span>
+                            <span style={{ fontWeight: 600 }}>{totals.card.toFixed(2)} ₴</span>
+                        </div>
+                        {totals.mixed > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                <span style={{ color: '#6b7280' }}>Змішана:</span>
+                                <span style={{ fontWeight: 600 }}>{totals.mixed.toFixed(2)} ₴</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -140,7 +190,8 @@ export default function AccountingChecksPage() {
                         <tr>
                             <th>#</th>
                             <th>Офіціант/Стіл</th>
-                            <th>Час</th>
+                            <th>Відкрито</th>
+                            <th>Закрито</th>
                             <th>Оплачено</th>
                             <th>Тип</th>
                             <th>Статус</th>
@@ -151,13 +202,34 @@ export default function AccountingChecksPage() {
                     </thead>
                     <tbody>
                         {receipts.length === 0 ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '20px' }}>Чеки відсутні за цей день</td></tr>
+                            <tr><td colSpan={10} style={{ textAlign: 'center', padding: '20px' }}>Чеки відсутні за цей день</td></tr>
                         ) : receipts.map(r => (
                             <>
                                 <tr key={r.id}>
                                     <td>{(r as any).type === 'check' ? '-' : r.receiptNumber}</td>
                                     <td>{r.waiterName || r.waiter}</td>
-                                    <td>{new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                                            {new Date(r.createdAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                            {new Date(r.createdAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {(r as any).status === 'paid' && (r as any).updatedAt ? (
+                                            <>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                                                    {new Date((r as any).updatedAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                                    {new Date((r as any).updatedAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <span style={{ color: '#9ca3af' }}>—</span>
+                                        )}
+                                    </td>
                                     <td>{r.total.toFixed(2)} ₴</td>
                                     <td>
                                         {(r as any).status === 'open' ? (
@@ -214,7 +286,7 @@ export default function AccountingChecksPage() {
                                 </tr>
                                 {expandedRow === r.id && (
                                     <tr className={styles.expandedRow}>
-                                        <td colSpan={9}>
+                                        <td colSpan={10}>
                                             <div className={styles.detailsContainer}>
                                                 <div className={styles.tabs}>
                                                     <div

@@ -1,0 +1,242 @@
+.container {
+    position: relative;
+    display: inline-block;
+}
+
+.trigger {
+    background: var(--primary-50);
+    border: 1px solid var(--primary-100);
+    color: var(--primary-700);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    transition: var(--transition-normal);
+}
+
+.trigger:hover {
+    background: var(--primary-100);
+    border-color: var(--primary-200);
+}
+
+.popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideUp 200ms ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.presets {
+    width: 200px;
+    padding: 16px;
+    border-right: 1px solid var(--gray-100);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.presetBtn {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    text-align: left;
+    cursor: pointer;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition-fast);
+}
+
+.presetBtn:hover {
+    background: var(--gray-50);
+    color: var(--primary-600);
+}
+
+.activePreset {
+    background: var(--primary-500) !important;
+    color: white !important;
+}
+
+.calendarWrapper {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.calendars {
+    display: flex;
+    gap: 32px;
+}
+
+.calendar {
+    width: 280px;
+}
+
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.monthTitle {
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: var(--gray-800);
+    text-transform: capitalize;
+}
+
+.navBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navBtn:hover {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.weekDays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 8px;
+}
+
+.weekDay {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-400);
+    padding: 8px 0;
+}
+
+.daysGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+    position: relative;
+    z-index: 1;
+}
+
+.day:hover:not(.otherMonth) {
+    background: var(--primary-50);
+    color: var(--primary-700);
+}
+
+.otherMonth {
+    color: var(--gray-300);
+    cursor: default;
+}
+
+.today {
+    font-weight: 700;
+    color: var(--primary-600);
+    text-decoration: underline;
+}
+
+.selected {
+    background: var(--primary-600) !important;
+    color: white !important;
+}
+
+.inRange {
+    background: var(--primary-50);
+}
+
+.rangeStart {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.rangeEnd {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.rangeMiddle {
+    border-radius: 0;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-100);
+}
+
+.applyBtn {
+    background: var(--success-main);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.applyBtn:hover {
+    background: var(--success-text);
+    transform: translateY(-1px);
+}
+
+.cancelBtn {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+}

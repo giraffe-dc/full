@@ -136,4 +136,3 @@ export function ReceiptsSection({ rows }: ReceiptsSectionProps) {
     </div>
   );
 }
-

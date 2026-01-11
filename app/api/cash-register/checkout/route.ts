@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, paymentMethod, total, subtotal, tax, customerId, shiftId, waiterName, waiterId } = body;
+        const { items, paymentMethod, paymentDetails, total, subtotal, tax, customerId, shiftId, waiterName, waiterId } = body;
 
         // Validate input
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
         const db = client.db("giraffe");
         const session = client.startSession();
 
-        let receiptId;
+        let receiptId: ObjectId | undefined;
 
         try {
             await session.withTransaction(async () => {
@@ -33,49 +33,61 @@ export async function POST(request: Request) {
                     tax,
                     total,
                     paymentMethod,
+                    paymentDetails, // Added details
                     createdAt: new Date(),
+                    updatedAt: new Date()
                 };
 
                 const receiptResult = await db.collection("receipts").insertOne(receipt, { session });
                 receiptId = receiptResult.insertedId;
 
-                // Match Account based on Settings
-                let accountId: ObjectId | null = null;
+                // Match Accounts based on Settings
                 const settings = await db.collection("settings").findOne({ type: "global" }, { session });
+                const financeSettings = settings?.finance || {};
 
-                if (settings && settings.finance) {
-                    if (paymentMethod === 'cash' && settings.finance.cashAccountId) {
-                        try { accountId = new ObjectId(settings.finance.cashAccountId); } catch (e) { }
-                    } else if (paymentMethod === 'card' && settings.finance.cardAccountId) {
-                        try { accountId = new ObjectId(settings.finance.cardAccountId); } catch (e) { }
+                // Unified transaction processing helper
+                const processPaymentPart = async (method: string, amount: number, accountIdStr: string | null) => {
+                    if (amount <= 0) return;
+
+                    let accountId: ObjectId | null = null;
+                    if (accountIdStr) {
+                        try { accountId = new ObjectId(accountIdStr); } catch (e) { }
                     }
-                }
 
-                // 2. Create Accounting Transaction (Revenue)
-                const transaction = {
-                    date: new Date(),
-                    amount: total,
-                    type: "income",
-                    category: "sales",
-                    description: `Чек #${receipt.receiptNumber}`,
-                    source: "cash-register",
-                    referenceId: receiptId,
-                    paymentMethod: paymentMethod,
-                    status: "completed",
-                    moneyAccountId: accountId ? accountId.toString() : null // Link to Account
+                    // Create Accounting Transaction
+                    const transaction = {
+                        date: new Date(),
+                        amount: amount,
+                        type: "income",
+                        category: "sales",
+                        description: `Чек #${receipt.receiptNumber} (${method})`,
+                        source: "cash-register",
+                        referenceId: receiptId,
+                        paymentMethod: method,
+                        status: "completed",
+                        moneyAccountId: accountId ? accountId.toString() : null
+                    };
+                    await db.collection("transactions").insertOne(transaction, { session });
+
+                    // Update Money Account Balance
+                    if (accountId) {
+                        await db.collection("money_accounts").updateOne(
+                            { _id: accountId },
+                            {
+                                $inc: { balance: amount },
+                                $set: { updatedAt: new Date() }
+                            },
+                            { session }
+                        );
+                    }
                 };
-                await db.collection("transactions").insertOne(transaction, { session });
 
-                // 2.1 Update Money Account Balance
-                if (accountId) {
-                    await db.collection("money_accounts").updateOne(
-                        { _id: accountId },
-                        {
-                            $inc: { balance: total },
-                            $set: { updatedAt: new Date() }
-                        },
-                        { session }
-                    );
+                if (paymentMethod === 'mixed' && paymentDetails) {
+                    await processPaymentPart('cash', paymentDetails.cash || 0, financeSettings.cashAccountId);
+                    await processPaymentPart('card', paymentDetails.card || 0, financeSettings.cardAccountId);
+                } else {
+                    const accId = paymentMethod === 'cash' ? financeSettings.cashAccountId : financeSettings.cardAccountId;
+                    await processPaymentPart(paymentMethod, total, accId);
                 }
 
                 // 3. Stock Deduction (Complex: Product -> Recipe -> Ingredients)

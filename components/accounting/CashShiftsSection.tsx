@@ -80,10 +80,6 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
         </div>
       </div>
 
-      {/* Toolbar/Filter placeholder */}
-      <div className={styles.controls}>
-        {/* <button className={styles.primaryButton} onClick={onAddShift}>+ Відкрити зміну</button> */}
-      </div>
 
       <div className={styles.tableCard}>
         <div className={styles.tableWrapper}>

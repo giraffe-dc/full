@@ -44,6 +44,7 @@ export default function CashRegisterPage() {
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<Receipt | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed'>('cash');
+  const [paymentAmounts, setPaymentAmounts] = useState({ cash: 0, card: 0 });
   const [amountGiven, setAmountGiven] = useState("");
   const [guestCountInput, setGuestCountInput] = useState("1");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -87,7 +88,7 @@ export default function CashRegisterPage() {
     setIsLoading(true);
     try {
       const [prodRes, deptRes, shiftRes, staffRes, checksRes, recipesRes] = await Promise.all([
-        fetch('/api/accounting/products?status=active'),        
+        fetch('/api/accounting/products?status=active'),
         fetch('/api/cash-register/departments'),
         fetch('/api/cash-register/shifts?status=open'),
         fetch('/api/staff'),
@@ -641,6 +642,7 @@ export default function CashRegisterPage() {
     const payload = {
       items: activeCheck.items,
       paymentMethod,
+      paymentDetails: paymentMethod === 'mixed' ? paymentAmounts : (paymentMethod === 'cash' ? { cash: activeCheck.total, card: 0 } : { cash: 0, card: activeCheck.total }),
       total: activeCheck.total,
       subtotal: activeCheck.subtotal,
       tax: activeCheck.tax,
@@ -1010,10 +1012,13 @@ export default function CashRegisterPage() {
                 {activeCheck?.total.toFixed(2)} ₴
               </div>
 
-              <div className={styles.paymentOptions}>
+              <div className={styles.paymentOptions} style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                 <button
                   className={`${styles.paymentOption} ${paymentMethod === 'cash' ? styles.active : ''}`}
-                  onClick={() => setPaymentMethod('cash')}
+                  onClick={() => {
+                    setPaymentMethod('cash');
+                    setAmountGiven(activeCheck?.total.toString() || "");
+                  }}
                 >
                   <span style={{ fontSize: '2rem' }}>💵</span> Готівка
                 </button>
@@ -1022,6 +1027,15 @@ export default function CashRegisterPage() {
                   onClick={() => setPaymentMethod('card')}
                 >
                   <span style={{ fontSize: '2rem' }}>💳</span> Карта
+                </button>
+                <button
+                  className={`${styles.paymentOption} ${paymentMethod === 'mixed' ? styles.active : ''}`}
+                  onClick={() => {
+                    setPaymentMethod('mixed');
+                    setPaymentAmounts({ cash: 0, card: 0 });
+                  }}
+                >
+                  <span style={{ fontSize: '2rem' }}>🌓</span> Змішана
                 </button>
               </div>
 
@@ -1044,9 +1058,59 @@ export default function CashRegisterPage() {
                 </div>
               )}
 
-              <div className={styles.modalActions}>
+              {paymentMethod === 'mixed' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className={styles.inputGroup} style={{ marginBottom: 0 }}>
+                    <label className={styles.inputLabel}>💵 Готівка</label>
+                    <input
+                      type="number"
+                      className={styles.inputField}
+                      placeholder="0.00"
+                      value={paymentAmounts.cash || ""}
+                      onChange={(e) => setPaymentAmounts({ ...paymentAmounts, cash: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className={styles.inputGroup} style={{ marginBottom: 0 }}>
+                    <label className={styles.inputLabel}>💳 Карта</label>
+                    <input
+                      type="number"
+                      className={styles.inputField}
+                      placeholder="0.00"
+                      value={paymentAmounts.card || ""}
+                      onChange={(e) => setPaymentAmounts({ ...paymentAmounts, card: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div style={{
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: '#f3f4f6',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontWeight: '600'
+                  }}>
+                    <span>Всього введено:</span>
+                    <span style={{
+                      color: (paymentAmounts.cash + paymentAmounts.card) === (activeCheck?.total || 0) ? '#166534' : '#dc2626'
+                    }}>
+                      {(paymentAmounts.cash + paymentAmounts.card).toFixed(2)} ₴ / {(activeCheck?.total || 0).toFixed(2)} ₴
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.modalActions} style={{ marginTop: '24px' }}>
                 <button className={styles.cancelButton} onClick={() => setShowPaymentModal(false)}>Скасувати</button>
-                <button className={styles.payButton} onClick={handleCheckout}>Підтвердити</button>
+                <button
+                  className={styles.payButton}
+                  disabled={
+                    paymentMethod === 'cash' ? Number(amountGiven) < (activeCheck?.total || 0) :
+                      paymentMethod === 'card' ? false :
+                        (paymentAmounts.cash + paymentAmounts.card).toFixed(2) !== (activeCheck?.total || 0).toFixed(2)
+                  }
+                  onClick={handleCheckout}
+                >
+                  Підтвердити
+                </button>
               </div>
             </div>
           </div>

@@ -7,45 +7,47 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const date = searchParams.get('date');
+        const startDateParam = searchParams.get('startDate');
+        const endDateParam = searchParams.get('endDate');
         const status = searchParams.get('status'); // 'all', 'open', 'paid'
 
         const client = await clientPromise;
         const db = client.db("giraffe");
 
-        const filter: any = {};
         const dateFilter: any = {};
+        let sDate: Date;
+        let eDate: Date;
 
-        if (date) {
-            const startDate = new Date(date);
-            startDate.setHours(0, 0, 0, 0);
-
-            const endDate = new Date(date);
-            endDate.setHours(23, 59, 59, 999);
-
-            dateFilter.createdAt = {
-                $gte: startDate,
-                $lte: endDate
-            };
+        if (startDateParam && endDateParam) {
+            sDate = new Date(startDateParam);
+            sDate.setHours(0, 0, 0, 0);
+            eDate = new Date(endDateParam);
+            eDate.setHours(23, 59, 59, 999);
+        } else if (date) {
+            sDate = new Date(date);
+            sDate.setHours(0, 0, 0, 0);
+            eDate = new Date(date);
+            eDate.setHours(23, 59, 59, 999);
         } else {
             // Default today
-            const startDate = new Date();
-            startDate.setHours(0, 0, 0, 0);
-            const endDate = new Date();
-            endDate.setHours(23, 59, 59, 999);
-            dateFilter.createdAt = {
-                $gte: startDate,
-                $lte: endDate
-            };
+            sDate = new Date();
+            sDate.setHours(0, 0, 0, 0);
+            eDate = new Date();
+            eDate.setHours(23, 59, 59, 999);
         }
 
+        dateFilter.createdAt = {
+            $gte: sDate,
+            $lte: eDate
+        };
+
         // Checks store 'createdAt' as ISO String, Receipts as Date object
-        const dateFilterString: any = {};
-        if (dateFilter.createdAt) {
-            dateFilterString.createdAt = {
-                $gte: dateFilter.createdAt.$gte.toISOString(),
-                $lte: dateFilter.createdAt.$lte.toISOString()
-            };
-        }
+        const dateFilterString: any = {
+            createdAt: {
+                $gte: sDate.toISOString(),
+                $lte: eDate.toISOString()
+            }
+        };
 
         let combinedResults: any[] = [];
 
