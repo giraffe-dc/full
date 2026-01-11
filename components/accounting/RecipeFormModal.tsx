@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MenuRecipe, RecipeIngredient } from '../../types/accounting';
 import styles from './RecipeFormModal.module.css';
+import { useToast } from '../ui/ToastContext';
 
 interface RecipeFormModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function RecipeFormModal({
   onClose,
   onSave,
 }: RecipeFormModalProps) {
+  const toast = useToast();
   const [formData, setFormData] = useState<Partial<MenuRecipe>>({
     code: '',
     name: '',
@@ -160,7 +162,7 @@ export function RecipeFormModal({
 
   const handleSave = () => {
     if (!formData.name || !formData.category) {
-      alert('Заповніть обов\'язкові поля (Назва, Категорія)');
+      toast.error('Заповніть обов\'язкові поля (Назва, Категорія)');
       return;
     }
 

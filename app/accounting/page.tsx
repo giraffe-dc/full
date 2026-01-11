@@ -58,11 +58,14 @@ import {
 } from "../../lib/accounting-utils";
 import { MarketingSection } from "@/components/accounting/MarketingSection";
 import { FinanceSettings } from "@/components/accounting/FinanceSettings";
+import { Preloader } from '@/components/ui/Preloader';
+import { useToast } from "@/components/ui/ToastContext";
 
 import { useSearchParams } from "next/navigation";
 
 
 function AccountingContent() {
+  const toast = useToast();
   const searchParams = useSearchParams();
   const activeSection = (searchParams.get("section") as AccountingSection) || "dashboard";
 
@@ -253,14 +256,23 @@ function AccountingContent() {
     } catch (e) { console.error(e); }
   }
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetchTx();
-    if (activeSection === 'clients') fetchClients();
-    if (activeSection === 'staff') fetchStaff();
-    if (activeSection === 'products') fetchProductsStats();
-    if (activeSection === 'receipts') fetchReceipts();
-    if (activeSection === 'cashShifts') fetchCashShifts();
-    fetchAccounts();
+    setLoading(true);
+    const fetchData = async () => {
+      await Promise.all([
+        fetchTx(),
+        fetchAccounts(),
+        activeSection === 'clients' ? fetchClients() : Promise.resolve(),
+        activeSection === 'staff' ? fetchStaff() : Promise.resolve(),
+        activeSection === 'products' ? fetchProductsStats() : Promise.resolve(),
+        activeSection === 'receipts' ? fetchReceipts() : Promise.resolve(),
+        activeSection === 'cashShifts' ? fetchCashShifts() : Promise.resolve(),
+      ]);
+      setLoading(false);
+    };
+    fetchData();
   }, [filters, activeSection]);
 
   function resetForm() {
@@ -306,10 +318,11 @@ function AccountingContent() {
     });
 
     if (res.ok) {
+      toast.success(editingTx ? 'Транзакцію оновлено!' : 'Транзакцію додано!');
       fetchTx();
       resetForm();
     } else {
-      alert("Помилка збереження");
+      toast.error("Помилка збереження");
     }
   }
 
@@ -317,9 +330,10 @@ function AccountingContent() {
     if (!confirm("Видалити транзакцію?")) return;
     const res = await fetch(`/api/accounting/transactions/${id}`, { method: "DELETE" });
     if (res.ok) {
+      toast.success("Транзакцію видалено");
       fetchTx();
     } else {
-      alert("Помилка видалення");
+      toast.error("Помилка видалення");
     }
   }
 
@@ -444,6 +458,10 @@ function AccountingContent() {
                                 : activeSection === "settings"
                                   ? "Налаштування фінансових параметрів."
                                   : "";
+
+  if (loading) {
+    return <Preloader message="Отримуємо дані бухгалтерії..." />;
+  }
 
   return (
     <div className={styles.container}>

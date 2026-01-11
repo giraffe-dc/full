@@ -11,10 +11,13 @@ import { StaffSchedulerModal } from '@/components/cash-register/StaffSchedulerMo
 import { WaiterSelectorModal } from '@/components/cash-register/WaiterSelectorModal';
 import { CheckView } from "@/components/cash-register/CheckView";
 import { ApplyPromotionModal } from "../../components/cash-register/ApplyPromotionModal";
+import { useToast } from "../../components/ui/ToastContext";
+import { Preloader } from "@/components/ui/Preloader";
 
 type ViewState = 'departments' | 'tables' | 'check';
 
 export default function CashRegisterPage() {
+  const toast = useToast();
   // --- Global Data ---
   const [products, setProducts] = useState<Service[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -160,6 +163,7 @@ export default function CashRegisterPage() {
       setIsLoading(false);
     }
   }
+
   const handleUpdateShiftStaff = async (ids: string[]) => {
     if (!currentShift) return;
     try {
@@ -182,7 +186,7 @@ export default function CashRegisterPage() {
 
   const handleSelectDepartment = async (dept: Department) => {
     if (!currentShift) {
-      alert("Спочатку відкрийте зміну!");
+      toast.error("Спочатку відкрийте зміну!");
       // setShowShiftModal(true);
       return;
     }
@@ -216,16 +220,16 @@ export default function CashRegisterPage() {
       if (data.success) {
         setDepartments([...departments, data.data]);
       } else {
-        alert("Помилка: " + data.error);
+        toast.error("Помилка: " + data.error);
       }
     } catch (e) {
-      alert("Помилка при створенні залу");
+      toast.error("Помилка при створенні залу");
     }
   };
 
   const handleSelectTable = async (table: Table) => {
     if (!currentShift) {
-      alert("Спочатку відкрийте зміну!");
+      toast.error("Спочатку відкрийте зміну!");
       setShowShiftModal(true);
       return;
     }
@@ -257,10 +261,10 @@ export default function CashRegisterPage() {
       if (data.success) {
         setTables([...tables, data.data]);
       } else {
-        alert("Помилка: " + data.error);
+        toast.error("Помилка: " + data.error);
       }
     } catch (e) {
-      alert("Помилка при створенні столу");
+      toast.error("Помилка при створенні столу");
     }
   };
 
@@ -298,7 +302,7 @@ export default function CashRegisterPage() {
       // This case should be handled by UI interceptor (handleTableClick),
       // but as a safety check, if we somehow get here without a waiter for a free table,
       // we should prevent check creation.
-      alert("Будь ласка, виберіть офіціанта.");
+      toast.error("Будь ласка, виберіть офіціанта.");
       setIsLoading(false);
       return;
     }
@@ -331,7 +335,7 @@ export default function CashRegisterPage() {
       }
     } catch (e) {
       console.error(e);
-      alert("Помилка при відкритті столу");
+      toast.error("Помилка при відкритті столу");
     } finally {
       setIsLoading(false);
     }
@@ -347,7 +351,7 @@ export default function CashRegisterPage() {
 
       // Free table
       if (activeStaffList.length === 0) {
-        alert("Нікого немає на зміні! Додайте співробітників.");
+        toast.error("Нікого немає на зміні! Додайте співробітників.");
         setShowStaffModal(true);
         return;
       }
@@ -447,7 +451,7 @@ export default function CashRegisterPage() {
 
   const handleOpenShift = async (balance: number, cashierId: string) => {
     if (!cashierId) {
-      alert("Оберіть співробітника, що відкриває зміну");
+      toast.error("Оберіть співробітника, що відкриває зміну");
       return;
     }
     const cashier = allStaff.find(s => s.id === cashierId);
@@ -464,14 +468,15 @@ export default function CashRegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
+        toast.success("Зміну відкрито!");
         setCurrentShift({ ...data.data, receipts: [] });
         setActiveStaffIds([cashierId]); // Update local active staff
-        setShowShiftModal(false);
+        setShowStaffModal(false);
       } else {
-        alert("Помилка: " + data.error);
+        toast.error("Помилка: " + data.error);
       }
     } catch (e) {
-      alert("Помилка мережі");
+      toast.error("Помилка мережі");
     }
   };
 
@@ -499,7 +504,7 @@ export default function CashRegisterPage() {
   const handleCreateTransaction = async () => {
     if (!currentShift) return;
     if (!transactionAmount || Number(transactionAmount) <= 0) {
-      alert("Введіть коректну суму");
+      toast.error("Введіть коректну суму");
       return;
     }
 
@@ -523,7 +528,7 @@ export default function CashRegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert("Операцію успішно збережено");
+        toast.success("Операцію успішно збережено");
         setShowTransactionModal(false);
         setTransactionAmount("");
         setTransactionCategory("");
@@ -531,10 +536,10 @@ export default function CashRegisterPage() {
         // Ideally refresh current shift data here to update totals immediately?
         // currentShift is updated on load or close. Let's trigger a light refresh if possible or just rely on next action.
       } else {
-        alert("Помилка: " + data.error);
+        toast.error("Помилка: " + data.error);
       }
     } catch (e) {
-      alert("Помилка мережі");
+      toast.error("Помилка мережі");
     }
   };
 
@@ -586,14 +591,11 @@ export default function CashRegisterPage() {
         setShowCloseShiftModal(true);
       } else {
         console.warn("No open shift found in API, but currentShift is set locally.");
-        // Fallback to local data if API fails to find it (should not happen usually)
-        // But to be safe, show modal with local start balance? 
-        // Better to alert user.
-        alert("Помилка: не знайдено відкриту зміну на сервері.");
+        toast.error("Помилка: не знайдено відкриту зміну на сервері.");
       }
     } catch (e) {
       console.error("Error fetching shift data", e);
-      alert("Не вдалося отримати дані зміни");
+      toast.error("Не вдалося отримати дані зміни");
     } finally {
       setIsLoading(false);
     }
@@ -611,15 +613,15 @@ export default function CashRegisterPage() {
       const data = await res.json();
 
       if (data.success) {
-        alert("Зміна закрита успішно!");
+        toast.success("Зміна закрита успішно!");
         setCurrentShift(null);
         setShowCloseShiftModal(false);
         setView('departments');
       } else {
-        alert("Помилка: " + data.error);
+        toast.error("Помилка: " + data.error);
       }
     } catch (e) {
-      alert("Помилка мережі");
+      toast.error("Помилка мережі");
     }
   };
 
@@ -661,15 +663,15 @@ export default function CashRegisterPage() {
         await fetch(`/api/cash-register/checks?id=${activeCheck.id}`, { method: 'DELETE' });
 
         // 3. Navigate back and refresh
-        alert("Оплата успішна!");
+        toast.success("Оплата успішна!");
         handleBackToTables();
       } else {
-        alert("Помилка оплати: " + (data.error || "Unknown"));
+        toast.error("Помилка оплати: " + (data.error || "Unknown"));
         setIsLoading(false);
       }
     } catch (e) {
       console.error(e);
-      alert("Помилка мережі при оплаті");
+      toast.error("Помилка мережі при оплаті");
       setIsLoading(false);
     }
   };
@@ -967,7 +969,7 @@ export default function CashRegisterPage() {
         setView('tables');
       } catch (e) {
         console.error("Failed to void check", e);
-        alert("Помилка при анулюванні чеку");
+        toast.error("Помилка при анулюванні чеку");
       }
     }
   };
@@ -1143,7 +1145,7 @@ export default function CashRegisterPage() {
           setShowStaffModal={setShowStaffModal}
           activeStaffIds={activeStaffIds}
           onShowPromotions={() => {
-            alert("Спочатку відкрийте чек!");
+            toast.error("Спочатку відкрийте чек!");
           }}
           isShiftOpen={!!currentShift}
           onOpenShift={handlePrepareOpenShift}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MenuIngredient } from '../../types/accounting';
 import styles from './IngredientFormModal.module.css';
+import { useToast } from '../ui/ToastContext';
 
 interface IngredientFormModalProps {
     isOpen: boolean;
@@ -17,6 +18,7 @@ export function IngredientFormModal({
     onClose,
     onSave,
 }: IngredientFormModalProps) {
+    const toast = useToast();
     const [formData, setFormData] = useState<Partial<MenuIngredient>>({
         code: '',
         name: '',
@@ -57,7 +59,7 @@ export function IngredientFormModal({
 
     const handleSave = () => {
         if (!formData.name || !formData.category) {
-            alert('Заповніть обов\'язкові поля');
+            toast.error('Заповніть обов\'язкові поля');
             return;
         }
 

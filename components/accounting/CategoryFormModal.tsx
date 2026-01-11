@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { ProductCategory } from '../../types/accounting';
 import styles from './CategoryFormModal.module.css';
+import { useToast } from '../ui/ToastContext';
+import { useEffect, useState } from 'react';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export function CategoryFormModal({
   onClose,
   onSave,
 }: CategoryFormModalProps) {
+  const toast = useToast();
   const [formData, setFormData] = useState<Partial<ProductCategory>>({
     name: '',
     parentCategory: undefined,
@@ -47,7 +49,7 @@ export function CategoryFormModal({
 
   const handleSave = () => {
     if (!formData.name) {
-      alert('Введіть назву категорії');
+      toast.error('Введіть назву категорії');
       return;
     }
 

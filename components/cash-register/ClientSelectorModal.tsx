@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './ClientSelectorModal.module.css';
 import { ClientFormModal } from '../accounting/ClientFormModal';
 import { ClientRow } from '../accounting/ClientsSection';
+import { Preloader } from '../ui/Preloader';
 
 // interface Client {
 //     id: string;
@@ -112,7 +113,7 @@ export function ClientSelectorModal({ onClose, onSelect, selectedClientId }: Cli
 
                 <div className={styles.list}>
                     {loading ? (
-                        <div style={{ padding: 16, textAlign: 'center' }}>Завантаження...</div>
+                        <Preloader fullScreen={false} variant="dark" message="Отримуємо список клієнтів..." />
                     ) : filteredClients.length === 0 ? (
                         <div style={{ padding: 16, textAlign: 'center', color: '#6b7280' }}>Клієнтів не знайдено</div>
                     ) : (

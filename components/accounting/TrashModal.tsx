@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Modal.module.css';
+import { useToast } from '../ui/ToastContext';
 
 interface TrashModalProps {
     isOpen: boolean;
@@ -10,6 +11,7 @@ interface TrashModalProps {
 }
 
 export function TrashModal({ isOpen, onClose, type, onRestore, title }: TrashModalProps) {
+    const toast = useToast();
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -73,12 +75,13 @@ export function TrashModal({ isOpen, onClose, type, onRestore, title }: TrashMod
             const res = await response.json();
 
             if (res.success) {
+                toast.success('Елемент відновлено');
                 // Remove from local list
                 setItems(items.filter(i => i.id !== id));
                 // Notify parent to refresh main list
                 onRestore(id, restoreType);
             } else {
-                alert('Помилка відновлення: ' + res.error);
+                toast.error('Помилка відновлення: ' + res.error);
             }
 
         } catch (error) {

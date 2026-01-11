@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Promotion, PromotionCondition } from '../../types/marketing';
 import { Check, CartItem } from '../../types/cash-register';
+import { Preloader } from '../ui/Preloader';
 import styles from '../accounting/marketing/PromotionModal.module.css'; // Reusing styles
 
 interface ApplyPromotionModalProps {
@@ -158,7 +159,9 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
                     <button className={styles.closeButton} onClick={onClose}>✕</button>
                 </div>
                 <div className={styles.content}>
-                    {availablePromotions.length === 0 ? (
+                    {isLoading ? (
+                        <Preloader fullScreen={false} variant="dark" message="Перевіряємо доступні акції..." />
+                    ) : availablePromotions.length === 0 ? (
                         <div style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
                             Немає доступних акцій для цього чеку
                         </div>

@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
 import styles from './StockSection.module.css';
+import { useToast } from '../../ui/ToastContext';
+import { useEffect, useState } from 'react';
 
 interface Warehouse { _id: string; name: string; }
 interface MoveItem {
@@ -22,6 +23,7 @@ interface MoveRecord {
 }
 
 export function StockMovements() {
+    const toast = useToast();
     const [mode, setMode] = useState<'list' | 'trash'>('list');
     const [showModal, setShowModal] = useState(false);
 
@@ -146,11 +148,11 @@ export function StockMovements() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.fromWarehouseId || !formData.toWarehouseId || items.length === 0) {
-            alert("Заповніть склади та додайте товари");
+            toast.error("Заповніть склади та додайте товари");
             return;
         }
         if (formData.fromWarehouseId === formData.toWarehouseId) {
-            alert("Склади повинні бути різними");
+            toast.error("Склади повинні бути різними");
             return;
         }
 
@@ -184,17 +186,17 @@ export function StockMovements() {
             });
 
             if (res.ok) {
-                alert(editingId ? 'Переміщення оновлено!' : 'Переміщення виконано!');
+                toast.success(editingId ? 'Переміщення оновлено!' : 'Переміщення виконано!');
                 resetForm();
                 setShowModal(false);
                 fetchMovements();
             } else {
                 const err = await res.json();
-                alert('Помилка: ' + err.error);
+                toast.error('Помилка: ' + err.error);
             }
         } catch (e) {
             console.error(e);
-            alert('Помилка збереження');
+            toast.error('Помилка збереження');
         }
     };
 

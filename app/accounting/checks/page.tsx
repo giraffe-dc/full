@@ -4,8 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { DateRangePicker } from '../../../components/ui/DateRangePicker';
 import { Receipt } from '../../../types/cash-register';
 import styles from './page.module.css';
+import { useToast } from '../../../components/ui/ToastContext';
 
 export default function AccountingChecksPage() {
+    const toast = useToast();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
@@ -42,12 +44,13 @@ export default function AccountingChecksPage() {
         try {
             const res = await fetch(`/api/accounting/checks?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
+                toast.success("Чек видалено");
                 fetchReceipts();
             } else {
-                alert("Помилка видалення");
+                toast.error("Помилка видалення");
             }
         } catch (e) {
-            alert("Помилка");
+            toast.error("Помилка");
         }
     };
 
@@ -93,13 +96,14 @@ export default function AccountingChecksPage() {
                 })
             });
             if (res.ok) {
+                toast.success("Чек оновлено");
                 setEditingReceipt(null);
                 fetchReceipts();
             } else {
-                alert("Помилка збереження");
+                toast.error("Помилка збереження");
             }
         } catch (e) {
-            alert("Помилка");
+            toast.error("Помилка");
         }
     };
 

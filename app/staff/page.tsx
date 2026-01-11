@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
+import { useToast } from "@/components/ui/ToastContext";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Preloader } from "@/components/ui/Preloader";
 
 type StaffMember = {
   _id: string;
@@ -16,6 +19,8 @@ type StaffMember = {
 };
 
 export default function StaffPage() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
@@ -23,6 +28,12 @@ export default function StaffPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Confirm Modal state
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string | null }>({
+    isOpen: false,
+    id: null,
+  });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -51,6 +62,7 @@ export default function StaffPage() {
     const res = await fetch(`/api/staff?${params.toString()}`);
     const data = await res.json();
     setStaff(data.data || []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -107,22 +119,31 @@ export default function StaffPage() {
     });
 
     if (res.ok) {
+      toast.success(editingStaff ? "Дані оновлено" : "Співробітника додано");
       fetchStaff();
       resetForm();
     } else {
-      alert("Помилка збереження");
+      toast.error("Помилка збереження");
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Видалити співробітника?")) return;
-    const res = await fetch(`/api/staff/${id}`, { method: "DELETE" });
+    setConfirmDelete({ isOpen: true, id });
+  }
+
+  async function executeDelete() {
+    if (!confirmDelete.id) return;
+    const res = await fetch(`/api/staff/${confirmDelete.id}`, { method: "DELETE" });
     if (res.ok) {
+      toast.success("Співробітника видалено");
       fetchStaff();
     } else {
-      alert("Помилка видалення");
+      toast.error("Помилка видалення");
     }
+    setConfirmDelete({ isOpen: false, id: null });
   }
+
+  if (loading) return <Preloader message="Завантаження списку персоналу..." />;
 
   return (
     <div className={styles.container}>
@@ -290,6 +311,14 @@ export default function StaffPage() {
           ))
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title="Видалення співробітника"
+        message="Ви впевнені, що хочете видалити цього співробітника? Ця дія незворотна."
+        onConfirm={executeDelete}
+        onClose={() => setConfirmDelete({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

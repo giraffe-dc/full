@@ -6,6 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import styles from './DocsEditor.module.css';
+import { useToast } from './ui/ToastContext';
 
 type Document = {
   _id: string;
@@ -24,6 +25,7 @@ export default function DocsEditor({
   onSave?: () => void;
   onCancel?: () => void;
 }) {
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('general');
   const [saving, setSaving] = useState(false);
@@ -90,23 +92,23 @@ export default function DocsEditor({
     };
 
     const saveToStorage = () => {
-       try {
+      try {
         window.localStorage.setItem('giraffe_docs_draft', JSON.stringify(payload));
       } catch {
         // ignore
       }
     };
-    
+
     // Save immediately on title/category change
     saveToStorage();
 
     // Also listen for editor content changes
     const handler = () => {
-       const currentContent = editor.getHTML();
-       const newPayload = { title, category, content: currentContent };
-       try {
+      const currentContent = editor.getHTML();
+      const newPayload = { title, category, content: currentContent };
+      try {
         window.localStorage.setItem('giraffe_docs_draft', JSON.stringify(newPayload));
-      } catch {}
+      } catch { }
     };
 
     editor.off('update'); // clear previous listeners to avoid duplicates
@@ -119,14 +121,14 @@ export default function DocsEditor({
 
   async function save() {
     if (!title.trim()) {
-      alert('Введіть заголовок');
+      toast.error('Введіть заголовок');
       return;
     }
     if (!editor) return;
 
     const content = editor.getHTML();
     if (!content.trim()) {
-      alert('Введіть текст документа');
+      toast.error('Введіть текст документа');
       return;
     }
 
@@ -155,7 +157,7 @@ export default function DocsEditor({
 
       if (onSave) onSave();
     } catch (err) {
-      alert('Помилка збереження документа');
+      toast.error('Помилка збереження документа');
     } finally {
       setSaving(false);
     }

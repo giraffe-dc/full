@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import styles from './MarketingSection.module.css'; // Make sure to create this or use shared styles
 import { PromotionModal } from './marketing/PromotionModal';
 import { Promotion } from '../../types/marketing';
+import { useToast } from '../ui/ToastContext';
 
 interface MarketingSectionProps {
     // Props if needed
 }
 
 export function MarketingSection({ }: MarketingSectionProps) {
+    const toast = useToast();
     const [promotions, setPromotions] = useState<Promotion[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [editingPromotion, setEditingPromotion] = useState<Promotion | undefined>(undefined);
@@ -47,10 +49,11 @@ export function MarketingSection({ }: MarketingSectionProps) {
         try {
             const res = await fetch(`/api/marketing/promotions/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                toast.success("Акцію видалено");
                 fetchPromotions();
             }
         } catch (e) {
-            alert("Помилка видалення");
+            toast.error("Помилка видалення");
         }
     };
 
@@ -68,13 +71,14 @@ export function MarketingSection({ }: MarketingSectionProps) {
             });
 
             if (res.ok) {
+                toast.success("Дані збережено");
                 setShowModal(false);
                 fetchPromotions();
             } else {
-                alert("Помилка збереження");
+                toast.error("Помилка збереження");
             }
         } catch (e) {
-            alert("Помилка мережі");
+            toast.error("Помилка мережі");
         }
     };
 

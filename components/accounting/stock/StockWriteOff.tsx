@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
 import styles from './StockSection.module.css';
+import { useToast } from '../../ui/ToastContext';
+import { useEffect, useState } from 'react';
 
 interface Warehouse { _id: string; name: string; }
 interface WriteOffItem {
@@ -21,6 +22,7 @@ interface WriteOffRecord {
 }
 
 export function StockWriteOff() {
+    const toast = useToast();
     const [mode, setMode] = useState<'list' | 'trash'>('list');
     const [showModal, setShowModal] = useState(false);
 
@@ -143,7 +145,7 @@ export function StockWriteOff() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.warehouseId || items.length === 0) {
-            alert("Оберіть склад та додайте товари");
+            toast.error("Оберіть склад та додайте товари");
             return;
         }
 
@@ -176,17 +178,17 @@ export function StockWriteOff() {
             });
 
             if (res.ok) {
-                alert(editingId ? 'Списання оновлено!' : 'Акт списання збережено!');
+                toast.success(editingId ? 'Списання оновлено!' : 'Акт списання збережено!');
                 resetForm();
                 setShowModal(false);
                 fetchWriteoffs();
             } else {
                 const err = await res.json();
-                alert('Помилка: ' + err.error);
+                toast.error('Помилка: ' + err.error);
             }
         } catch (e) {
             console.error(e);
-            alert('Помилка збереження');
+            toast.error('Помилка збереження');
         }
     };
 

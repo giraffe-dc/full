@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MoneyAccount } from '../../types/accounting';
 import styles from './InvoicesSection.module.css'; // Reusing styles for now
+import { useToast } from '../ui/ToastContext';
 
 interface AccountsSectionProps {
     rows: MoneyAccount[];
@@ -11,6 +12,7 @@ export function AccountsSection({
     rows,
     onRefresh
 }: AccountsSectionProps) {
+    const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingAccount, setEditingAccount] = useState<MoneyAccount | null>(null);
@@ -73,13 +75,14 @@ export function AccountsSection({
         try {
             const res = await fetch(`/api/accounting/accounts/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                toast.success('Рахунок видалено');
                 onRefresh();
             } else {
-                alert('Помилка видалення');
+                toast.error('Помилка видалення');
             }
         } catch (e) {
             console.error(e);
-            alert('Помилка сервера');
+            toast.error('Помилка сервера');
         }
     };
 
@@ -96,14 +99,15 @@ export function AccountsSection({
             });
 
             if (res.ok) {
+                toast.success(editingAccount ? 'Рахунок оновлено' : 'Рахунок створено');
                 setShowForm(false);
                 onRefresh();
             } else {
-                alert('Помилка збереження');
+                toast.error('Помилка збереження');
             }
         } catch (e) {
             console.error(e);
-            alert('Помилка сервера');
+            toast.error('Помилка сервера');
         }
     };
 

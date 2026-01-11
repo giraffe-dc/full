@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
+import { useToast } from "@/components/ui/ToastContext";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Preloader } from "@/components/ui/Preloader";
 
 type Project = {
   _id: string;
@@ -15,12 +18,20 @@ type Project = {
 };
 
 export default function ProjectsPage() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Confirm Modal state
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; id: string | null }>({
+    isOpen: false,
+    id: null,
+  });
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -36,6 +47,7 @@ export default function ProjectsPage() {
     const res = await fetch(`/api/projects?${params.toString()}`);
     const data = await res.json();
     setProjects(data.data || []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -88,22 +100,31 @@ export default function ProjectsPage() {
     });
 
     if (res.ok) {
+      toast.success(editingProject ? "Проект оновлено" : "Проект створено");
       fetchProjects();
       resetForm();
     } else {
-      alert("Помилка збереження");
+      toast.error("Помилка збереження");
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Видалити проект?")) return;
-    const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+    setConfirmDelete({ isOpen: true, id });
+  }
+
+  async function executeDelete() {
+    if (!confirmDelete.id) return;
+    const res = await fetch(`/api/projects/${confirmDelete.id}`, { method: "DELETE" });
     if (res.ok) {
+      toast.success("Проект видалено");
       fetchProjects();
     } else {
-      alert("Помилка видалення");
+      toast.error("Помилка видалення");
     }
+    setConfirmDelete({ isOpen: false, id: null });
   }
+
+  if (loading) return <Preloader message="Завантаження проектів..." />;
 
   return (
     <div className={styles.container}>
@@ -225,6 +246,14 @@ export default function ProjectsPage() {
           ))
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title="Видалення проекту"
+        message="Ви впевнені, що хочете видалити цей проект? Ця дія незворотна."
+        onConfirm={executeDelete}
+        onClose={() => setConfirmDelete({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

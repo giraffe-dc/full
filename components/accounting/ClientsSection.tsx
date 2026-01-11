@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from "react";
 import styles from "./ClientsSection.module.css";
 import { ClientFormModal } from "./ClientFormModal";
+import { useToast } from "../ui/ToastContext";
 
 export interface ClientRow {
   id?: string;
@@ -32,6 +33,7 @@ interface ClientsSectionProps {
 }
 
 export function ClientsSection({ rows, totals }: ClientsSectionProps) {
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientRow | undefined>(undefined);
@@ -76,21 +78,22 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
       const data = await res.json();
 
       if (res.ok) {
+        toast.success("Клієнта збережено");
         // Should refresh data here. 
         // Since we don't have refresh callback, we'll reload simple way or rely on SWR later.
         window.location.reload();
         return true;
       } else {
         if (data.error === 'duplicate_phone') {
-          alert(`❌ Помилка: ${data.message}`);
+          toast.error(`❌ Помилка: ${data.message}`);
         } else {
-          alert("❌ Помилка збереження клієнта");
+          toast.error("❌ Помилка збереження клієнта");
         }
         return false; // Повертаємо false при помилці
       }
     } catch (e) {
       console.error(e);
-      alert("❌ Помилка збереження клієнта");
+      toast.error("❌ Помилка збереження клієнта");
       return false; // Повертаємо false при помилці
     }
   };

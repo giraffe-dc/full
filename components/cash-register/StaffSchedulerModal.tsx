@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './StaffSchedulerModal.module.css';
+import { Preloader } from '../ui/Preloader';
 
 interface Staff {
     id: string;
@@ -63,7 +64,7 @@ export function StaffSchedulerModal({ currentActiveIds, onSave, onClose, shiftId
                 <h2 className={styles.title}>Хто на зміні?</h2>
 
                 {loading ? (
-                    <div style={{ padding: 20, textAlign: 'center' }}>Завантаження...</div>
+                    <Preloader fullScreen={false} variant="dark" message="Завантаження персоналу..." />
                 ) : (
                     <div className={styles.staffList}>
                         {staffList.map(staff => (

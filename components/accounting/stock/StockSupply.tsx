@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
 import styles from './StockSection.module.css';
+import { useToast } from '../../ui/ToastContext';
+import { useEffect, useState } from 'react';
 
 interface Warehouse { _id: string; name: string; }
 interface Supplier { _id: string; name: string; }
@@ -27,6 +28,7 @@ interface SupplyRecord {
 }
 
 export function StockSupply() {
+    const toast = useToast();
     const [mode, setMode] = useState<'list' | 'trash'>('list');
     const [showModal, setShowModal] = useState(false);
 
@@ -210,7 +212,7 @@ export function StockSupply() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.warehouseId || !formData.supplierId || items.length === 0) {
-            alert("Заповніть всі обов'язкові поля та додайте товари");
+            toast.error("Заповніть всі обов'язкові поля та додайте товари");
             return;
         }
 
@@ -248,17 +250,17 @@ export function StockSupply() {
             });
 
             if (res.ok) {
-                alert(editingId ? 'Постачання оновлено!' : 'Постачання збережено!');
+                toast.success(editingId ? 'Постачання оновлено!' : 'Постачання збережено!');
                 resetForm();
                 setShowModal(false);
                 fetchSupplies();
             } else {
                 const err = await res.json();
-                alert('Помилка: ' + err.error);
+                toast.error('Помилка: ' + err.error);
             }
         } catch (e) {
             console.error(e);
-            alert('Помилка збереження');
+            toast.error('Помилка збереження');
         }
     };
 

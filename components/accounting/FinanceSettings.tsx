@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MoneyAccount } from '../../types/accounting';
 import styles from './FinanceSettings.module.css';
+import { useToast } from '../ui/ToastContext';
 
 interface FinanceSettingsProps {
 }
 
 export function FinanceSettings() {
+    const toast = useToast();
     const [accounts, setAccounts] = useState<MoneyAccount[]>([]);
     const [settings, setSettings] = useState<any>({});
     const [loading, setLoading] = useState(false);
@@ -57,13 +59,13 @@ export function FinanceSettings() {
                 })
             });
             if (res.ok) {
-                alert('Налаштування збережено!');
+                toast.success('Налаштування збережено!');
             } else {
-                alert('Помилка збереження');
+                toast.error('Помилка збереження');
             }
         } catch (e) {
             console.error(e);
-            alert('Помилка сервера');
+            toast.error('Помилка сервера');
         }
     };
 

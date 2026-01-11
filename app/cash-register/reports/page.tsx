@@ -5,6 +5,7 @@ import styles from "./page.module.css";
 import { CashRegisterState, XReport, ZReport, ServiceCategory } from "../../../types/cash-register";
 import { XReportView } from "../../../components/cash-register/XReportView";
 import { ZReportView } from "../../../components/cash-register/ZReportView";
+import { Preloader } from "@/components/ui/Preloader";
 
 type ReportType = "x-report" | "z-report" | "receipts";
 
@@ -14,6 +15,7 @@ export default function ReportsPage() {
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
   const [expandedReceipt, setExpandedReceipt] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Завантажити дані з API
   useEffect(() => {
@@ -21,6 +23,7 @@ export default function ReportsPage() {
   }, [reportType, startDate, endDate]);
 
   const fetchReports = async () => {
+    setIsLoading(true);
     try {
       if (reportType === 'x-report') {
         // X-Report needs current OPEN shift with its receipts
@@ -77,6 +80,8 @@ export default function ReportsPage() {
       }
     } catch (e) {
       console.error("Reports load error", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -132,6 +137,10 @@ export default function ReportsPage() {
   };
 
   const xReport = reportType === "x-report" ? generateXReport() : null;
+
+  if (isLoading) {
+    return <Preloader message="Отримуємо дані звітів..." />;
+  }
 
   return (
     <div className={styles.container}>
