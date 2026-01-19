@@ -23,6 +23,14 @@ export const CATEGORY_LABELS: CategoryLabel = {
   marketing: "Маркетинг",
   maintenance: "Обслуговування",
   other: "Інше",
+  sales: "Продажі",
+  "Business Expenses": "Госп. витрати",
+  "Supplier Payment": "Постачальники",
+  "Utilities": "Комунальні",
+  "Deposit": "Депозит",
+  "Salary Payment": "Виплата ЗП",
+  "transfer": "Переміщення",
+  "incasation": "Інкасація",
 };
 
 export const CATEGORIES = Object.keys(CATEGORY_LABELS);

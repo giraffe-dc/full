@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
         const financeSettings = settings?.finance || {};
         const cashAccountId = financeSettings.cashAccountId;
         const cardAccountId = financeSettings.cardAccountId;
+        const safeAccountId = financeSettings.safeAccountId;
 
         // 2. Get All Accounts
         const accounts = await db.collection("money_accounts")
@@ -36,9 +37,11 @@ export async function GET(req: NextRequest) {
             .toArray();
 
         // 3. Get All Transactions and aggregate by account
-        // We need to match transactions to accounts via moneyAccountId OR paymentMethod defaults
         const transactions = await db.collection("transactions").find({}).toArray();
         const stockMovements = await db.collection("stock_movements").find({ type: 'supply', paidAmount: { $gt: 0 } }).toArray();
+
+        // 4. Get Cash Register Transactions
+        const cashTransactions = await db.collection("cash_transactions").find({}).toArray();
 
         // Helper to find account ID for a transaction
         const getTxAccountId = (tx: any) => {
@@ -74,13 +77,29 @@ export async function GET(req: NextRequest) {
 
         // Process Stock Supplies (Expenses)
         stockMovements.forEach(supply => {
-            // Logic for supplies: usually defaults to cash/card unless specified. 
-            // Assuming supplies follow same logic or have moneyAccountId (if added to schema).
-            // For now, let's assume they use default payment methods if not specified.
             const accId = getTxAccountId(supply);
             if (accId && accountBalances[accId] !== undefined) {
                 const amt = Number(supply.paidAmount) || 0;
                 accountBalances[accId] -= amt; // Supplies are expenses
+            }
+        });
+
+        // Process Cash Register Transactions
+        cashTransactions.forEach(ct => {
+            const amt = Number(ct.amount) || 0;
+
+            // Standard Cash Account Impact
+            if (cashAccountId && accountBalances[cashAccountId] !== undefined) {
+                if (ct.type === 'income') {
+                    accountBalances[cashAccountId] += amt;
+                } else if (ct.type === 'expense' || ct.type === 'incasation') {
+                    accountBalances[cashAccountId] -= amt;
+                }
+            }
+
+            // Incasation: Add to Safe Account
+            if (ct.type === 'incasation' && safeAccountId && accountBalances[safeAccountId] !== undefined) {
+                accountBalances[safeAccountId] += amt;
             }
         });
 

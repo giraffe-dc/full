@@ -141,6 +141,29 @@ export function calculateExpenseCategoryStats(transactions: any[]) {
 }
 
 /**
+ * Розрахувати статистику по методах оплати (готівка/картка) для доходів
+ */
+export function calculatePaymentMethodStats(transactions: any[]) {
+  const incomeTx = transactions.filter((t) => t.type === "income");
+  const stats: Record<string, number> = {
+    cash: 0,
+    card: 0,
+    mixed: 0,
+    other: 0
+  };
+
+  incomeTx.forEach((t) => {
+    const method = t.paymentMethod || "other";
+    if (method === 'cash') stats.cash += t.amount;
+    else if (method === 'card') stats.card += t.amount;
+    else if (method === 'mixed') stats.mixed += t.amount;
+    else stats.other += t.amount;
+  });
+
+  return stats;
+}
+
+/**
  * Розрахувати щоденну статистику
  */
 export function calculateDailyStats(transactions: any[]) {
@@ -149,13 +172,13 @@ export function calculateDailyStats(transactions: any[]) {
   transactions.forEach((t) => {
     const date = new Date(t.date).toISOString().split("T")[0];
     const current = dailyMap.get(date) || { income: 0, expense: 0 };
-    
+
     if (t.type === "income") {
       current.income += Number(t.amount || 0);
     } else if (t.type === "expense") {
       current.expense += Number(t.amount || 0);
     }
-    
+
     dailyMap.set(date, current);
   });
 

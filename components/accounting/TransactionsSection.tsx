@@ -79,6 +79,28 @@ export function TransactionsSection({
         </button>
       </div>
 
+      {/* Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ padding: '16px', borderRadius: '12px', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>Доходи</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#22c55e' }}>
+            {tx.reduce((acc, t) => t.type === 'income' ? acc + Number(t.amount) : acc, 0).toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </div>
+        </div>
+        <div style={{ padding: '16px', borderRadius: '12px', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>Витрати</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#ef4444' }}>
+            {tx.reduce((acc, t) => t.type === 'expense' ? acc + Number(t.amount) : acc, 0).toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </div>
+        </div>
+        <div style={{ padding: '16px', borderRadius: '12px', background: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>Баланс</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#3b82f6' }}>
+            {tx.reduce((acc, t) => t.type === 'income' ? acc + Number(t.amount) : acc - Number(t.amount), 0).toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className={styles.filters}>
         <div className={styles.dateGroup}>

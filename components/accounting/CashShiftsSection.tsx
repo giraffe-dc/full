@@ -111,7 +111,7 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                     <td>{shift.endTime ? formatDate(shift.endTime) : <span style={{ color: 'green' }}>Активна</span>}</td>
                     <td className={styles.moneyCell}>{formatMoney(shift.startBalance)}</td>
                     <td className={styles.moneyCell}>{formatMoney(shift.totalIncasation)}</td>
-                    <td className={styles.moneyCell} style={{ fontWeight: 'bold' }}>{formatMoney(shift.totalSalesCash)}</td>
+                    <td className={styles.moneyCell} style={{ fontWeight: 'bold' }}>{formatMoney(shift.endBalance)}</td>
                     <td className={styles.moneyCell} style={getDiffStyle(shift.cashDifference)}>{formatMoney(shift.cashDifference)}</td>
                     <td style={{ textAlign: 'right', color: '#6b7280' }}>
                       {expandedId === shift.id ? '▲' : '▼'}

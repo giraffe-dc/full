@@ -36,16 +36,21 @@ export async function GET(request: Request) {
             eDate.setHours(23, 59, 59, 999);
         }
 
-        dateFilter.createdAt = {
-            $gte: sDate,
-            $lte: eDate
-        };
-
-        // Checks store 'createdAt' as ISO String, Receipts as Date object
-        const dateFilterString: any = {
+        // Checks (Open) use createdAt (Opening Time)
+        const checksDateFilter = {
             createdAt: {
                 $gte: sDate.toISOString(),
                 $lte: eDate.toISOString()
+            }
+        };
+
+        // Receipts (Paid) use updatedAt (Payment/Closing Time)
+        // Note: We use Date objects for receipts collection usually, but check if checkout saves ISO or Date. 
+        // checkout/route.ts saves `updatedAt: new Date()` (Date object).
+        const receiptsDateFilter = {
+            updatedAt: {
+                $gte: sDate,
+                $lte: eDate
             }
         };
 
@@ -54,15 +59,15 @@ export async function GET(request: Request) {
         // Fetch Data based on status
         if ((!status || status === 'all' || status === 'paid')) {
             const receipts = await db.collection("receipts")
-                .find(dateFilter)
-                .sort({ createdAt: -1 })
+                .find(receiptsDateFilter)
+                .sort({ updatedAt: -1 })
                 .toArray();
-            combinedResults.push(...receipts.map(r => ({ ...r, id: r._id.toString(), status: 'paid', type: 'receipt' })));
+            combinedResults.push(...receipts.map(r => ({ ...r, id: r._id.toString(), status: 'paid', type: 'receipt', date: r.updatedAt })));
         }
 
         if ((!status || status === 'all' || status === 'open')) {
             const checks = await db.collection("checks")
-                .find(dateFilterString)
+                .find(checksDateFilter)
                 .sort({ createdAt: -1 })
                 .toArray();
 
@@ -73,12 +78,13 @@ export async function GET(request: Request) {
                 paymentMethod: 'unpaid',
                 status: 'open',
                 type: 'check',
-                customerName: c.tableName
+                customerName: c.tableName,
+                date: c.createdAt // Normalize date field for sorting
             })));
         }
 
-        // Sort combined results by createdAt desc
-        combinedResults.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Sort combined results by date desc
+        combinedResults.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return NextResponse.json({
             success: true,

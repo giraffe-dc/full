@@ -18,6 +18,7 @@ interface DashboardSectionProps {
   operationCount: number;
   incomeCategoryStats: { key: string; label: string; total: number; percent: number }[];
   expenseCategoryStats: { key: string; label: string; total: number; percent: number }[];
+  paymentMethodStats: { key: string; label: string; total: number; percent: number }[];
   dailyStats: DailyPoint[];
   maxDailyValue: number;
   filters: { startDate: string; endDate: string };
@@ -34,6 +35,7 @@ export function DashboardSection({
   operationCount,
   incomeCategoryStats,
   expenseCategoryStats,
+  paymentMethodStats,
   dailyStats,
   maxDailyValue,
   filters,
@@ -143,6 +145,36 @@ export function DashboardSection({
         {/* INCOME CATEGORIES */}
         <section className={styles.chartCard}>
           <h2 className={styles.chartTitle}>Структура Доходів</h2>
+
+          {/* Payment Methods Breakdown */}
+          {paymentMethodStats && paymentMethodStats.length > 0 && (
+            <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid #e5e7eb' }}>
+              <h3 style={{ fontSize: '0.9rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>За типом оплати</h3>
+              {paymentMethodStats.map(stat => (
+                <div key={stat.key} className={styles.listRow}>
+                  <div className={styles.listInfo}>
+                    <div className={styles.listLabel}>
+                      <span>{stat.label}</span>
+                      <span>{stat.total.toLocaleString('uk-UA')} ₴</span>
+                    </div>
+                    <div className={styles.barBg}>
+                      <div
+                        className={styles.barFill}
+                        style={{
+                          width: `${stat.percent}%`,
+                          backgroundColor: stat.key === 'cash' ? '#22c55e' : stat.key === 'card' ? '#3b82f6' : '#a855f7'
+                        }}
+                      ></div>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>{stat.percent.toFixed(1)}%</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Categories Breakdown */}
+          <h3 style={{ fontSize: '0.9rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>За категоріями</h3>
           {incomeCategoryStats.length === 0 ? (
             <div className={styles.emptyState}>Немає даних</div>
           ) : (

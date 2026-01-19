@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    const includePos = searchParams.get("includePos") === "true"; // Check for flag
+    const includeReceipts = searchParams.get("includeReceipts") === "true";
+    const includeCashTx = searchParams.get("includeCashTx") === "true"; // New flag
 
     const client = await clientPromise;
     const db = client.db("giraffe");
@@ -32,11 +33,15 @@ export async function GET(req: NextRequest) {
     // Date Filter Construction
     const dateFilter: any = {};
     if (startDate) dateFilter.$gte = new Date(startDate);
-    if (endDate) dateFilter.$lte = new Date(endDate);
+    if (endDate) {
+      const endD = new Date(endDate);
+      endD.setHours(23, 59, 59, 999);
+      dateFilter.$lte = endD;
+    }
 
     const matchDate = (field: string) => (Object.keys(dateFilter).length ? { [field]: dateFilter } : {});
 
-    // 1. Fetch Manual Transactions (excluding POS auto-generated ones if we have separate source)
+    // 1. Fetch Manual Transactions
     const txPromise = db.collection("transactions")
       .find({
         ...matchDate("date"),
@@ -53,12 +58,29 @@ export async function GET(req: NextRequest) {
       })
       .toArray();
 
-    // 3. Fetch Receipts (Income) - ONLY IF includePos is true
-    const receiptsPromise = includePos
+    // 3. Fetch Receipts (Income)
+    const receiptsPromise = includeReceipts
       ? db.collection("receipts").find({ ...matchDate("createdAt") }).toArray()
       : Promise.resolve([]);
 
-    const [txRaw, suppliesRaw, receiptsRaw] = await Promise.all([txPromise, suppliesPromise, receiptsPromise]);
+    // 4. Fetch Cash Transactions (Income/Expense/Incasation)
+    const cashTxPromise = includeCashTx
+      ? db.collection("cash_transactions").find({ ...matchDate("createdAt") }).toArray()
+      : Promise.resolve([]);
+
+    // 5. Fetch Settings for Account Resolution
+    const settingsPromise = db.collection("settings").findOne({ type: "global" });
+
+    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, settings] = await Promise.all([
+      txPromise,
+      suppliesPromise,
+      receiptsPromise,
+      cashTxPromise,
+      settingsPromise
+    ]);
+
+    // Resolve Cash Account ID from Settings
+    const cashAccountId = settings?.finance?.cashAccountId || null;
 
     const transactions = [
       // Manual
@@ -79,11 +101,25 @@ export async function GET(req: NextRequest) {
         description: `Чек #${r.receiptNumber}`,
         amount: r.total,
         type: 'income',
-        category: 'sales', // General category for POS
+        category: 'sales',
         paymentMethod: r.paymentMethod,
         source: 'pos',
-        visits: 1, // Count as 1 visit/order
+        visits: 1,
         createdAt: r.createdAt
+      })),
+      // Cash Register Transactions (Income/Expense/Incasation)
+      ...cashTxRaw.map(ct => ({
+        _id: ct._id.toString(),
+        date: ct.createdAt,
+        description: ct.comment || (ct.type === 'incasation' ? 'Інкасація' : (ct.type === 'income' ? 'Внесення' : 'Витрата')),
+        amount: ct.amount,
+        type: ct.type === 'incasation' ? 'expense' : ct.type,
+        category: ct.category || (ct.type === 'incasation' ? 'incasation' : 'other'),
+        paymentMethod: 'cash',
+        source: 'cash-register',
+        createdAt: ct.createdAt,
+        // Assign Default Cash Account ID
+        moneyAccountId: cashAccountId
       })),
       // Supplies -> Expense
       ...suppliesRaw.map(s => ({
@@ -129,10 +165,7 @@ export async function GET(req: NextRequest) {
       { income: 0, expense: 0, balance: 0 }
     );
 
-    // Slice for pagination if needed, but current UI assumes all load (limit 200 in original)
-    // Let's keep it robust but maybe limit if too large. 
-    // The original had limit(200). With merged data, it might be bigger.
-    // Let's return first 500 for performance.
+    // Slice for pagination if needed
     const resultData = filtered.slice(0, 500);
 
     return NextResponse.json({ data: resultData, totals });

@@ -6,6 +6,7 @@ import { ObjectId } from "mongodb";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+
         const {
             items,
             paymentMethod,
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
         const session = client.startSession();
 
         let receiptId: ObjectId | undefined;
+        let createdReceipt: any;
 
         try {
             await session.withTransaction(async () => {
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
 
                 const receiptResult = await db.collection("receipts").insertOne(receipt, { session });
                 receiptId = receiptResult.insertedId;
+                createdReceipt = receipt;
 
                 // Match Accounts based on Settings
                 const settings = await db.collection("settings").findOne({ type: "global" }, { session });
@@ -171,21 +174,7 @@ export async function POST(request: Request) {
                             const qtyToDeduct = (ing.net || ing.gross) * item.quantity;
 
                             // Deduct from Stock Balances
-                            // We need to know WHICH warehouse. Defaulting to a "Kitchen" or "Bar" would be good.
-                            // For MVP, lets assume a default warehouse or find one.
-                            // TODO: Pass warehouseId from frontend or settings.
-                            // Using a wildcard logic: update ANY warehouse that has this item? No, that's dangerous.
-                            // Let's assume a default warehouse ID for now or skip if not found.
-                            // Better approach: Since we don't have warehouse selection in POS yet, 
-                            // we will query for a warehouse that has this ingredient and deduct from it.
-                            // Or better, just use a 'default' warehouse concept.
-
-                            // Let's try to find a warehouseId from the item/ingredient mapping if possible
-                            // or just use the first warehouse found with positive balance?
-                            // Safe MVP: Just Log warning if no warehouse determined.
-
-                            // Implementation: Decrement from a specific warehouse (e.g., Main Warehouse)
-                            // You might need to fetch a default warehouse ID here.
+                            // Assuming default warehouse for now
                             const defaultWarehouse = await db.collection("warehouses").findOne({}, { session });
 
                             if (defaultWarehouse && ing.id) {
@@ -213,6 +202,22 @@ export async function POST(request: Request) {
                         }
                     }
                 }
+
+                // 4. Delete Open Check and Free Table
+                if (body.checkId) {
+                    await db.collection("checks").deleteOne({ _id: new ObjectId(body.checkId) }, { session });
+
+                    // Optional: Update table status to 'free' immediately?
+                    // Actually, if we delete the check, the table logic in 'checks/route.ts' (DELETE) handled it.
+                    // But here we are just deleting the document. We should also update the table manually.
+                    if (body.tableId) {
+                        await db.collection("tables").updateOne(
+                            { _id: new ObjectId(body.tableId) },
+                            { $set: { status: 'free', seats: 4 } }, // Resetting seats to default or 0? 4 is a safe default for now
+                            { session }
+                        );
+                    }
+                }
             });
         } catch (e) {
             console.error("Transaction aborted:", e);
@@ -221,7 +226,18 @@ export async function POST(request: Request) {
             await session.endSession();
         }
 
-        return NextResponse.json({ success: true, receiptId });
+        return NextResponse.json({
+            success: true,
+            data: {
+                ...createdReceipt,
+                id: receiptId?.toString(),
+                _id: undefined, // Remove MongoDB _id
+                shiftId: createdReceipt.shiftId?.toString(),
+                customerId: createdReceipt.customerId?.toString(),
+                waiterId: createdReceipt.waiterId?.toString(),
+                departmentId: createdReceipt.departmentId?.toString()
+            }
+        });
     } catch (error) {
         console.error("Checkout error:", error);
         return NextResponse.json({ error: "Checkout failed: " + (error as Error).message }, { status: 500 });

@@ -39,6 +39,7 @@ export interface CartItem {
   subtotal: number;
   discount?: number; // Discount amount for this item line
   guestId?: string; // For grouping items by guest
+  modifiers?: any[]; // Array of modifiers
 }
 
 // Чек

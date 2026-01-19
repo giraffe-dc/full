@@ -50,6 +50,7 @@ import {
   calculateProductTotals,
   calculatePaymentTotals,
   calculateIncomeStats,
+  calculatePaymentMethodStats,
   calculateIncomeCategoryStats,
   calculateExpenseCategoryStats,
   calculateDailyStats,
@@ -137,14 +138,35 @@ function AccountingContent() {
   // Агрегати для дашборда на основі поточних транзакцій (з мемоізацією)
   const dashboardStats = useMemo(() => {
     const incomeStats = calculateIncomeStats(tx);
-    const incomeCategoryStats = calculateIncomeCategoryStats(tx);
-    const expenseCategoryStats = calculateExpenseCategoryStats(tx);
+    const incomeCategoryStatsRaw = calculateIncomeCategoryStats(tx);
+    const expenseCategoryStatsRaw = calculateExpenseCategoryStats(tx);
+
+    // Payment Method Stats
+    const paymentMethodStatsRaw = calculatePaymentMethodStats(tx);
+    const paymentMethodStats = Object.entries(paymentMethodStatsRaw)
+      .filter(([_, val]) => val > 0)
+      .map(([key, val]) => {
+        const LABELS: Record<string, string> = {
+          cash: "Готівка",
+          card: "Картка",
+          mixed: "Змішана",
+          other: "Інше"
+        };
+        return {
+          key,
+          label: LABELS[key] || key,
+          total: val,
+          percent: incomeStats.totalIncomeAmount ? (val / incomeStats.totalIncomeAmount) * 100 : 0
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+
     const dailyStats = calculateDailyStats(tx);
     const maxDailyValue = calculateMaxDailyValue(dailyStats);
 
     return {
       ...incomeStats,
-      incomeCategoryStats: Object.entries(incomeCategoryStats)
+      incomeCategoryStats: Object.entries(incomeCategoryStatsRaw)
         .map(([key, total]) => ({
           key,
           label: categoryLabels[key] || key,
@@ -152,16 +174,17 @@ function AccountingContent() {
           percent: incomeStats.totalIncomeAmount ? (total / incomeStats.totalIncomeAmount) * 100 : 0,
         }))
         .sort((a, b) => b.total - a.total),
-      expenseCategoryStats: Object.entries(expenseCategoryStats)
+      expenseCategoryStats: Object.entries(expenseCategoryStatsRaw)
         .map(([key, total]) => ({
           key,
           label: categoryLabels[key] || key,
           total,
-          percent: Object.values(expenseCategoryStats).reduce((s, v) => s + v, 0)
-            ? (total / Object.values(expenseCategoryStats).reduce((s, v) => s + v, 0)) * 100
+          percent: Object.values(expenseCategoryStatsRaw).reduce((s, v) => s + v, 0)
+            ? (total / Object.values(expenseCategoryStatsRaw).reduce((s, v) => s + v, 0)) * 100
             : 0,
         }))
         .sort((a, b) => b.total - a.total),
+      paymentMethodStats,
       dailyStats,
       maxDailyValue,
     };
@@ -176,9 +199,15 @@ function AccountingContent() {
     if (filters.paymentMethod) params.append("paymentMethod", filters.paymentMethod);
     if (filters.source) params.append("source", filters.source);
 
-    // For Dashboard, include POS receipts
+    // Dashboard: Sales + Manual + CashTx
     if (activeSection === 'dashboard') {
-      params.append("includePos", "true");
+      params.append("includeReceipts", "true");
+      params.append("includeCashTx", "true");
+    }
+
+    // Revenue: Manual + CashTx (NO Sales Receipts as requested)
+    if (activeSection === 'revenue') {
+      params.append("includeCashTx", "true");
     }
 
     const res = await fetch(`/api/accounting/transactions?${params.toString()}`);
@@ -486,6 +515,7 @@ function AccountingContent() {
             operationCount={tx.length}
             incomeCategoryStats={dashboardStats.incomeCategoryStats}
             expenseCategoryStats={dashboardStats.expenseCategoryStats}
+            paymentMethodStats={dashboardStats.paymentMethodStats}
             dailyStats={dashboardStats.dailyStats}
             maxDailyValue={dashboardStats.maxDailyValue}
             filters={filters}
