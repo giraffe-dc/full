@@ -63,6 +63,7 @@ import { Preloader } from '@/components/ui/Preloader';
 import { useToast } from "@/components/ui/ToastContext";
 
 import { useSearchParams } from "next/navigation";
+import { TransactionModal } from "@/components/accounting/TransactionModal";
 
 
 function AccountingContent() {
@@ -336,8 +337,84 @@ function AccountingContent() {
     setShowForm(true);
   }
 
+  // State for cash shift transactions
+  const [currentShiftId, setCurrentShiftId] = useState<string | null>(null);
+
+  // ... (existing handlers)
+
+  function handleAddShiftTransaction(shiftId: string) {
+    setCurrentShiftId(shiftId);
+    setFormData({
+      date: new Date().toISOString().split("T")[0],
+      description: "",
+      amount: "",
+      type: "expense", // Default to expense for shifts usually? or income
+      category: "other",
+      paymentMethod: "cash",
+      source: "cash-register", // Mark as cash register
+      visits: "",
+      moneyAccountId: "",
+    });
+    setEditingTx(null);
+    setShowForm(true);
+  }
+
+  function handleEditShiftTransaction(t: any, shiftId: string) {
+    setCurrentShiftId(shiftId);
+    setEditingTx(t);
+    setFormData({
+      date: new Date(t.createdAt || new Date()).toISOString().split("T")[0],
+      description: t.comment || "",
+      amount: String(Math.abs(t.amount)), // Amount is stored as number, maybe negative for expense
+      type: (t.type === 'Прихід' || t.type === 'Відкриття зміни' || t.type === 'Закриття зміни' || t.amount >= 0) ? 'income' : 'expense', // Infer type from display or amount
+      category: t.category || "other",
+      paymentMethod: "cash",
+      source: "cash-register",
+      visits: "",
+      moneyAccountId: "",
+    });
+    setShowForm(true);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Check if we are in cash shift mode
+    if (activeSection === 'cashShifts' && currentShiftId) {
+      console.log(editingTx);
+      const url = editingTx ? `/api/cash-register/transactions?id=${editingTx.id}` : `/api/cash-register/transactions`; // PUT needs id, POST doesn't. 
+      // My API uses PUT /api/accounting/transactions for update (with body.id) and POST for create.
+
+      const method = editingTx ? "PUT" : "POST";
+      const body = {
+        id: editingTx ? editingTx.id : undefined,
+        shiftId: currentShiftId,
+        type: formData.type,
+        category: formData.category,
+        amount: formData.amount,
+        comment: formData.description,
+        // author?
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        toast.success(editingTx ? 'Транзакцію оновлено!' : 'Транзакцію додано!');
+        fetchCashShifts(); // Refresh shifts
+        setShowForm(false);
+        setEditingTx(null);
+        setCurrentShiftId(null);
+      } else {
+        toast.error("Помилка збереження");
+      }
+      return;
+    }
+
+    // Default Accounting Transactions Logic
     const url = editingTx ? `/api/accounting/transactions/${editingTx._id}` : "/api/accounting/transactions";
     const method = editingTx ? "PUT" : "POST";
     const res = await fetch(url, {
@@ -355,8 +432,22 @@ function AccountingContent() {
     }
   }
 
+  // ... (handleDelete need update too?)
+
   async function handleDelete(id: string) {
     if (!confirm("Видалити транзакцію?")) return;
+
+    if (activeSection === 'cashShifts') {
+      const res = await fetch(`/api/cash-register/transactions?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Транзакцію видалено");
+        fetchCashShifts();
+      } else {
+        toast.error("Помилка видалення");
+      }
+      return;
+    }
+
     const res = await fetch(`/api/accounting/transactions/${id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Транзакцію видалено");
@@ -365,6 +456,8 @@ function AccountingContent() {
       toast.error("Помилка видалення");
     }
   }
+  // ...
+
 
   function handleOpenNewForm() {
     setFormData({
@@ -575,7 +668,15 @@ function AccountingContent() {
         )}
 
         {activeSection === "cashShifts" && (
-          <CashShiftsSection rows={cashShifts} onAddShift={handleAddShift} onCloseShift={handleCloseShift} onOpenShift={handleOpenShift} onViewShift={handleViewShift} />
+          <CashShiftsSection
+            rows={cashShifts}
+            onAddShift={handleAddShift}
+            onCloseShift={handleCloseShift}
+            onOpenShift={handleOpenShift}
+            onViewShift={handleViewShift}
+            onAddTransaction={handleAddShiftTransaction}
+            onEditTransaction={handleEditShiftTransaction}
+          />
         )}
 
         {activeSection === "salary" && (
@@ -655,7 +756,17 @@ function AccountingContent() {
           <StockSection title="Категорії інгредієнтів" subtitle="Організація інгредієнтів" />
         )}
 
-
+        {/* Global Transaction Modal */}
+        <TransactionModal
+          showForm={showForm}
+          onCloseForm={() => setShowForm(false)}
+          form={formData}
+          onFormChange={setFormData}
+          onSubmit={handleSubmit}
+          categories={categories}
+          categoryLabels={categoryLabels}
+          accounts={accountsData}
+        />
       </div>
     </div>
   );

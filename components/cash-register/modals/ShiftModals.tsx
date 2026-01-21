@@ -178,7 +178,7 @@ export const ShiftModals = ({
                                 type="number"
                                 value={endBalance}
                                 onChange={(e) => setEndBalance(e.target.value)}
-                                placeholder={closingData.expectedBalance.toFixed(2)}
+                                placeholder={"Введіть фактичну готівку"}
                                 style={{
                                     width: '100%',
                                     padding: '10px',

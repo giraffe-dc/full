@@ -167,7 +167,7 @@ export function TransactionsSection({
       </div>
 
       {/* Form Section */}
-      {showForm && (
+      {/* {showForm && (
         <div className={styles.formSection}>
           <form onSubmit={onSubmit}>
             <div className={styles.formHeader}>
@@ -273,7 +273,7 @@ export function TransactionsSection({
             </div>
           </form>
         </div>
-      )}
+      )} */}
 
       {/* Table */}
       <div className={styles.tableWrapper}>

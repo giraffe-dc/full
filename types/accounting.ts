@@ -1,6 +1,7 @@
 // Типи даних для модуля Бухгалтерія
 
 export type Transaction = {
+  id: any;
   _id: string;
   date: string;
   description: string;

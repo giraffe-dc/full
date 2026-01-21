@@ -67,3 +67,73 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 });
     }
 }
+
+export async function PUT(request: Request) {
+    try {
+        const body = await request.json();
+        const { id, type, category, amount, comment } = body;
+
+        if (!id) return NextResponse.json({ error: "Transaction ID required" }, { status: 400 });
+
+        const client = await clientPromise;
+        const db = client.db("giraffe");
+
+        // Handle Open Shift Update
+        if (id.startsWith('open-')) {
+            const shiftId = id.replace('open-', '');
+            await db.collection("cash_shifts").updateOne(
+                { _id: new ObjectId(shiftId) },
+                { $set: { startBalance: Number(amount) } }
+            );
+            return NextResponse.json({ success: true, message: "Shift start balance updated" });
+        }
+
+        // Handle Close Shift Update
+        if (id.startsWith('close-')) {
+            const shiftId = id.replace('close-', '');
+            // Update both actualBalance and endBalance to keep them in sync or adhering to business logic
+            // endBalance usually means the finalized balance.
+            await db.collection("cash_shifts").updateOne(
+                { _id: new ObjectId(shiftId) },
+                { $set: { endBalance: Number(amount), actualBalance: Number(amount) } }
+            );
+            return NextResponse.json({ success: true, message: "Shift end balance updated" });
+        }
+
+        // Normal Transaction Update
+        await db.collection("cash_transactions").updateOne(
+            { _id: new ObjectId(id) },
+            {
+                $set: {
+                    type,
+                    category,
+                    amount: Number(amount),
+                    comment,
+                    updatedAt: new Date()
+                }
+            }
+        );
+
+        return NextResponse.json({ success: true, message: "Transaction updated" });
+    } catch (e) {
+        return NextResponse.json({ error: "Failed to update transaction" }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) return NextResponse.json({ error: "Transaction ID required" }, { status: 400 });
+
+        const client = await clientPromise;
+        const db = client.db("giraffe");
+
+        await db.collection("cash_transactions").deleteOne({ _id: new ObjectId(id) });
+
+        return NextResponse.json({ success: true, message: "Transaction deleted" });
+    } catch (e) {
+        return NextResponse.json({ error: "Failed to delete transaction" }, { status: 500 });
+    }
+}

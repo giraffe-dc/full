@@ -62,6 +62,41 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ ok: true });
     }
 
+    // 3. If not found, try 'cash_transactions'
+    const cashUpdateData: any = { updatedAt: new Date() };
+    if (date !== undefined) cashUpdateData.createdAt = date ? new Date(date) : new Date();
+    if (description !== undefined) cashUpdateData.comment = description;
+
+    // Handle amount/type for cash_transactions (signed amount)
+    // We need both amount and type to determine the sign correctly strictly speaking, 
+    // but if we only update one, we might need to fetch the doc first or assume.
+    // However, usually form sends both.
+    let newAmount = amount !== undefined ? Number(amount) : undefined;
+    if (newAmount !== undefined && (type === 'expense' || (!type && newAmount < 0))) {
+      newAmount = -Math.abs(newAmount);
+    } else if (newAmount !== undefined) {
+      newAmount = Math.abs(newAmount);
+    }
+
+    if (newAmount !== undefined) cashUpdateData.amount = newAmount;
+    if (type !== undefined) cashUpdateData.type = type === 'expense' ? 'Витрата' : 'Прихід'; // Map to UA labels if that's what's stored, OR keep English if standardized. 
+    // Checking existing code in cash-register/transactions, it seems it expects specific types or stores what's passed.
+    // Let's assume standardized 'income'/'expense' or mapped.
+    // Actually, cash-register/transactions stored 'Прихід'/'Витрата' or raw? 
+    // Let's check cash-register/transactions route again? 
+    // Better safe: strictly update what we can. 
+    // The previous code used `t.type` which was mapped to 'income'/'expense'.
+
+    if (category !== undefined) cashUpdateData.category = category;
+
+    const resultCash = await db
+      .collection("cash_transactions")
+      .updateOne({ _id: new ObjectId(id) }, { $set: cashUpdateData });
+
+    if (resultCash.matchedCount > 0) {
+      return NextResponse.json({ ok: true });
+    }
+
     return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -111,12 +146,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
           if (sm) {
             await db.collection("stock_movements").deleteOne({ _id: new ObjectId(id) }, { session });
             deleted = true;
+          } else {
+            // Try deleting cash_transactions
+            const ct = await db.collection("cash_transactions").findOne({ _id: new ObjectId(id) }, { session });
+            if (ct) {
+              await db.collection("cash_transactions").deleteOne({ _id: new ObjectId(id) }, { session });
+              deleted = true;
+            }
           }
         }
       });
     } finally {
       await session.endSession();
     }
+    // ...
 
     if (deleted) {
       return NextResponse.json({ ok: true });

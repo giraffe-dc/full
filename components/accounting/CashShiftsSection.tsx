@@ -10,6 +10,7 @@ export interface ShiftTransaction {
   authorName: string;
   comment?: string;
   editedBy?: string;
+  category?: string;
 }
 
 export interface CashShift {
@@ -43,9 +44,11 @@ interface CashShiftsSectionProps {
   onCloseShift: (id: string) => void;
   onOpenShift: (id: string) => void;
   onViewShift: (id: string) => void;
+  onAddTransaction: (shiftId: string) => void;
+  onEditTransaction: (tx: ShiftTransaction, shiftId: string) => void;
 }
 
-export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift, onViewShift }: CashShiftsSectionProps) {
+export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift, onViewShift, onAddTransaction, onEditTransaction }: CashShiftsSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
@@ -166,7 +169,10 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
 
                           {/* Action Link */}
                           <div style={{ marginBottom: '15px' }}>
-                            <button style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                            <button
+                              onClick={() => onAddTransaction(shift.id)}
+                              style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
+                            >
                               + Додати транзакцію
                             </button>
                           </div>
@@ -195,7 +201,14 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                                     <td style={{ padding: '10px 0', color: '#6b7280' }}>{t.comment || '—'}</td>
                                     <td style={{ padding: '10px 0', color: '#6b7280' }}>{t.editedBy || '—'}</td>
                                     <td style={{ padding: '10px 0', textAlign: 'right' }}>
-                                      <button style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '8px' }}>Ред</button>
+                                      {t.id && (
+                                        <button
+                                          onClick={() => onEditTransaction(t, shift.id)}
+                                          style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '8px' }}
+                                        >
+                                          Ред
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 ))
@@ -223,4 +236,3 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
     </div>
   );
 }
-

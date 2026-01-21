@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const client = await clientPromise;
@@ -19,54 +21,56 @@ export async function GET(request: NextRequest) {
       const start = new Date(shift.startTime);
       const end = shift.endTime ? new Date(shift.endTime) : new Date();
 
-      // 1. Fetch Receipts linked to this shift
-      // If shiftId is stored in receipt, use it. Ideally we should use it.
-      // Fallback to date range if shiftId missing (legacy).
-      const receiptQuery = shiftId ? { shiftId: new ObjectId(shiftId) } : {
-        createdAt: { $gte: start, $lte: end }
-      };
+      const cashTransactionsCollection = db.collection('cash_transactions');
 
+      // 1. Fetch Receipts linked to this shift
       let shiftReceipts = [];
       try {
-        // Try searching by shiftId (ObjectId) first
         shiftReceipts = await receiptsCollection.find({ shiftId: new ObjectId(shiftId) }).toArray();
       } catch (e) {
-        // Fallback if shiftId is string or not found
         shiftReceipts = await receiptsCollection.find({
           createdAt: { $gte: start, $lte: end }
         }).toArray();
       }
 
       const cashRevenue = shiftReceipts
-        .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed') // Simplified mixed
+        .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
         .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.cashPart || r.total) : r.total), 0);
 
       const cashlessRevenue = shiftReceipts
         .filter((r: any) => r.paymentMethod === 'card')
         .reduce((acc: number, r: any) => acc + r.total, 0);
 
-      // 2. Fetch Transactions (Income/Expense/Incasation)
-      // Linking transactions to shifts is tricky if they don't have shiftId.
-      // We will use Date Range for now.
+      // 2. Fetch Manual Cash Transactions (Income/Expense/Incasation)
+      // Use shiftId if possible, else date range
+      let cashTxs = [];
+      try {
+        cashTxs = await cashTransactionsCollection.find({ shiftId: new ObjectId(shiftId) }).toArray();
+      } catch (e) {
+        cashTxs = await cashTransactionsCollection.find({ createdAt: { $gte: start, $lte: end } }).toArray();
+      }
+
+      // 3. Fetch General Transactions ( Legacy/Other sources) - optional/legacy check
+      // We keep this if there are manual transactions from accounting linked to this time, 
+      // but usually cash register ops are in cash_transactions now.
       const txs = await transactionsCollection.find({
         date: { $gte: start, $lte: end },
-        source: { $ne: 'cash-register' } // Exclude automatic sales transactions to avoid double counting if they exist
+        source: { $ne: 'cash-register' }
       }).toArray();
 
-      // Separate transactions
       let income = 0;
       let expenses = 0;
       let incasation = 0;
 
       const detailedTransactions = [];
 
-      // Add Shift Open/Close events as pseudo-transactions for UI
+      // Add Shift Open/Close events
       detailedTransactions.push({
         id: `open-${shiftId}`,
-        category: 'Відкриття зміни',
-        time: new Date(shift.startTime).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
-        sum: shift.openingBalance,
-        employee: shift.cashier,
+        type: 'Відкриття зміни',
+        createdAt: new Date(shift.startTime).toISOString(),
+        amount: shift.openingBalance,
+        authorName: shift.cashier,
         comment: '',
         editedBy: '—'
       });
@@ -74,39 +78,57 @@ export async function GET(request: NextRequest) {
       if (shift.endTime) {
         detailedTransactions.push({
           id: `close-${shiftId}`,
-          category: 'Закриття зміни',
-          time: new Date(shift.endTime).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
-          sum: shift.actualBalance || shift.currentCash || 0, // Using recorded closing balance
-          employee: shift.cashier,
+          type: 'Закриття зміни',
+          createdAt: new Date(shift.endTime).toISOString(),
+          amount: shift.actualBalance || shift.currentCash || 0,
+          authorName: shift.cashier,
           comment: '',
           editedBy: '—'
         });
       }
 
+      // Process Cash Transactions (The main ones for the shift)
+      cashTxs.forEach((ct: any) => {
+        const amt = Number(ct.amount) || 0;
+        if (ct.type === 'income') income += amt;
+        if (ct.type === 'expense') expenses += amt;
+        if (ct.type === 'incasation') incasation += amt;
+
+        detailedTransactions.push({
+          id: ct._id.toString(),
+          type: ct.type === 'incasation' ? 'Інкасація' : (ct.category || (ct.type === 'income' ? 'Прихід' : 'Витрата')), // Map type/category to display name
+          createdAt: ct.createdAt, // Ensure date string compatibility
+          amount: ct.type === 'expense' || ct.type === 'incasation' ? -amt : amt, // Visual negative for expense
+          authorName: ct.authorName || shift.cashier,
+          comment: ct.comment,
+          editedBy: '—'
+        });
+      });
+
+      // Process General Transactions (Legacy backup)
       txs.forEach((t: any) => {
+        // Only include if not already covered (unlikely to have dups if sources differ)
         if (t.type === 'income') income += (t.amount || 0);
         if (t.type === 'expense') expenses += (t.amount || 0);
-        if (t.category === 'incasation' || t.description?.toLowerCase().includes('інкасація')) {
-          incasation += (t.amount || 0);
-        }
 
         detailedTransactions.push({
           id: t._id.toString(),
-          category: t.category || (t.type === 'income' ? 'Прихід' : 'Витрата'),
-          time: new Date(t.date).toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
-          sum: t.amount,
-          employee: t.user || shift.cashier, // Fallback
+          type: t.category || (t.type === 'income' ? 'Прихід' : 'Витрата'),
+          createdAt: t.date,
+          amount: t.type === 'expense' ? -(t.amount || 0) : (t.amount || 0),
+          authorName: t.user || shift.cashier,
           comment: t.description,
           editedBy: '—'
         });
       });
 
-      // 3. Calculate Balances
+      // 4. Calculate Balances
       // Book Balance = Opening + Cash Revenue + Incomes - Expenses - Incasation
-      // Note: Cashless revenue goes to bank, doesn't affect Cash Drawer Balance.
       const bookBalance = (shift.openingBalance || 0) + cashRevenue + income - expenses - incasation;
-      const actualBalance = shift.closingBalance !== undefined ? shift.closingBalance : bookBalance; // If not closed, assume match or use current
+      const actualBalance = shift.closingBalance !== undefined ? shift.closingBalance : bookBalance;
       const difference = actualBalance - bookBalance;
+
+      console.log(`Shift ${shiftId}: Transactions count=${detailedTransactions.length}, OpenBalance=${shift.openingBalance}, Income=${income}`);
 
       return {
         id: shiftId,
@@ -114,18 +136,20 @@ export async function GET(request: NextRequest) {
         startTime: shift.startTime,
         endTime: shift.endTime,
         openingBalance: shift.openingBalance,
-        incasation: incasation,
-        currentCash: actualBalance,
-        difference: difference,
+        totalIncasation: incasation,
+        totalSalesCash: cashRevenue,
 
+        // Detailed stats
         bookBalance: bookBalance,
-        actualBalance: actualBalance,
-        cashRevenue: cashRevenue,
-        cashlessRevenue: cashlessRevenue,
-        income: income,
-        expenses: expenses,
+        endBalance: actualBalance, // "Фактичний баланс" usually means what was counted. If open, use book or 0? 
+        // Logic: If closed, use closingBalance. If open, use bookBalance (since no diff yet).
+        cashDifference: difference,
 
-        transactions: detailedTransactions.sort((a, b) => new Date(b.time as string).getTime() - new Date(a.time as string).getTime()), // Sort descending
+        totalSalesCard: cashlessRevenue,
+        totalIncome: income,
+        totalExpenses: expenses,
+
+        transactions: detailedTransactions.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()),
         status: shift.status,
         cashier: shift.cashier
       };

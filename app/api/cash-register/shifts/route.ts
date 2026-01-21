@@ -3,12 +3,14 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
         const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 20;
-        // console.log(status, limit);
+
         const client = await clientPromise;
         const db = client.db("giraffe");
 
@@ -23,54 +25,144 @@ export async function GET(request: Request) {
             .limit(limit)
             .toArray();
 
-        // Aggregate sales for open shifts (or all shifts if performance allows)
-        // For MVP, doing it for the fetched shifts is fine
+        // Parallel fetch optimization
         const shiftIds = shifts.map(s => s._id);
-        const receipts = await db.collection("receipts").find({ shiftId: { $in: shiftIds } }).toArray();
-        const transactions = await db.collection("cash_transactions").find({ shiftId: { $in: shiftIds } }).toArray();
 
-        const data = shifts.map(shift => {
-            const shiftReceipts = receipts.filter(r => r.shiftId.toString() === shift._id.toString());
-            const shiftTransactions = transactions.filter(t => t.shiftId.toString() === shift._id.toString());
+        // Fetch receipts and transactions for these shifts
+        // Note: For open shifts or older data without shiftId, we might need date fallback, 
+        // but for now relying on shiftId is cleaner for the main list if data is populated.
+        // Falls back to date matches inside the map for robustness if needed.
 
-            const totalSales = shiftReceipts.reduce((sum, r) => sum + (r.total || 0), 0);
+        // Let's iterate and build details
+        const detailedShifts = await Promise.all(shifts.map(async (shift) => {
+            const shiftId = shift._id.toString();
+            const start = new Date(shift.startTime);
+            const end = shift.endTime ? new Date(shift.endTime) : new Date();
+
+            // 1. Fetch Receipts
+            let shiftReceipts = await db.collection("receipts").find({ shiftId: shift._id }).toArray();
+            if (shiftReceipts.length === 0) {
+                // Fallback to date
+                shiftReceipts = await db.collection("receipts").find({
+                    createdAt: { $gte: start, $lte: end }
+                }).toArray();
+            }
 
             const totalSalesCash = shiftReceipts
-                .filter(r => r.paymentMethod === 'cash')
-                .reduce((sum, r) => sum + (r.total || 0), 0);
+                .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
+                .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.cashPart || r.total) : r.total), 0);
 
             const totalSalesCard = shiftReceipts
-                .filter(r => r.paymentMethod === 'card')
-                .reduce((sum, r) => sum + (r.total || 0), 0);
+                .filter((r: any) => r.paymentMethod === 'card')
+                .reduce((acc: number, r: any) => acc + r.total, 0);
 
-            const totalIncome = shiftTransactions
-                .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + (t.amount || 0), 0);
+            // 2. Fetch Cash Transactions
+            let cashTxs = await db.collection("cash_transactions").find({ shiftId: shift._id }).toArray();
+            if (cashTxs.length === 0) {
+                cashTxs = await db.collection("cash_transactions").find({ createdAt: { $gte: start, $lte: end } }).toArray();
+            }
 
-            const totalExpenses = shiftTransactions
-                .filter(t => t.type === 'expense')
-                .reduce((sum, t) => sum + (t.amount || 0), 0);
+            // 3. General Transactions (Legacy/Other)
+            const generalTxs = await db.collection("transactions").find({
+                date: { $gte: start, $lte: end },
+                source: { $ne: 'cash-register' }
+            }).toArray();
 
-            const totalIncasation = shiftTransactions
-                .filter(t => t.type === 'incasation')
-                .reduce((sum, t) => sum + (t.amount || 0), 0);
+            let income = 0;
+            let expenses = 0;
+            let incasation = 0;
+
+            const detailedTransactions: any[] = [];
+
+            // Add Shift Open Event
+            detailedTransactions.push({
+                id: `open-${shiftId}`,
+                type: 'Відкриття зміни',
+                createdAt: new Date(shift.startTime).toISOString(),
+                amount: shift.startBalance, // Fixed field name
+                authorName: shift.cashier || 'Касир',
+                comment: '',
+                editedBy: '—'
+            });
+
+            if (shift.status === 'closed' && shift.endTime) {
+                detailedTransactions.push({
+                    id: `close-${shiftId}`,
+                    type: 'Закриття зміни',
+                    createdAt: new Date(shift.endTime).toISOString(),
+                    amount: shift.actualBalance || shift.endBalance || 0, // Fixed field name
+                    authorName: shift.cashier || 'Касир',
+                    comment: '',
+                    editedBy: '—'
+                });
+            }
+
+            // Process Cash Transactions
+            cashTxs.forEach((ct: any) => {
+                const amt = Number(ct.amount) || 0;
+                if (ct.type === 'income') income += amt;
+                if (ct.type === 'expense') expenses += amt;
+                if (ct.type === 'incasation') incasation += amt;
+
+                detailedTransactions.push({
+                    id: ct._id.toString(),
+                    type: ct.type === 'incasation' ? 'Інкасація' : (ct.category || (ct.type === 'income' ? 'Прихід' : 'Витрата')),
+                    createdAt: new Date(ct.createdAt).toISOString(),
+                    amount: ct.type === 'expense' || ct.type === 'incasation' ? -amt : amt,
+                    authorName: ct.authorName || shift.cashierName,
+                    comment: ct.comment,
+                    editedBy: '—'
+                });
+            });
+
+            // Process General Transactions
+            generalTxs.forEach((t: any) => {
+                if (t.type === 'income') income += (t.amount || 0);
+                if (t.type === 'expense') expenses += (t.amount || 0);
+
+                detailedTransactions.push({
+                    id: t._id.toString(),
+                    type: t.category || (t.type === 'income' ? 'Прихід' : 'Витрата'),
+                    createdAt: new Date(t.date).toISOString(),
+                    amount: t.type === 'expense' ? -(t.amount || 0) : (t.amount || 0),
+                    authorName: t.user || 'System',
+                    comment: t.description,
+                    editedBy: '—'
+                });
+            });
+
+            // Calculate Balances
+            // Use startBalance / endBalance from DB
+            const bookBalance = (shift.startBalance || 0) + totalSalesCash + income - expenses - incasation;
+            const actualBalance = shift.endBalance !== undefined ? shift.endBalance : bookBalance;
 
             return {
                 ...shift,
-                id: shift._id.toString(),
-                totalSales: shift.status === 'open' ? totalSales : (shift.totalSales || totalSales),
-                totalSalesCash: shift.status === 'open' ? totalSalesCash : (shift.totalSalesCash || totalSalesCash),
-                totalSalesCard: shift.status === 'open' ? totalSalesCard : (shift.totalSalesCard || totalSalesCard),
-                totalIncome: shift.status === 'open' ? totalIncome : (shift.totalIncome || totalIncome),
-                totalExpenses: shift.status === 'open' ? totalExpenses : (shift.totalExpenses || totalExpenses), // Now using real expenses
-                totalIncasation: shift.status === 'open' ? totalIncasation : (shift.totalIncasation || totalIncasation),
-                receipts: shiftReceipts,
-                transactions: shiftTransactions // New field
-            };
-        });
+                id: shiftId,
+                shiftNumber: shift.shiftNumber ? String(shift.shiftNumber) : shiftId.slice(-4),
+                // Ensure frontend fields match
+                startTime: shift.startTime,
+                endTime: shift.endTime,
+                startBalance: shift.startBalance,
+                totalIncasation: incasation,
+                totalSalesCash: totalSalesCash,
 
-        return NextResponse.json({ success: true, data });
+                bookBalance,
+                endBalance: actualBalance,
+                cashDifference: actualBalance - bookBalance,
+
+                totalSalesCard: totalSalesCard,
+                totalIncome: income,
+                totalExpenses: expenses,
+
+                transactions: detailedTransactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+                cashier: shift.cashier || shift.cashierName || 'Касир'
+            };
+        }));
+
+        return NextResponse.json({ success: true, data: detailedShifts });
     } catch (error) {
+        console.error("Failed to fetch shifts:", error);
         return NextResponse.json({ error: "Failed to fetch shifts" }, { status: 500 });
     }
 }
