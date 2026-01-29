@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     const endDate = searchParams.get("endDate");
     const includeReceipts = searchParams.get("includeReceipts") === "true";
     const includeCashTx = searchParams.get("includeCashTx") === "true"; // New flag
+    const moneyAccountId = searchParams.get("moneyAccountId");
 
     const client = await clientPromise;
     const db = client.db("giraffe");
@@ -59,32 +60,41 @@ export async function GET(req: NextRequest) {
       .toArray();
 
     // 3. Fetch Receipts (Income)
-    const receiptsPromise = includeReceipts
+    const receiptsPromise = includeReceipts || moneyAccountId
       ? db.collection("receipts").find({ ...matchDate("createdAt") }).toArray()
       : Promise.resolve([]);
 
     // 4. Fetch Cash Transactions (Income/Expense/Incasation)
-    const cashTxPromise = includeCashTx
+    const cashTxPromise = includeCashTx || moneyAccountId
       ? db.collection("cash_transactions").find({ ...matchDate("createdAt") }).toArray()
       : Promise.resolve([]);
 
     // 5. Fetch Settings for Account Resolution
     const settingsPromise = db.collection("settings").findOne({ type: "global" });
 
-    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, settings] = await Promise.all([
+    // 6. Fetch Account if moneyAccountId is provided to calculate opening/closing balance
+    const accountPromise = moneyAccountId 
+      ? db.collection("money_accounts").findOne({ _id: new ObjectId(moneyAccountId) })
+      : Promise.resolve(null);
+
+    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, settings, accountDoc] = await Promise.all([
       txPromise,
       suppliesPromise,
       receiptsPromise,
       cashTxPromise,
-      settingsPromise
+      settingsPromise,
+      accountPromise
     ]);
 
     // Resolve Cash Account ID from Settings
-    const cashAccountId = settings?.finance?.cashAccountId || null;
+    const financeSettings = settings?.finance || {};
+    const cashAccountId = financeSettings.cashAccountId;
+    const cardAccountId = financeSettings.cardAccountId;
+    const safeAccountId = financeSettings.safeAccountId;
 
     const transactions = [
       // Manual
-      ...txRaw.map(t => ({
+      ...txRaw.map((t: any) => ({
         ...t,
         _id: t._id.toString(),
         date: t.date,
@@ -93,9 +103,10 @@ export async function GET(req: NextRequest) {
         paymentMethod: t.paymentMethod || "cash",
         type: t.type || "income",
         amount: t.amount || 0,
+        moneyAccountId: t.moneyAccountId || (t.paymentMethod === 'cash' ? cashAccountId : t.paymentMethod === 'card' ? cardAccountId : null)
       })),
       // Receipts -> Income
-      ...receiptsRaw.map(r => ({
+      ...receiptsRaw.map((r: any) => ({
         _id: r._id.toString(),
         date: r.createdAt,
         description: `Чек #${r.receiptNumber}`,
@@ -105,24 +116,49 @@ export async function GET(req: NextRequest) {
         paymentMethod: r.paymentMethod,
         source: 'pos',
         visits: 1,
-        createdAt: r.createdAt
+        createdAt: r.createdAt,
+        moneyAccountId: r.paymentMethod === 'cash' ? cashAccountId : r.paymentMethod === 'card' ? cardAccountId : null
       })),
       // Cash Register Transactions (Income/Expense/Incasation)
-      ...cashTxRaw.map(ct => ({
-        _id: ct._id.toString(),
-        date: ct.createdAt,
-        description: ct.comment || (ct.type === 'incasation' ? 'Інкасація' : (ct.type === 'income' ? 'Внесення' : 'Витрата')),
-        amount: ct.amount,
-        type: ct.type === 'incasation' ? 'expense' : ct.type,
-        category: ct.category || (ct.type === 'incasation' ? 'incasation' : 'other'),
-        paymentMethod: 'cash',
-        source: 'cash-register',
-        createdAt: ct.createdAt,
-        // Assign Default Cash Account ID
-        moneyAccountId: cashAccountId
-      })),
+      ...cashTxRaw.flatMap((ct: any) => {
+        const items = [];
+        const amt = Number(ct.amount) || 0;
+
+        // Impact on Cash Account
+        if (cashAccountId) {
+          items.push({
+            _id: ct._id.toString(),
+            date: ct.createdAt,
+            description: ct.comment || (ct.type === 'incasation' ? 'Інкасація (вилучення)' : (ct.type === 'income' ? 'Внесення' : 'Витрата')),
+            amount: amt,
+            type: (ct.type === 'expense' || ct.type === 'incasation') ? 'expense' : 'income',
+            category: ct.category || (ct.type === 'incasation' ? 'incasation' : 'other'),
+            paymentMethod: 'cash',
+            source: 'cash-register',
+            createdAt: ct.createdAt,
+            moneyAccountId: cashAccountId
+          });
+        }
+
+        // Impact on Safe Account for Incasation
+        if (ct.type === 'incasation' && safeAccountId) {
+          items.push({
+            _id: ct._id.toString() + '_safe',
+            date: ct.createdAt,
+            description: `Інкасація (надходження в сейф) ${ct.comment || ''}`,
+            amount: amt,
+            type: 'income',
+            category: 'incasation',
+            paymentMethod: 'transfer',
+            source: 'cash-register',
+            createdAt: ct.createdAt,
+            moneyAccountId: safeAccountId
+          });
+        }
+        return items;
+      }),
       // Supplies -> Expense
-      ...suppliesRaw.map(s => ({
+      ...suppliesRaw.map((s: any) => ({
         _id: s._id.toString(),
         date: s.date,
         description: `Постачання: ${s.supplierName || 'Unknown'}`,
@@ -131,7 +167,8 @@ export async function GET(req: NextRequest) {
         category: 'stock',
         paymentMethod: s.paymentMethod || 'cash',
         source: 'stock',
-        createdAt: s.createdAt || s.date
+        createdAt: s.createdAt || s.date,
+        moneyAccountId: s.moneyAccountId || (s.paymentMethod === 'cash' ? cashAccountId : s.paymentMethod === 'card' ? cardAccountId : null)
       }))
     ];
 
@@ -146,6 +183,7 @@ export async function GET(req: NextRequest) {
     if (pCat) filtered = filtered.filter(t => t.category === pCat);
     if (pMethod) filtered = filtered.filter(t => t.paymentMethod === pMethod);
     if (pSource) filtered = filtered.filter(t => t.source === pSource);
+    if (moneyAccountId) filtered = filtered.filter(t => t.moneyAccountId === moneyAccountId);
 
     // Sort Descending
     filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -165,10 +203,78 @@ export async function GET(req: NextRequest) {
       { income: 0, expense: 0, balance: 0 }
     );
 
+    // Calculate Opening and Closing Balances if account is specified
+    let openingBalance = 0;
+    let closingBalance = 0;
+
+    if (moneyAccountId && accountDoc) {
+      // 1. Start with account initial balance
+      const initialBal = (accountDoc.initialBalance !== undefined) ? Number(accountDoc.initialBalance) : (Number(accountDoc.balance) || 0);
+      
+      // 2. We need to calculate balance BEFORE startDate
+      // This is complex because we filtered everything already.
+      // Let's perform a separate aggregation for the balance at startDate
+      
+      const startD = startDate ? new Date(startDate) : null;
+      
+      // For simplicity and performance, we'll fetch all impact before startDate
+      // Note: In a production app, we might store daily snapshots or use a more efficient ledger
+      
+      const [preTx, preSupplies, preReceipts, preCashTx] = await Promise.all([
+        db.collection("transactions").find({ moneyAccountId, date: { $lt: startD } }).toArray(),
+        db.collection("stock_movements").find({ moneyAccountId, type: 'supply', date: { $lt: startD } }).toArray(),
+        // Receipts and CashTx are trickier because they use defaults if no accountId
+        // But for "History" we usually care about the account they WERE assigned to.
+        // If moneyAccountId is the default cash/card account, we include them.
+        (financeSettings.cashAccountId === moneyAccountId || financeSettings.cardAccountId === moneyAccountId)
+          ? db.collection("receipts").find({ 
+              createdAt: { $lt: startD },
+              paymentMethod: financeSettings.cashAccountId === moneyAccountId ? 'cash' : 'card'
+            }).toArray()
+          : Promise.resolve([]),
+        financeSettings.cashAccountId === moneyAccountId || financeSettings.safeAccountId === moneyAccountId
+          ? db.collection("cash_transactions").find({ createdAt: { $lt: startD } }).toArray()
+          : Promise.resolve([])
+      ]);
+
+      let preBalance = initialBal;
+      preTx.forEach((t: any) => {
+        const amt = Number(t.amount) || 0;
+        preBalance += (t.type === 'income' ? amt : -amt);
+      });
+      preSupplies.forEach((s: any) => {
+        preBalance -= (Number(s.paidAmount) || 0);
+      });
+      preReceipts.forEach((r: any) => {
+        // Double check payment method matches account
+        if (r.paymentMethod === 'cash' && moneyAccountId === financeSettings.cashAccountId) {
+          preBalance += (Number(r.total) || 0);
+        } else if (r.paymentMethod === 'card' && moneyAccountId === financeSettings.cardAccountId) {
+          preBalance += (Number(r.total) || 0);
+        }
+      });
+      preCashTx.forEach((ct: any) => {
+        const amt = Number(ct.amount) || 0;
+        if (moneyAccountId === financeSettings.cashAccountId) {
+          preBalance += (ct.type === 'income' ? amt : -amt);
+        } else if (ct.type === 'incasation' && moneyAccountId === financeSettings.safeAccountId) {
+          preBalance += amt;
+        }
+      });
+
+      openingBalance = preBalance;
+      closingBalance = openingBalance + totals.balance;
+    }
+
     // Slice for pagination if needed
     const resultData = filtered.slice(0, 500);
 
-    return NextResponse.json({ data: resultData, totals });
+    return NextResponse.json({ 
+      data: resultData, 
+      totals,
+      openingBalance,
+      closingBalance
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);

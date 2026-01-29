@@ -274,7 +274,7 @@ function AccountingContent() {
   }
 
   // Money Accounts Data
-  const [accountsData, setAccountsData] = useState<MoneyAccount[]>([]);
+  const [accountsData, setAccountsData] = useState<any[]>([]);
 
   async function fetchAccounts() {
     try {

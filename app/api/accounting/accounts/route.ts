@@ -20,8 +20,22 @@ export async function GET(req: NextRequest) {
         const user = await getUserFromReq(req);
         // if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); 
 
+        const { searchParams } = new URL(req.url);
+        const startDate = searchParams.get("startDate");
+        const endDate = searchParams.get("endDate");
+
         const client = await clientPromise;
         const db = client.db("giraffe");
+
+        // Date Filter Construction
+        const dateFilter: any = {};
+        if (startDate) dateFilter.$gte = new Date(startDate);
+        if (endDate) {
+            const endD = new Date(endDate);
+            endD.setHours(23, 59, 59, 999);
+            dateFilter.$lte = endD;
+        }
+        const matchDate = (field: string) => (Object.keys(dateFilter).length ? { [field]: dateFilter } : {});
 
         // 1. Get Global Settings for default accounts
         const settings = await db.collection("settings").findOne({ type: "global" });
@@ -38,10 +52,26 @@ export async function GET(req: NextRequest) {
 
         // 3. Get All Transactions and aggregate by account
         const transactions = await db.collection("transactions").find({}).toArray();
+        const periodTransactions = Object.keys(dateFilter).length 
+            ? await db.collection("transactions").find({ ...matchDate("date") }).toArray()
+            : transactions;
+
         const stockMovements = await db.collection("stock_movements").find({ type: 'supply', paidAmount: { $gt: 0 } }).toArray();
+        const periodStockMovements = Object.keys(dateFilter).length
+            ? await db.collection("stock_movements").find({ type: 'supply', paidAmount: { $gt: 0 }, ...matchDate("date") }).toArray()
+            : stockMovements;
 
         // 4. Get Cash Register Transactions
         const cashTransactions = await db.collection("cash_transactions").find({}).toArray();
+        const periodCashTransactions = Object.keys(dateFilter).length
+            ? await db.collection("cash_transactions").find({ ...matchDate("createdAt") }).toArray()
+            : cashTransactions;
+
+        // 5. Get Receipts (Income)
+        const receipts = await db.collection("receipts").find({}).toArray();
+        const periodReceipts = Object.keys(dateFilter).length
+            ? await db.collection("receipts").find({ ...matchDate("createdAt") }).toArray()
+            : receipts;
 
         // Helper to find account ID for a transaction
         const getTxAccountId = (tx: any) => {
@@ -103,12 +133,64 @@ export async function GET(req: NextRequest) {
             }
         });
 
+        // Process Receipts (Income)
+        receipts.forEach(r => {
+            const accId = getTxAccountId(r);
+            if (accId && accountBalances[accId] !== undefined) {
+                accountBalances[accId] += (Number(r.total) || 0);
+            }
+        });
+
+        // Calculate Period Turnovers
+        const periodIncome: Record<string, number> = {};
+        const periodExpense: Record<string, number> = {};
+        accounts.forEach(acc => {
+            periodIncome[acc._id.toString()] = 0;
+            periodExpense[acc._id.toString()] = 0;
+        });
+
+        periodTransactions.forEach(tx => {
+            const accId = getTxAccountId(tx);
+            if (accId && periodIncome[accId] !== undefined) {
+                const amt = Number(tx.amount) || 0;
+                if (tx.type === 'income') periodIncome[accId] += amt;
+                else if (tx.type === 'expense') periodExpense[accId] += amt;
+            }
+        });
+
+        periodStockMovements.forEach(s => {
+            const accId = getTxAccountId(s);
+            if (accId && periodExpense[accId] !== undefined) {
+                periodExpense[accId] += (Number(s.paidAmount) || 0);
+            }
+        });
+
+        periodCashTransactions.forEach(ct => {
+            const amt = Number(ct.amount) || 0;
+            if (cashAccountId && periodIncome[cashAccountId] !== undefined) {
+                if (ct.type === 'income') periodIncome[cashAccountId] += amt;
+                else if (ct.type === 'expense' || ct.type === 'incasation') periodExpense[cashAccountId] += amt;
+            }
+            if (ct.type === 'incasation' && safeAccountId && periodIncome[safeAccountId] !== undefined) {
+                periodIncome[safeAccountId] += amt;
+            }
+        });
+
+        periodReceipts.forEach(r => {
+            const accId = getTxAccountId(r);
+            if (accId && periodIncome[accId] !== undefined) {
+                periodIncome[accId] += (Number(r.total) || 0);
+            }
+        });
+
         const data = accounts.map(a => ({
             id: a._id.toString(),
             name: a.name,
             type: a.type || 'cash',
-            balance: accountBalances[a._id.toString()] || 0, // Calculated Total Balance
-            initialBalance: (a.initialBalance !== undefined) ? a.initialBalance : (a.balance || 0), // Explicit Initial Balance
+            balance: accountBalances[a._id.toString()] || 0,
+            periodIncome: periodIncome[a._id.toString()] || 0,
+            periodExpense: periodExpense[a._id.toString()] || 0,
+            initialBalance: (a.initialBalance !== undefined) ? a.initialBalance : (a.balance || 0),
             currency: a.currency || 'UAH',
             description: a.description || '',
             status: a.status || 'active',
