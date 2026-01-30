@@ -106,19 +106,56 @@ export async function GET(req: NextRequest) {
         moneyAccountId: t.moneyAccountId || (t.paymentMethod === 'cash' ? cashAccountId : t.paymentMethod === 'card' ? cardAccountId : null)
       })),
       // Receipts -> Income
-      ...receiptsRaw.map((r: any) => ({
-        _id: r._id.toString(),
-        date: r.createdAt,
-        description: `Чек #${r.receiptNumber}`,
-        amount: r.total,
-        type: 'income',
-        category: 'sales',
-        paymentMethod: r.paymentMethod,
-        source: 'pos',
-        visits: 1,
-        createdAt: r.createdAt,
-        moneyAccountId: r.paymentMethod === 'cash' ? cashAccountId : r.paymentMethod === 'card' ? cardAccountId : null
-      })),
+      ...receiptsRaw.flatMap((r: any) => {
+        const items = [];
+        if (r.paymentMethod === 'mixed') {
+          if (r.paymentDetails?.cash) {
+            items.push({
+              _id: r._id.toString() + '_cash',
+              date: r.createdAt,
+              description: `Чек #${r.receiptNumber} (Готівка)`,
+              amount: r.paymentDetails.cash,
+              type: 'income',
+              category: 'sales',
+              paymentMethod: 'cash',
+              source: 'pos',
+              visits: 1,
+              createdAt: r.createdAt,
+              moneyAccountId: cashAccountId
+            });
+          }
+          if (r.paymentDetails?.card) {
+            items.push({
+              _id: r._id.toString() + '_card',
+              date: r.createdAt,
+              description: `Чек #${r.receiptNumber} (Картка)`,
+              amount: r.paymentDetails.card,
+              type: 'income',
+              category: 'sales',
+              paymentMethod: 'card',
+              source: 'pos',
+              visits: 0, // avoid double counting visits
+              createdAt: r.createdAt,
+              moneyAccountId: cardAccountId
+            });
+          }
+        } else {
+          items.push({
+            _id: r._id.toString(),
+            date: r.createdAt,
+            description: `Чек #${r.receiptNumber}`,
+            amount: r.total,
+            type: 'income',
+            category: 'sales',
+            paymentMethod: r.paymentMethod,
+            source: 'pos',
+            visits: 1,
+            createdAt: r.createdAt,
+            moneyAccountId: r.paymentMethod === 'cash' ? cashAccountId : r.paymentMethod === 'card' ? cardAccountId : null
+          });
+        }
+        return items;
+      }),
       // Cash Register Transactions (Income/Expense/Incasation)
       ...cashTxRaw.flatMap((ct: any) => {
         const items = [];
@@ -246,11 +283,21 @@ export async function GET(req: NextRequest) {
         preBalance -= (Number(s.paidAmount) || 0);
       });
       preReceipts.forEach((r: any) => {
-        // Double check payment method matches account
-        if (r.paymentMethod === 'cash' && moneyAccountId === financeSettings.cashAccountId) {
-          preBalance += (Number(r.total) || 0);
-        } else if (r.paymentMethod === 'card' && moneyAccountId === financeSettings.cardAccountId) {
-          preBalance += (Number(r.total) || 0);
+        // Handle Mixed Payments
+        if (r.paymentMethod === 'mixed') {
+          if (moneyAccountId === financeSettings.cashAccountId && r.paymentDetails?.cash) {
+            preBalance += (Number(r.paymentDetails.cash) || 0);
+          }
+          if (moneyAccountId === financeSettings.cardAccountId && r.paymentDetails?.card) {
+            preBalance += (Number(r.paymentDetails.card) || 0);
+          }
+        } else {
+          // Standard Payments
+          if (r.paymentMethod === 'cash' && moneyAccountId === financeSettings.cashAccountId) {
+            preBalance += (Number(r.total) || 0);
+          } else if (r.paymentMethod === 'card' && moneyAccountId === financeSettings.cardAccountId) {
+            preBalance += (Number(r.total) || 0);
+          }
         }
       });
       preCashTx.forEach((ct: any) => {

@@ -243,3 +243,13 @@ export type MoneyAccount = {
   status: 'active' | 'inactive';
   createdAt?: string;
 };
+
+export type ExpenseCategory = {
+  id: string;
+  _id?: string;
+  name: string;
+  description?: string;
+  color?: string;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+};

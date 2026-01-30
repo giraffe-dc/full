@@ -27,7 +27,8 @@ import { StockMovements } from '../../components/accounting/stock/StockMovements
 import { StockWriteOff } from '../../components/accounting/stock/StockWriteOff';
 import { StockInventory } from '../../components/accounting/stock/StockInventory';
 
-import type { Transaction, Totals, CashShift, SalaryRow, MoneyAccount } from "../../types/accounting";
+import { ExpenseCategoriesSection } from '../../components/accounting/ExpenseCategoriesSection';
+import type { Transaction, Totals, CashShift, SalaryRow, MoneyAccount, ExpenseCategory } from "../../types/accounting";
 import {
   CATEGORY_LABELS,
   CATEGORIES,
@@ -73,6 +74,8 @@ function AccountingContent() {
 
   const [tx, setTx] = useState<Transaction[]>([]);
   const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, balance: 0 });
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [accountsData, setAccountsData] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [filters, setFilters] = useState({
@@ -142,6 +145,8 @@ function AccountingContent() {
     const incomeCategoryStatsRaw = calculateIncomeCategoryStats(tx);
     const expenseCategoryStatsRaw = calculateExpenseCategoryStats(tx);
 
+    const dynamicLabels: Record<string, string> = expenseCategories.reduce((acc, c) => ({ ...acc, [c.name]: c.name }), {});
+
     // Payment Method Stats
     const paymentMethodStatsRaw = calculatePaymentMethodStats(tx);
     const paymentMethodStats = Object.entries(paymentMethodStatsRaw)
@@ -170,7 +175,7 @@ function AccountingContent() {
       incomeCategoryStats: Object.entries(incomeCategoryStatsRaw)
         .map(([key, total]) => ({
           key,
-          label: categoryLabels[key] || key,
+          label: dynamicLabels[key] || key,
           total,
           percent: incomeStats.totalIncomeAmount ? (total / incomeStats.totalIncomeAmount) * 100 : 0,
         }))
@@ -178,7 +183,7 @@ function AccountingContent() {
       expenseCategoryStats: Object.entries(expenseCategoryStatsRaw)
         .map(([key, total]) => ({
           key,
-          label: categoryLabels[key] || key,
+          label: dynamicLabels[key] || key,
           total,
           percent: Object.values(expenseCategoryStatsRaw).reduce((s, v) => s + v, 0)
             ? (total / Object.values(expenseCategoryStatsRaw).reduce((s, v) => s + v, 0)) * 100
@@ -189,7 +194,7 @@ function AccountingContent() {
       dailyStats,
       maxDailyValue,
     };
-  }, [tx, categoryLabels]);
+  }, [tx, expenseCategories]);
 
   async function fetchTx() {
     const params = new URLSearchParams();
@@ -274,7 +279,17 @@ function AccountingContent() {
   }
 
   // Money Accounts Data
-  const [accountsData, setAccountsData] = useState<any[]>([]);
+  // (expenseCategories and accountsData moved up)
+
+  async function fetchExpenseCategories() {
+    try {
+      const res = await fetch('/api/accounting/categories/expense');
+      const data = await res.json();
+      if (data.data) {
+        setExpenseCategories(data.data);
+      }
+    } catch (e) { console.error(e); }
+  }
 
   async function fetchAccounts() {
     try {
@@ -294,6 +309,7 @@ function AccountingContent() {
       await Promise.all([
         fetchTx(),
         fetchAccounts(),
+        fetchExpenseCategories(),
         activeSection === 'clients' ? fetchClients() : Promise.resolve(),
         activeSection === 'staff' ? fetchStaff() : Promise.resolve(),
         activeSection === 'products' ? fetchProductsStats() : Promise.resolve(),
@@ -349,7 +365,7 @@ function AccountingContent() {
       description: "",
       amount: "",
       type: "expense", // Default to expense for shifts usually? or income
-      category: "other",
+      category: expenseCategories[0]?.name || "other",
       paymentMethod: "cash",
       source: "cash-register", // Mark as cash register
       visits: "",
@@ -465,7 +481,7 @@ function AccountingContent() {
       description: "",
       amount: "",
       type: "income",
-      category: "other",
+      category: expenseCategories[0]?.name || "other",
       paymentMethod: "cash",
       source: "onsite",
       visits: "",
@@ -593,6 +609,10 @@ function AccountingContent() {
         {/* <h1 className={styles.pageTitle}>{sectionTitle}</h1>
         <p className={styles.lead}>{sectionDescription}</p> */}
 
+        {activeSection === "expenseCategories" && (
+          <ExpenseCategoriesSection onRefresh={fetchExpenseCategories} />
+        )}
+
         {activeSection === "settings" && (
           <FinanceSettings />
         )}
@@ -627,8 +647,8 @@ function AccountingContent() {
             active={true}
             filters={filters}
             onFiltersChange={setFilters}
-            categories={categories}
-            categoryLabels={categoryLabels}
+            categories={expenseCategories.map(c => c.name)}
+            categoryLabels={expenseCategories.reduce((acc, c) => ({ ...acc, [c.name]: c.name }), {})}
             showForm={showForm}
             onCloseForm={() => setShowForm(false)}
             onOpenForm={handleOpenNewForm}
@@ -763,8 +783,8 @@ function AccountingContent() {
           form={formData}
           onFormChange={setFormData}
           onSubmit={handleSubmit}
-          categories={categories}
-          categoryLabels={categoryLabels}
+          categories={expenseCategories.map(c => c.name)}
+          categoryLabels={expenseCategories.reduce((acc, c) => ({ ...acc, [c.name]: c.name }), {})}
           accounts={accountsData}
         />
       </div>

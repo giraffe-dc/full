@@ -44,13 +44,18 @@ export async function GET(request: Request) {
             }
         };
 
-        // Receipts (Paid) use updatedAt (Payment/Closing Time)
-        // Note: We use Date objects for receipts collection usually, but check if checkout saves ISO or Date. 
-        // checkout/route.ts saves `updatedAt: new Date()` (Date object).
+        // Receipts (Paid) - FIX: Use unified date range logic
         const receiptsDateFilter = {
             updatedAt: {
                 $gte: sDate,
                 $lte: eDate
+            }
+        };
+
+        const receiptsDateFilterISO = {
+            updatedAt: {
+                $gte: sDate.toISOString(),
+                $lte: eDate.toISOString()
             }
         };
 
@@ -59,7 +64,12 @@ export async function GET(request: Request) {
         // Fetch Data based on status
         if ((!status || status === 'all' || status === 'paid')) {
             const receipts = await db.collection("receipts")
-                .find(receiptsDateFilter)
+                .find({
+                    $or: [
+                        receiptsDateFilter,
+                        receiptsDateFilterISO
+                    ]
+                })
                 .sort({ updatedAt: -1 })
                 .toArray();
             combinedResults.push(...receipts.map(r => ({ ...r, id: r._id.toString(), status: 'paid', type: 'receipt', date: r.updatedAt })));

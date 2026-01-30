@@ -38,7 +38,8 @@ export type AccountingSection =
   | "menuRecipes"
   | "menuIngredients"
   | "menuProductCategories"
-  | "menuIngredientCategories";
+  | "menuIngredientCategories"
+  | "expenseCategories";
 
 interface AccordionSection {
   id: string;
@@ -152,6 +153,7 @@ export function AccountingSidebar() {
       label: 'Сервіс',
       icon: Icons.Service,
       items: [
+        { id: 'expenseCategories', label: 'Категорії витрат' },
         { id: 'access', label: 'Доступи' },
         { id: 'venues', label: 'Заклади' },
         { id: 'settings', label: 'Налаштування' },

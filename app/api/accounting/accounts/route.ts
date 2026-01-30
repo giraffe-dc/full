@@ -135,9 +135,18 @@ export async function GET(req: NextRequest) {
 
         // Process Receipts (Income)
         receipts.forEach(r => {
-            const accId = getTxAccountId(r);
-            if (accId && accountBalances[accId] !== undefined) {
-                accountBalances[accId] += (Number(r.total) || 0);
+            if (r.paymentMethod === 'mixed') {
+                if (cashAccountId && accountBalances[cashAccountId] !== undefined && r.paymentDetails?.cash) {
+                    accountBalances[cashAccountId] += (Number(r.paymentDetails.cash) || 0);
+                }
+                if (cardAccountId && accountBalances[cardAccountId] !== undefined && r.paymentDetails?.card) {
+                    accountBalances[cardAccountId] += (Number(r.paymentDetails.card) || 0);
+                }
+            } else {
+                const accId = getTxAccountId(r);
+                if (accId && accountBalances[accId] !== undefined) {
+                    accountBalances[accId] += (Number(r.total) || 0);
+                }
             }
         });
 
@@ -177,9 +186,18 @@ export async function GET(req: NextRequest) {
         });
 
         periodReceipts.forEach(r => {
-            const accId = getTxAccountId(r);
-            if (accId && periodIncome[accId] !== undefined) {
-                periodIncome[accId] += (Number(r.total) || 0);
+            if (r.paymentMethod === 'mixed') {
+                if (cashAccountId && periodIncome[cashAccountId] !== undefined && r.paymentDetails?.cash) {
+                    periodIncome[cashAccountId] += (Number(r.paymentDetails.cash) || 0);
+                }
+                if (cardAccountId && periodIncome[cardAccountId] !== undefined && r.paymentDetails?.card) {
+                    periodIncome[cardAccountId] += (Number(r.paymentDetails.card) || 0);
+                }
+            } else {
+                const accId = getTxAccountId(r);
+                if (accId && periodIncome[accId] !== undefined) {
+                    periodIncome[accId] += (Number(r.total) || 0);
+                }
             }
         });
 
