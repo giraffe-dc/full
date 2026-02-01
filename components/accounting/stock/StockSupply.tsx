@@ -31,6 +31,7 @@ export function StockSupply() {
     const toast = useToast();
     const [mode, setMode] = useState<'list' | 'trash'>('list');
     const [showModal, setShowModal] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     const [supplies, setSupplies] = useState<SupplyRecord[]>([]);
     const [deletedSupplies, setDeletedSupplies] = useState<SupplyRecord[]>([]);
@@ -63,6 +64,7 @@ export function StockSupply() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
 
     useEffect(() => {
+        fetchUserRole();
         fetchWarehouses();
         fetchSuppliers();
         fetchIngredients();
@@ -71,6 +73,19 @@ export function StockSupply() {
         fetchSupplies();
         fetchAccounts();
     }, []);
+
+    // Fetch current user role
+    const fetchUserRole = async () => {
+        try {
+            const res = await fetch('/api/auth/me');
+            const data = await res.json();
+            if (data.authenticated && data.user) {
+                setUserRole(data.user.role);
+            }
+        } catch (e) {
+            console.error('Failed to fetch user role:', e);
+        }
+    };
 
     useEffect(() => {
         if (!ingredientSearch.trim()) {
@@ -151,6 +166,9 @@ export function StockSupply() {
     };
 
     const openEditModal = (sup: SupplyRecord) => {
+        // Для користувачів 'user' завжди встановлюємо готівку
+        const cashAccount = userRole === 'user' ? accounts.find(acc => acc.type === 'cash') : null;
+        
         setFormData({
             date: new Date(sup.date).toISOString().split('T')[0],
             warehouseId: sup.warehouseId,
@@ -159,9 +177,9 @@ export function StockSupply() {
             paymentStatus: sup.paymentStatus,
             paidAmount: sup.paidAmount,
             // @ts-ignore
-            paymentMethod: sup.paymentMethod || 'cash',
+            paymentMethod: userRole === 'user' ? 'cash' : (sup.paymentMethod || 'cash'),
             // @ts-ignore
-            moneyAccountId: sup.moneyAccountId || ''
+            moneyAccountId: userRole === 'user' && cashAccount ? cashAccount.id : (sup.moneyAccountId || '')
         });
         setItems(sup.items.map((i: any) => ({
             id: Math.random().toString(36),
@@ -286,6 +304,10 @@ export function StockSupply() {
 
     const resetForm = () => {
         setItems([]);
+        
+        // Для користувачів 'user' автоматично встановлюємо готівковий рахунок
+        const cashAccount = userRole === 'user' ? accounts.find(acc => acc.type === 'cash') : null;
+        
         setFormData({
             date: new Date().toISOString().split('T')[0],
             warehouseId: '',
@@ -294,7 +316,7 @@ export function StockSupply() {
             paymentStatus: 'unpaid',
             paidAmount: 0,
             paymentMethod: 'cash',
-            moneyAccountId: ''
+            moneyAccountId: cashAccount?.id || ''
         });
         setEditingId(null);
     };
@@ -405,8 +427,8 @@ export function StockSupply() {
 
             {/* MODAL */}
             {showModal && (
-                <div className={styles.modalOverlay}>
-                    <div className={styles.modalContent} style={{ maxWidth: '900px', width: '95%' }}>
+                <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
                             <h3>{editingId ? 'Редагування постачання' : 'Нове постачання'}</h3>
                             <button onClick={() => setShowModal(false)} className={styles.closeButton}>×</button>
@@ -460,7 +482,25 @@ export function StockSupply() {
                                 </div>
 
                                 {/* Payment Control */}
-                                <div style={{ background: '#f8f9fa', padding: '10px 15px', borderRadius: '8px', marginBottom: '15px' }}>
+                                <div className={styles.paymentSection}>
+                                    <div className={styles.paymentHeader}>Оплата постачання</div>
+                                    {userRole === 'user' && (
+                                        <div style={{ 
+                                            background: '#fef3c7', 
+                                            border: '1px solid #fbbf24', 
+                                            borderRadius: '8px', 
+                                            padding: '10px 14px', 
+                                            marginBottom: '12px',
+                                            fontSize: '13px',
+                                            color: '#92400e',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <span style={{ fontSize: '16px' }}>ℹ️</span>
+                                            <span>Доступна лише оплата готівкою з готівкового рахунку</span>
+                                        </div>
+                                    )}
                                     <div className={styles.formRow3} style={{ alignItems: 'flex-end', gap: '15px' }}>
                                         <div className={styles.formGroup} style={{ marginBottom: 0 }}>
                                             <label className={styles.label}>Статус оплати</label>
@@ -493,10 +533,15 @@ export function StockSupply() {
                                                         value={formData.paymentMethod}
                                                         onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}
                                                         className={styles.select}
+                                                        disabled={userRole === 'user'}
                                                     >
                                                         <option value="cash">Готівка</option>
-                                                        <option value="card">Карта</option>
-                                                        <option value="bank">Банк</option>
+                                                        {userRole !== 'user' && (
+                                                            <>
+                                                                <option value="card">Карта</option>
+                                                                <option value="bank">Банк</option>
+                                                            </>
+                                                        )}
                                                     </select>
                                                 </div>
                                                 <div className={styles.formGroup} style={{ marginBottom: 0 }}>
@@ -505,13 +550,22 @@ export function StockSupply() {
                                                         value={formData.moneyAccountId}
                                                         onChange={e => setFormData({ ...formData, moneyAccountId: e.target.value })}
                                                         className={styles.select}
+                                                        disabled={userRole === 'user'}
                                                     >
                                                         <option value="">Авто-вибір (Налаштування)</option>
-                                                        {accounts.map(acc => (
-                                                            <option key={acc.id} value={acc.id}>
-                                                                {acc.name} ({acc.balance} {acc.currency})
-                                                            </option>
-                                                        ))}
+                                                        {accounts
+                                                            .filter(acc => {
+                                                                // Для user role - лише готівкові рахунки
+                                                                if (userRole === 'user') {
+                                                                    return acc.type === 'cash';
+                                                                }
+                                                                return true;
+                                                            })
+                                                            .map(acc => (
+                                                                <option key={acc.id} value={acc.id}>
+                                                                    {acc.name} ({acc.currency})
+                                                                </option>
+                                                            ))}
                                                     </select>
                                                 </div>
                                             </>
@@ -520,12 +574,12 @@ export function StockSupply() {
                                 </div>
 
                                 <div className={styles.searchContainer}>
-                                    <label className={styles.label}>Додати товар</label>
+                                    <label className={styles.label}> Додати товар</label>
                                     <input
                                         value={ingredientSearch}
                                         onChange={e => setIngredientSearch(e.target.value)}
                                         className={styles.input}
-                                        placeholder="Почніть вводити назву..."
+                                        placeholder="Почніть вводити назву або код..."
                                         autoComplete="off"
                                     />
                                     {searchResults.length > 0 && (
@@ -613,9 +667,12 @@ export function StockSupply() {
                                     </table>
                                 </div>
 
-                                <div className={styles.bottomActions} style={{ marginTop: '20px' }}>
+                                <div className={styles.bottomActions}>
+                                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#111827' }}>
+                                        Загальна сума: <span style={{ color: '#3b82f6' }}>{totalSum.toFixed(2)} ₴</span>
+                                    </div>
                                     <button type="submit" className={styles.buttonPrimary}>
-                                        {editingId ? 'Оновити' : 'Зберегти'}
+                                        {editingId ? '⚡ Оновити' : '✅ Зберегти'}
                                     </button>
                                 </div>
                             </form>

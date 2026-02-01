@@ -22,14 +22,18 @@ export default async function Home() {
     }
 
     const userLabel = payload?.email ?? 'користувач'
+    const userRole = payload?.role ?? 'user'
 
     const modules = [
-        { href: '/cash-register', icon: '💰', title: 'Каса', description: 'Продажі, чеки, звіти' },
-        { href: '/accounting', icon: '📊', title: 'Бухгалтерія', description: 'Фінанси, транзакції, аналітика' },
-        { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати' },
-        { href: '/projects', icon: '📁', title: 'Проекти', description: 'Управління проектами' },
-        { href: '/docs', icon: '📄', title: 'Документи', description: 'Документація та файли' },
+        { href: '/cash-register', icon: '💰', title: 'Каса', description: 'Продажі, чеки, звіти', roles: ['user', 'admin'] },
+        { href: '/supply', icon: '📦', title: 'Постачання', description: 'Прихід товарів та інгредієнтів', roles: ['user', 'admin'] },
+        { href: '/accounting', icon: '📊', title: 'Бухгалтерія', description: 'Фінанси, транзакції, аналітика', roles: ['admin'] },
+        { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати', roles: ['admin'] },
+        { href: '/projects', icon: '📁', title: 'Проекти', description: 'Управління проектами', roles: ['user', 'admin'] },
+        { href: '/docs', icon: '📄', title: 'Документи', description: 'Документація та файли', roles: ['user', 'admin'] },
     ]
+
+    const visibleModules = modules.filter(m => m.roles.includes(userRole))
 
     return (
         <div className={styles.page}>
@@ -42,7 +46,7 @@ export default async function Home() {
                 </div>
 
                 <div className={styles.grid}>
-                    {modules.map((module) => (
+                    {visibleModules.map((module) => (
                         <Link key={module.href} href={module.href} className={styles.card}>
                             <div className={styles.cardIcon}>{module.icon}</div>
                             <h2 className={styles.cardTitle}>{module.title}</h2>

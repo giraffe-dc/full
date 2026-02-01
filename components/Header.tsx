@@ -46,6 +46,7 @@ export default function Header() {
     const navItems = [
         { href: '/', label: 'Головна', icon: '🏠' },
         { href: '/cash-register', label: 'Каса', icon: '💰' },
+        { href: '/supply', label: 'Постачання', icon: '📦' },
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
         { href: '/staff', label: 'Персонал', icon: '👥' },
         { href: '/projects', label: 'Проекти', icon: '📁' },
@@ -65,7 +66,7 @@ export default function Header() {
                     <nav className={styles.nav}>
                         {navItems.filter(item => {
                             if (user.role === 'user') {
-                                return ['/', '/cash-register', '/projects'].includes(item.href);
+                                return ['/', '/cash-register', '/projects', '/supply'].includes(item.href);
                             }
                             return true;
                         }).map((item) => {

@@ -73,8 +73,15 @@ export const ShiftModals = ({
             toast.error("Некоректна сума");
             return;
         }
+        if (!endBalance || endBalance === '') {
+            toast.error("Фактична готівка є обов'язковим полем");
+            return;
+        }
         onCloseShift(balance);
     };
+
+    // Validation for close shift button
+    const isCloseShiftDisabled = !endBalance || endBalance === '' || isNaN(Number(endBalance));
 
     return (
         <>
@@ -173,27 +180,41 @@ export const ShiftModals = ({
                         </div>
 
                         <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Фактична готівка в касі</label>
+                            <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>
+                                Фактична готівка в касі <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
                             <input
                                 type="number"
                                 value={endBalance}
                                 onChange={(e) => setEndBalance(e.target.value)}
                                 placeholder={"Введіть фактичну готівку"}
+                                required
                                 style={{
                                     width: '100%',
                                     padding: '10px',
-                                    border: '1px solid #ccc',
+                                    border: '2px solid',
                                     borderRadius: '4px',
                                     fontSize: '1.2rem',
                                     fontWeight: 'bold',
-                                    borderColor: Number(endBalance) === closingData.expectedBalance
-                                        ? '#22c55e'
-                                        : Math.abs(Number(endBalance) - closingData.expectedBalance) > 10
-                                            ? '#ef4444'
-                                            : '#eab308'
+                                    borderColor: !endBalance || endBalance === ''
+                                        ? '#ef4444'
+                                        : Number(endBalance) === closingData.expectedBalance
+                                            ? '#22c55e'
+                                            : Math.abs(Number(endBalance) - closingData.expectedBalance) > 10
+                                                ? '#ef4444'
+                                                : '#eab308'
                                 }}
                             />
-                            {endBalance && (
+                            {!endBalance || endBalance === '' ? (
+                                <div style={{
+                                    marginTop: '5px', 
+                                    fontSize: '0.85rem', 
+                                    color: '#ef4444',
+                                    fontWeight: '500'
+                                }}>
+                                    ⚠️ Обов'язкове поле
+                                </div>
+                            ) : (
                                 <div style={{
                                     marginTop: '5px', fontSize: '0.9rem', textAlign: 'right', fontWeight: 'bold',
                                     color: Number(endBalance) - closingData.expectedBalance === 0 ? '#22c55e' : (Number(endBalance) - closingData.expectedBalance < 0 ? '#ef4444' : '#22c55e')
@@ -204,10 +225,32 @@ export const ShiftModals = ({
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                            <button onClick={onCloseCloseShift} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
+                            <button 
+                                onClick={onCloseCloseShift} 
+                                style={{ 
+                                    padding: '8px 16px', 
+                                    background: '#ccc', 
+                                    borderRadius: '4px', 
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Скасувати
+                            </button>
                             <button
                                 onClick={handleCloseShiftSubmit}
-                                style={{ padding: '8px 16px', background: '#ef4444', color: 'white', borderRadius: '4px', border: 'none', fontWeight: 'bold' }}
+                                disabled={isCloseShiftDisabled}
+                                style={{ 
+                                    padding: '8px 16px', 
+                                    background: isCloseShiftDisabled ? '#d1d5db' : '#ef4444', 
+                                    color: 'white', 
+                                    borderRadius: '4px', 
+                                    border: 'none', 
+                                    fontWeight: 'bold',
+                                    cursor: isCloseShiftDisabled ? 'not-allowed' : 'pointer',
+                                    opacity: isCloseShiftDisabled ? 0.6 : 1,
+                                    transition: 'all 0.2s ease'
+                                }}
                             >
                                 Закрити зміну
                             </button>

@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose';
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
 // Paths that require authentication
-const protectedPaths = ['/admin', '/accounting', '/docs', '/projects', '/staff', '/cash-register'];
+const protectedPaths = ['/admin', '/accounting', '/docs', '/projects', '/staff', '/cash-register', '/supply'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
       // Access Control Logic
       if (role === 'user') {
         // Allowed paths for 'user' role
-        const allowedPaths = ['/', '/cash-register', '/projects', '/docs'];
+        const allowedPaths = ['/', '/cash-register', '/projects', '/docs', '/supply'];
 
         const isAllowed = allowedPaths.some(p =>
           pathname === p || pathname.startsWith(`${p}/`)
@@ -64,6 +64,7 @@ export const config = {
     '/docs/:path*',
     '/projects/:path*',
     '/staff/:path*',
-    '/cash-register/:path*'
+    '/cash-register/:path*',
+    '/supply/:path*'
   ],
 };

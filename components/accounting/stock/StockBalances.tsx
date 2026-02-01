@@ -23,6 +23,7 @@ export function StockBalances() {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [selectedWarehouse, setSelectedWarehouse] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchWarehouses();
@@ -63,6 +64,14 @@ export function StockBalances() {
         return wh ? wh.name : 'Unknown';
     };
 
+    // Filter balances by search term
+    const filteredBalances = balances.filter(item => {
+        if (!searchTerm.trim()) return true;
+        const search = searchTerm.toLowerCase();
+        return item.itemName.toLowerCase().includes(search) ||
+               getWarehouseName(item.warehouseId).toLowerCase().includes(search);
+    });
+
     return (
         <section className={styles.card}>
             <div className={styles.headerRow}>
@@ -70,6 +79,41 @@ export function StockBalances() {
                     <h2 className={styles.title}>Залишки на складах</h2>
                 </div>
                 <div className={styles.toolbarRight}>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <input
+                            type="text"
+                            placeholder="Пошук за назвою або складом..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className={styles.input}
+                            style={{ 
+                                minWidth: '280px', 
+                                marginRight: '10px',
+                                padding: '8px 32px 8px 12px',
+                                fontSize: '14px'
+                            }}
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                style={{
+                                    position: 'absolute',
+                                    right: '15px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    color: '#9ca3af',
+                                    padding: '2px 5px'
+                                }}
+                                title="Очистити пошук"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
                     <select
                         value={selectedWarehouse}
                         onChange={e => setSelectedWarehouse(e.target.value)}
@@ -85,6 +129,18 @@ export function StockBalances() {
                 </div>
             </div>
 
+            {searchTerm && (
+                <div style={{ 
+                    padding: '8px 20px', 
+                    background: '#f0f9ff', 
+                    borderBottom: '1px solid #bfdbfe',
+                    fontSize: '13px',
+                    color: '#1e40af'
+                }}>
+                    🔍 Знайдено: <b>{filteredBalances.length}</b> з {balances.length} записів
+                </div>
+            )}
+
             <div className={styles.tableContainer}>
                 <table className={styles.table}>
                     <thead>
@@ -98,8 +154,8 @@ export function StockBalances() {
                         </tr>
                     </thead>
                     <tbody>
-                        {balances.length > 0 ? (
-                            balances.map((item) => (
+                        {filteredBalances.length > 0 ? (
+                            filteredBalances.map((item) => (
                                 <tr key={item._id}>
                                     <td>{item.itemName}</td>
                                     <td><span className={styles.categoryBadge}>{getWarehouseName(item.warehouseId)}</span></td>
@@ -111,7 +167,9 @@ export function StockBalances() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={6} className={styles.noData}>Запишиків не знайдено</td>
+                                <td colSpan={6} className={styles.noData}>
+                                    {searchTerm ? 'Нічого не знайдено за вашим запитом' : 'Запишиків не знайдено'}
+                                </td>
                             </tr>
                         )}
                     </tbody>
