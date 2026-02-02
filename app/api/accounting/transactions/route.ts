@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
     const settingsPromise = db.collection("settings").findOne({ type: "global" });
 
     // 6. Fetch Account if moneyAccountId is provided to calculate opening/closing balance
-    const accountPromise = moneyAccountId 
+    const accountPromise = moneyAccountId
       ? db.collection("money_accounts").findOne({ _id: new ObjectId(moneyAccountId) })
       : Promise.resolve(null);
 
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
             date: ct.createdAt,
             description: ct.comment || (ct.type === 'incasation' ? 'Інкасація (вилучення)' : (ct.type === 'income' ? 'Внесення' : 'Витрата')),
             amount: amt,
-            type: (ct.type === 'expense' || ct.type === 'incasation') ? 'expense' : 'income',
+            type: ct.type,
             category: ct.category || (ct.type === 'incasation' ? 'incasation' : 'other'),
             paymentMethod: 'cash',
             source: 'cash-register',
@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
             date: ct.createdAt,
             description: `Інкасація (надходження в сейф) ${ct.comment || ''}`,
             amount: amt,
-            type: 'income',
+            type: 'incasation',
             category: 'incasation',
             paymentMethod: 'transfer',
             source: 'cash-register',
@@ -226,18 +226,21 @@ export async function GET(req: NextRequest) {
     filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Calculate totals
-    const totals = filtered.reduce<{ income: number; expense: number; balance: number }>(
+    const totals = filtered.reduce<{ income: number; expense: number; balance: number; incasation: number; safeBalance: number }>(
       (acc, t) => {
         const amt = Number(t.amount) || 0;
         if (t.type === "income") {
           acc.income += amt;
+        } else if (t.type === "incasation") {
+          acc.incasation += amt;
         } else {
           acc.expense += amt;
         }
         acc.balance = acc.income - acc.expense;
+        acc.safeBalance = acc.incasation - acc.expense;
         return acc;
       },
-      { income: 0, expense: 0, balance: 0 }
+      { income: 0, expense: 0, balance: 0, incasation: 0, safeBalance: 0 }
     );
 
     // Calculate Opening and Closing Balances if account is specified
@@ -247,16 +250,16 @@ export async function GET(req: NextRequest) {
     if (moneyAccountId && accountDoc) {
       // 1. Start with account initial balance
       const initialBal = (accountDoc.initialBalance !== undefined) ? Number(accountDoc.initialBalance) : (Number(accountDoc.balance) || 0);
-      
+
       // 2. We need to calculate balance BEFORE startDate
       // This is complex because we filtered everything already.
       // Let's perform a separate aggregation for the balance at startDate
-      
+
       const startD = startDate ? new Date(startDate) : null;
-      
+
       // For simplicity and performance, we'll fetch all impact before startDate
       // Note: In a production app, we might store daily snapshots or use a more efficient ledger
-      
+
       const [preTx, preSupplies, preReceipts, preCashTx] = await Promise.all([
         db.collection("transactions").find({ moneyAccountId, date: { $lt: startD } }).toArray(),
         db.collection("stock_movements").find({ moneyAccountId, type: 'supply', date: { $lt: startD } }).toArray(),
@@ -264,10 +267,10 @@ export async function GET(req: NextRequest) {
         // But for "History" we usually care about the account they WERE assigned to.
         // If moneyAccountId is the default cash/card account, we include them.
         (financeSettings.cashAccountId === moneyAccountId || financeSettings.cardAccountId === moneyAccountId)
-          ? db.collection("receipts").find({ 
-              createdAt: { $lt: startD },
-              paymentMethod: financeSettings.cashAccountId === moneyAccountId ? 'cash' : 'card'
-            }).toArray()
+          ? db.collection("receipts").find({
+            createdAt: { $lt: startD },
+            paymentMethod: financeSettings.cashAccountId === moneyAccountId ? 'cash' : 'card'
+          }).toArray()
           : Promise.resolve([]),
         financeSettings.cashAccountId === moneyAccountId || financeSettings.safeAccountId === moneyAccountId
           ? db.collection("cash_transactions").find({ createdAt: { $lt: startD } }).toArray()
@@ -316,8 +319,8 @@ export async function GET(req: NextRequest) {
     // Slice for pagination if needed
     const resultData = filtered.slice(0, 500);
 
-    return NextResponse.json({ 
-      data: resultData, 
+    return NextResponse.json({
+      data: resultData,
       totals,
       openingBalance,
       closingBalance

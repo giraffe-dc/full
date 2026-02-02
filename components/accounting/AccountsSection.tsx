@@ -29,7 +29,7 @@ export function AccountsSection({
     const [endOfPeriodBalance, setEndOfPeriodBalance] = useState<number>(0);
     const [openingBalance, setOpeningBalance] = useState<number>(0);
     const [closingBalance, setClosingBalance] = useState<number>(0);
-    const [periodTotals, setPeriodTotals] = useState({ income: 0, expense: 0 });
+    const [periodTotals, setPeriodTotals] = useState({ income: 0, expense: 0, incasation: 0, safeBalance: 0 });
 
     // Form State
     const [formData, setFormData] = useState({
@@ -76,7 +76,6 @@ export function AccountsSection({
         setFormData({
             name: account.name,
             type: account.type,
-            // @ts-ignore - initialBalance might be missing in type def yet, but API returns it
             initialBalance: String(account.initialBalance !== undefined ? account.initialBalance : account.balance),
             currency: account.currency || 'UAH',
             description: account.description || ''
@@ -143,7 +142,12 @@ export function AccountsSection({
             if (data.data) {
                 setHistoryTransactions(data.data);
                 setEndOfPeriodBalance(data.totals.balance);
-                setPeriodTotals({ income: data.totals.income, expense: data.totals.expense });
+                setPeriodTotals({
+                    income: data.totals.income,
+                    expense: data.totals.expense,
+                    incasation: data.totals.incasation || 0,
+                    safeBalance: data.totals.safeBalance || 0
+                });
                 setOpeningBalance(data.openingBalance || 0);
                 setClosingBalance(data.closingBalance || 0);
             }
@@ -378,8 +382,8 @@ export function AccountsSection({
                 <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center', backgroundColor: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <label style={{ fontSize: '0.85em', color: '#4b5563', fontWeight: 500 }}>Період з:</label>
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             value={historyFilters.startDate}
                             onChange={(e) => handleHistoryFilterChange(e.target.value, historyFilters.endDate)}
                             style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9em' }}
@@ -387,8 +391,8 @@ export function AccountsSection({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <label style={{ fontSize: '0.85em', color: '#4b5563', fontWeight: 500 }}>по:</label>
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             value={historyFilters.endDate}
                             onChange={(e) => handleHistoryFilterChange(historyFilters.startDate, e.target.value)}
                             style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.9em' }}
@@ -422,24 +426,24 @@ export function AccountsSection({
                                             <div style={{ fontWeight: 500 }}>{t.description}</div>
                                             <small style={{ color: '#6b7280' }}>{t.category}</small>
                                         </td>
-                                        <td style={{ 
-                                            padding: '10px 8px', 
-                                            textAlign: 'right', 
+                                        <td style={{
+                                            padding: '10px 8px',
+                                            textAlign: 'right',
                                             fontWeight: 600,
-                                            color: t.type === 'income' ? '#059669' : '#dc2626' 
+                                            color: (t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#059669' : '#dc2626'
                                         }}>
-                                            {t.type === 'income' ? '+' : '-'} {Number(t.amount).toFixed(2)}
+                                            {(t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '+' : '-'} {Number(t.amount).toFixed(2)}
                                         </td>
                                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                                            <span style={{ 
-                                                fontSize: '0.75em', 
-                                                padding: '2px 8px', 
+                                            <span style={{
+                                                fontSize: '0.75em',
+                                                padding: '2px 8px',
                                                 borderRadius: '999px',
-                                                backgroundColor: t.type === 'income' ? '#ecfdf5' : '#fef2f2',
-                                                color: t.type === 'income' ? '#065f46' : '#991b1b',
-                                                border: `1px solid ${t.type === 'income' ? '#a7f3d0' : '#fecaca'}`
+                                                backgroundColor: (t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#ecfdf5' : '#fef2f2',
+                                                color: (t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#065f46' : '#991b1b',
+                                                border: `1px solid ${(t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#a7f3d0' : '#fecaca'}`
                                             }}>
-                                                {t.type === 'income' ? 'Надходження' : 'Витрата'}
+                                                {t.type === 'income' ? 'Надходження' : t.type === 'incasation' ? 'Інкасація' : 'Витрата'}
                                             </span>
                                         </td>
                                     </tr>
@@ -456,21 +460,38 @@ export function AccountsSection({
                         <div style={{ display: 'flex', gap: '24px', margin: '4px 0', padding: '8px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
                             <div style={{ fontSize: '0.9em' }}>
                                 <div style={{ color: '#6b7280', fontSize: '0.8em', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Прихід</div>
-                                <strong style={{ color: '#059669', fontSize: '1.1em' }}>+{periodTotals.income.toFixed(2)}</strong>
+                                <strong style={{ color: '#059669', fontSize: '1.1em' }}>+ {selectedAccountForHistory?.type === 'safe' ? periodTotals.incasation.toFixed(2) : periodTotals.income.toFixed(2)}</strong>
                             </div>
                             <div style={{ fontSize: '0.9em' }}>
                                 <div style={{ color: '#6b7280', fontSize: '0.8em', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Витрати</div>
-                                <strong style={{ color: '#dc2626', fontSize: '1.1em' }}>-{periodTotals.expense.toFixed(2)}</strong>
+                                <strong style={{ color: '#dc2626', fontSize: '1.1em' }}>-{selectedAccountForHistory?.type === 'cash' ? (periodTotals.expense+periodTotals.incasation).toFixed(2) : periodTotals.expense.toFixed(2)}</strong>
                             </div>
+                            {/* Added Incasation summary */}
+                            {/* {periodTotals.incasation > 0 && (
+                                <div style={{ fontSize: '0.9em' }}>
+                                    <div style={{ color: '#6b7280', fontSize: '0.8em', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Інкасація</div>
+                                    <strong style={{ color: selectedAccountForHistory?.type === 'safe' ? '#059669' : '#dc2626', fontSize: '1.1em' }}>
+                                        {selectedAccountForHistory?.type === 'safe' ? '+' : '-'}{periodTotals.incasation.toFixed(2)}
+                                    </strong>
+                                </div>
+                            )} */}
                             <div style={{ fontSize: '0.9em' }}>
                                 <div style={{ color: '#6b7280', fontSize: '0.8em', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Оборот</div>
-                                <strong style={{ color: endOfPeriodBalance >= 0 ? '#059669' : '#dc2626', fontSize: '1.1em' }}>
-                                    {endOfPeriodBalance >= 0 ? '+' : ''}{endOfPeriodBalance.toFixed(2)}
-                                </strong>
+                                {/* Calculate Net Change (Turnover) including Incasation */}
+                                {(() => {
+                                    const turnover = periodTotals.income - periodTotals.expense +
+                                        (selectedAccountForHistory?.type === 'safe' ? periodTotals.incasation : -periodTotals.incasation);
+
+                                    return (
+                                        <strong style={{ color: turnover >= 0 ? '#059669' : '#dc2626', fontSize: '1.1em' }}>
+                                            {turnover >= 0 ? '+' : ''}{turnover.toFixed(2)}
+                                        </strong>
+                                    );
+                                })()}
                             </div>
                         </div>
                         <div style={{ fontSize: '1rem', color: '#111827' }}>
-                            Залишок на кінець: <strong>{closingBalance.toFixed(2)} {selectedAccountForHistory?.currency}</strong>
+                            Залишок на кінець: <strong>{selectedAccountForHistory?.type === 'safe' ? periodTotals.safeBalance.toFixed(2) : closingBalance.toFixed(2)} {selectedAccountForHistory?.currency}</strong>
                         </div>
                     </div>
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '24px' }}>

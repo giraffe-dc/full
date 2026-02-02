@@ -242,6 +242,9 @@ export type MoneyAccount = {
   description: string;
   status: 'active' | 'inactive';
   createdAt?: string;
+  initialBalance?: number;
+  periodIncome?: number;
+  periodExpense?: number;
 };
 
 export type ExpenseCategory = {
