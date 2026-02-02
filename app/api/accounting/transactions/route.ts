@@ -236,7 +236,7 @@ export async function GET(req: NextRequest) {
         } else {
           acc.expense += amt;
         }
-        acc.balance = acc.income - acc.expense;
+        acc.balance = acc.income - acc.expense - acc.incasation;
         acc.safeBalance = acc.incasation - acc.expense;
         return acc;
       },
