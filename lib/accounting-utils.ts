@@ -96,8 +96,11 @@ export function calculatePaymentTotals(rows: PaymentRow[]): PaymentTotals {
 /**
  * Розрахувати статистику доходів
  */
+/**
+ * Розрахувати статистику доходів
+ */
 export function calculateIncomeStats(transactions: any[]) {
-  const incomeTx = transactions.filter((t) => t.type === "income");
+  const incomeTx = transactions.filter((t) => t.type === "income" && t.category !== "incasation" && t.type !== "incasation");
   const totalIncomeAmount = incomeTx.reduce((sum, t) => sum + t.amount, 0);
   const averageCheck = incomeTx.length > 0 ? totalIncomeAmount / incomeTx.length : 0;
   const totalVisits = incomeTx.reduce((sum, t) => sum + (t.visits || 0), 0);
@@ -114,7 +117,7 @@ export function calculateIncomeStats(transactions: any[]) {
  * Розрахувати статистику по категоріях доходів
  */
 export function calculateIncomeCategoryStats(transactions: any[]) {
-  const incomeTx = transactions.filter((t) => t.type === "income");
+  const incomeTx = transactions.filter((t) => t.type === "income" && t.category !== "incasation" && t.type !== "incasation");
   const stats: Record<string, number> = {};
 
   incomeTx.forEach((t) => {
@@ -129,7 +132,7 @@ export function calculateIncomeCategoryStats(transactions: any[]) {
  * Розрахувати статистику по категоріях витрат
  */
 export function calculateExpenseCategoryStats(transactions: any[]) {
-  const expenseTx = transactions.filter((t) => t.type === "expense");
+  const expenseTx = transactions.filter((t) => t.type === "expense" && t.category !== "incasation" && t.type !== "incasation");
   const stats: Record<string, number> = {};
 
   expenseTx.forEach((t) => {
@@ -144,7 +147,7 @@ export function calculateExpenseCategoryStats(transactions: any[]) {
  * Розрахувати статистику по методах оплати (готівка/картка) для доходів
  */
 export function calculatePaymentMethodStats(transactions: any[]) {
-  const incomeTx = transactions.filter((t) => t.type === "income");
+  const incomeTx = transactions.filter((t) => t.type === "income" && t.category !== "incasation" && t.type !== "incasation");
   const stats: Record<string, number> = {
     cash: 0,
     card: 0,
@@ -170,6 +173,9 @@ export function calculateDailyStats(transactions: any[]) {
   const dailyMap = new Map<string, { income: number; expense: number }>();
 
   transactions.forEach((t) => {
+    // Exclude incasation from daily stats
+    if (t.type === 'incasation' || t.category === 'incasation') return;
+
     const date = new Date(t.date).toISOString().split("T")[0];
     const current = dailyMap.get(date) || { income: 0, expense: 0 };
 

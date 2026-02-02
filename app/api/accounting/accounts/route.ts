@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
         // 3. Get All Transactions and aggregate by account
         const transactions = await db.collection("transactions").find({}).toArray();
-        const periodTransactions = Object.keys(dateFilter).length 
+        const periodTransactions = Object.keys(dateFilter).length
             ? await db.collection("transactions").find({ ...matchDate("date") }).toArray()
             : transactions;
 
@@ -133,7 +133,9 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        // Process Receipts (Income)
+        // Process Receipts (Income) - DISABLED to avoid double counting
+        // Receipts now generate 'transactions' with source='pos', so we count them in the transactions loop.
+        /*
         receipts.forEach(r => {
             if (r.paymentMethod === 'mixed') {
                 if (cashAccountId && accountBalances[cashAccountId] !== undefined && r.paymentDetails?.cash) {
@@ -149,6 +151,7 @@ export async function GET(req: NextRequest) {
                 }
             }
         });
+        */
 
         // Calculate Period Turnovers
         const periodIncome: Record<string, number> = {};
@@ -185,6 +188,7 @@ export async function GET(req: NextRequest) {
             }
         });
 
+        /*
         periodReceipts.forEach(r => {
             if (r.paymentMethod === 'mixed') {
                 if (cashAccountId && periodIncome[cashAccountId] !== undefined && r.paymentDetails?.cash) {
@@ -200,6 +204,7 @@ export async function GET(req: NextRequest) {
                 }
             }
         });
+        */
 
         const data = accounts.map(a => ({
             id: a._id.toString(),
