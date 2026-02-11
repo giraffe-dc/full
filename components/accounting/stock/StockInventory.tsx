@@ -27,6 +27,38 @@ export function StockInventory() {
     const [histories, setHistories] = useState<any[]>([]);
     const [showHistory, setShowHistory] = useState(true);
     const [selectedHistory, setSelectedHistory] = useState<any | null>(null);
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'itemName', direction: 'asc' });
+
+    const requestSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortedData = (data: any[]) => {
+        if (!sortConfig) return data;
+        return [...data].sort((a, b) => {
+            let aValue = a[sortConfig.key];
+            let bValue = b[sortConfig.key];
+
+            // Special case for history list warehouse name
+            if (sortConfig.key === 'warehouseName') {
+                aValue = warehouses.find(w => w._id === a.warehouseId)?.name || '';
+                bValue = warehouses.find(w => w._id === b.warehouseId)?.name || '';
+            }
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    };
+
+    const getSortIndicator = (key: string) => {
+        if (!sortConfig || sortConfig.key !== key) return ' ↕';
+        return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
+    };
 
     useEffect(() => {
         fetchWarehouses();
@@ -292,15 +324,15 @@ export function StockInventory() {
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>Дата</th>
-                                <th>Склад</th>
-                                <th>Опис</th>
-                                <th>Позицій з відхиленням</th>
+                                <th onClick={() => requestSort('date')} style={{ cursor: 'pointer' }}>Дата{getSortIndicator('date')}</th>
+                                <th onClick={() => requestSort('warehouseName')} style={{ cursor: 'pointer' }}>Склад{getSortIndicator('warehouseName')}</th>
+                                <th onClick={() => requestSort('description')} style={{ cursor: 'pointer' }}>Опис{getSortIndicator('description')}</th>
+                                <th onClick={() => requestSort('itemsCount')} style={{ cursor: 'pointer' }}>Позицій з відхиленням{getSortIndicator('itemsCount')}</th>
                                 <th>Дії</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {histories.map(h => (
+                            {getSortedData(histories.map(h => ({ ...h, itemsCount: h.items?.length || 0 }))).map(h => (
                                 <tr key={h._id}>
                                     <td>{new Date(h.date).toLocaleDateString()}</td>
                                     <td>{warehouses.find(w => w._id === h.warehouseId)?.name || h.warehouseId}</td>
@@ -328,17 +360,17 @@ export function StockInventory() {
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>Назва</th>
-                                <th>Облік</th>
-                                <th>Факт</th>
-                                <th>Різниця</th>
+                                <th onClick={() => requestSort('itemName')} style={{ cursor: 'pointer' }}>Назва{getSortIndicator('itemName')}</th>
+                                <th onClick={() => requestSort('theoreticalQty')} style={{ cursor: 'pointer' }}>Облік{getSortIndicator('theoreticalQty')}</th>
+                                <th onClick={() => requestSort('actualQty')} style={{ cursor: 'pointer' }}>Факт{getSortIndicator('actualQty')}</th>
+                                <th onClick={() => requestSort('qty')} style={{ cursor: 'pointer' }}>Різниця{getSortIndicator('qty')}</th>
                                 <th>Од. вим.</th>
-                                <th>Собівартість (од)</th>
+                                <th onClick={() => requestSort('cost')} style={{ cursor: 'pointer' }}>Собівартість (од){getSortIndicator('cost')}</th>
                                 <th>Сума розбіжності</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {selectedHistory.items.map((item: any) => {
+                            {getSortedData(selectedHistory.items).map((item: any) => {
                                 const delta = item.qty;
                                 const diffSum = delta * item.cost;
                                 return (
@@ -401,17 +433,17 @@ export function StockInventory() {
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>Назва</th>
-                                <th>Облік</th>
-                                <th>Факт</th>
+                                <th onClick={() => requestSort('itemName')} style={{ cursor: 'pointer' }}>Назва{getSortIndicator('itemName')}</th>
+                                <th onClick={() => requestSort('theoreticalQty')} style={{ cursor: 'pointer' }}>Облік{getSortIndicator('theoreticalQty')}</th>
+                                <th onClick={() => requestSort('actualQty')} style={{ cursor: 'pointer' }}>Факт{getSortIndicator('actualQty')}</th>
                                 <th>Різниця</th>
                                 <th>Од. вим.</th>
-                                <th>Собівартість (од)</th>
+                                <th onClick={() => requestSort('cost')} style={{ cursor: 'pointer' }}>Собівартість (од){getSortIndicator('cost')}</th>
                                 <th>Сума розбіжності</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map(item => {
+                            {getSortedData(items).map(item => {
                                 const delta = item.actualQty - item.theoreticalQty;
                                 const diffSum = delta * item.cost;
                                 return (
