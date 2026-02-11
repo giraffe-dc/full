@@ -58,6 +58,7 @@ export interface Receipt {
   paymentMethod: 'cash' | 'card' | 'mixed';
   createdAt: string;
   updatedAt?: string;
+  openedAt?: string;
   shiftId: string;
   notes?: string;
   history?: {
@@ -132,6 +133,7 @@ export interface XReport {
   totalExpenses: number;
   totalIncasation: number;
   salesByCategory: Record<ServiceCategory, number>;
+  transactions: ShiftTransaction[];
 }
 
 // Z-Звіт (закриття зміни)

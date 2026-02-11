@@ -382,6 +382,9 @@ export async function POST(req: NextRequest) {
       await session.withTransaction(async () => {
         const numericAmount = Number(amount);
 
+        // 2.5 Find Active Shift if any
+        const activeShift = await db.collection("cash_shifts").findOne({ status: "open" });
+
         // 3. Create Transaction
         const result = await db.collection("transactions").insertOne({
           date: date ? new Date(date) : new Date(),
@@ -395,7 +398,8 @@ export async function POST(req: NextRequest) {
           createdBy: user.sub,
           createdAt: new Date(),
           updatedAt: new Date(),
-          moneyAccountId: targetAccountId ? targetAccountId.toString() : null
+          moneyAccountId: targetAccountId ? targetAccountId.toString() : null,
+          shiftId: activeShift ? activeShift._id : null
         }, { session });
 
         insertId = result.insertedId;

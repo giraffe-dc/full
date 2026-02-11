@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
-import { CashRegisterState, XReport, ZReport, ServiceCategory } from "../../../types/cash-register";
+import { CashRegisterState, XReport, ZReport, ServiceCategory, ShiftTransaction } from "../../../types/cash-register";
 import { XReportView } from "../../../components/cash-register/XReportView";
 import { ZReportView } from "../../../components/cash-register/ZReportView";
 import { Preloader } from "@/components/ui/Preloader";
@@ -111,9 +111,29 @@ export default function ReportsPage() {
     });
 
     const transactions = state.currentShift.transactions || [];
-    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalIncasation = transactions.filter(t => t.type === 'incasation').reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // External transactions (mapped in backend) have types like 'Витрата (Accounting)', 'Постачання (Stock)', etc.
+    // Internal have 'income', 'expense', 'incasation'.
+    // We sum them based on their amount (normalized in backend for individual shift view).
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    let totalIncasation = 0;
+
+    transactions.forEach(t => {
+      const amt = t.amount || 0;
+      // We look at 't.type' or just the sign if normalized, but backend normalized 'amount' to be negative for expenses.
+      // However, frontend ZReportView might expect separate absolute totals.
+      // Backend normalization for [id] route: amount is negative for expense/incasation.
+
+      if ((t as any).type === 'income' || (t as any).type?.includes('Прихід')) {
+        totalIncome += amt;
+      } else if ((t as any).type === 'incasation' || (t as any).type?.includes('Інкасація')) {
+        totalIncasation += Math.abs(amt);
+      } else if ((t as any).type === 'expense' || (t as any).type?.includes('Витрата') || (t as any).type?.includes('Постачання')) {
+        totalExpenses += Math.abs(amt);
+      }
+    });
 
     // Calculate current cash balance
     // Start + Sales(Cash) + Income - Expenses - Incasation
@@ -133,6 +153,7 @@ export default function ReportsPage() {
       totalIncasation,
       currentBalance,
       salesByCategory: salesByCategory as Record<ServiceCategory, number>,
+      transactions: transactions as ShiftTransaction[],
     };
   };
 

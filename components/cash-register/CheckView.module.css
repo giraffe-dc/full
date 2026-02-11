@@ -10,7 +10,7 @@
 
 /* Left Panel */
 .leftPanel {
-    width: 420px;
+    width: 42%;
     background: white;
     display: flex;
     flex-direction: column;
@@ -459,7 +459,7 @@
 
 @media (max-width: 900px) {
     .leftPanel {
-        width: 340px;
+        width: 42%;
     }
 
     .productGrid {
@@ -489,7 +489,7 @@
 
 /* Left Panel */
 .leftPanel {
-    width: 400px;
+    width: 42%;
     /* Fixed width for receipt-like feel */
     background: white;
     display: flex;
@@ -874,7 +874,7 @@
 
 @media (max-width: 900px) {
     .leftPanel {
-        width: 320px;
+        width: 42%;
     }
 }
 

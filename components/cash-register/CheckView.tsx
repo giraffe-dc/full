@@ -124,8 +124,102 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
     };
 
     const handlePrintCheck = () => {
-        // Mock print functionality
-        alert(`Друк чеку #${check.id.slice(-4)}...\n\nСума: ${check.total} ₴`);
+        const printWindow = window.open('', '_blank', 'width=400,height=600');
+        if (!printWindow) return;
+
+        const dateStr = new Date().toLocaleString('uk-UA');
+        const itemsHtml = check.items.map(item => `
+            <div class="item">
+                <div class="item-main">
+                    <span class="item-name">${item.serviceName}</span>
+                    <span class="item-total">${item.subtotal.toFixed(2)}</span>
+                </div>
+                <div class="item-details">
+                    ${item.quantity} x ${item.price.toFixed(2)}
+                    ${item.discount ? `<span class="item-discount">(-${item.discount.toFixed(2)})</span>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Чек #${check.id.slice(-4)}</title>
+                <style>
+                    body { 
+                        font-family: 'Courier New', Courier, monospace; 
+                        padding: 10px; 
+                        width: 300px;
+                        margin: 0 auto;
+                        color: #000;
+                    }
+                    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+                    .brand { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+                    .context { font-size: 14px; margin-bottom: 5px; }
+                    .item { margin-bottom: 8px; font-size: 14px; }
+                    .item-main { display: flex; justify-content: space-between; font-weight: bold; }
+                    .item-details { font-size: 12px; color: #333; }
+                    .item-discount { color: #000; font-weight: normal; margin-left: 5px; }
+                    .totals { border-top: 2px dashed #000; padding-top: 10px; margin-top: 10px; }
+                    .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; }
+                    .comment-box { 
+                        margin-top: 15px; 
+                        padding: 8px; 
+                        border: 1px solid #000; 
+                        font-size: 13px;
+                        font-style: italic;
+                    }
+                    .footer { text-align: center; margin-top: 20px; font-size: 12px; border-top: 1px solid #eee; padding-top: 10px; }
+                    @media print {
+                        body { width: 90%; padding: 1rem; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="brand">GIRAFFE</div>
+                    <div class="context">Чек #${check.id.slice(-4)}</div>
+                    <div class="context">Стіл: ${check.tableName}</div>
+                    ${check.waiterName ? `<div class="context">Офіціант: ${check.waiterName}</div>` : ''}
+                    <div class="context">${dateStr}</div>
+                </div>
+
+                <div class="items">
+                    ${itemsHtml}
+                </div>
+
+                <div class="totals">
+                    <div class="total-row">
+                        <span>ВСЬОГО:</span>
+                        <span>${check.total.toFixed(2)} ₴</span>
+                    </div>
+                </div>
+
+                ${check.comment ? `
+                    <div class="comment-box">
+                        <strong>Коментар:</strong><br/>
+                        ${check.comment}
+                    </div>
+                ` : ''}
+
+                <div class="footer">
+                    Дякуємо за візит!<br/>
+                    giraffe.pos
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(() => { window.close(); }, 500);
+                    };
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
     };
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -243,6 +337,9 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                                         <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handlePrintCheck(); }}>
                                             🖨️ Друк чеку
                                         </button>
+                                        {/* <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); (window as any).showPromotions?.(); }} style={{ color: '#d97706' }}>
+                                            🏷️ Акції
+                                        </button> */}
                                         {Math.abs(check.total) < 0.01 && (
                                             <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); onVoid(); }} style={{ color: '#ef4444' }}>
                                                 🗑️ Анулювати (Помилковий)

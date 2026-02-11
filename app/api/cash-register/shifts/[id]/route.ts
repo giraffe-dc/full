@@ -21,7 +21,83 @@ export async function GET(
 
         // Fetch receipts for this shift
         const receipts = await db.collection("receipts").find({ shiftId: new ObjectId(id) }).toArray();
-        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+        const cashTransactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+
+        // 3. General Transactions (External Manual)
+        const settings = await db.collection("settings").findOne({ type: "global" });
+        const posAccountIds = [
+            settings?.finance?.cashAccountId,
+            settings?.finance?.cardAccountId
+        ].filter(Boolean);
+
+        const startTime = new Date(shift.startTime);
+        const endTime = shift.endTime ? new Date(shift.endTime) : new Date();
+
+        const externalTransactions = await db.collection("transactions").find({
+            $or: [
+                { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
+                {
+                    date: { $gte: startTime, $lte: endTime },
+                    shiftId: { $exists: false },
+                    moneyAccountId: { $in: posAccountIds }
+                }
+            ]
+        }).toArray();
+
+        // 4. Stock Supplies
+        const supplies = await db.collection("stock_movements")
+            .find({
+                type: 'supply',
+                paidAmount: { $gt: 0 },
+                $or: [
+                    { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
+                    {
+                        date: { $gte: startTime, $lte: endTime },
+                        shiftId: { $exists: false },
+                        moneyAccountId: { $in: posAccountIds }
+                    }
+                ]
+            })
+            .toArray();
+
+        // Map and merge
+        const mappedExternal = externalTransactions.map(t => ({
+            ...t,
+            id: t._id.toString(),
+            _id: undefined,
+            type: t.type === 'expense' ? 'Витрата (Accounting)' : 'Прихід (Accounting)',
+            amount: t.type === 'expense' ? -t.amount : t.amount,
+            createdAt: t.date,
+            authorName: 'Accounting',
+            comment: t.description
+        }));
+
+        const mappedSupplies = supplies.map(s => ({
+            ...s,
+            id: s._id.toString(),
+            _id: undefined,
+            type: 'Постачання (Stock)',
+            amount: -s.paidAmount,
+            createdAt: s.date,
+            authorName: s.supplierName || 'Stock',
+            comment: s.description || 'Оплата постачання'
+        }));
+
+        // Merge all transactions
+        const allTransactions = [
+            ...cashTransactions.map(t => ({
+                ...t,
+                id: t._id.toString(),
+                _id: undefined,
+                shiftId: t.shiftId?.toString(),
+                authorId: t.authorId?.toString(),
+                createdAt: t.createdAt, // Ensure this property is explicitly here
+                // Normalize for UI
+                amount: t.type === 'expense' || t.type === 'incasation' ? -t.amount : t.amount
+            })),
+            ...mappedExternal,
+            ...mappedSupplies
+        ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         // Serialize ObjectIds
         const serializedShift = {
@@ -35,13 +111,7 @@ export async function GET(
                 shiftId: r.shiftId?.toString(),
                 customerId: r.customerId?.toString()
             })),
-            transactions: transactions.map(t => ({
-                ...t,
-                id: t._id.toString(),
-                _id: undefined,
-                shiftId: t.shiftId?.toString(),
-                authorId: t.authorId?.toString()
-            }))
+            transactions: allTransactions
         };
 
         return NextResponse.json({ success: true, data: serializedShift });

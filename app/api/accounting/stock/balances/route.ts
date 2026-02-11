@@ -43,6 +43,8 @@ export async function GET(req: NextRequest) {
                             unit: "$unit",
                             date: "$date",
                             cost: "$cost",
+                            type: "$type",
+                            qty: "$qty", // Absolute qty for inventory
                             change: {
                                 $switch: {
                                     branches: [
@@ -50,7 +52,8 @@ export async function GET(req: NextRequest) {
                                         { case: { $eq: ["$type", "writeoff"] }, then: { $multiply: ["$qty", -1] } },
                                         { case: { $eq: ["$type", "sale"] }, then: { $multiply: ["$qty", -1] } },
                                         { case: { $eq: ["$type", "move"] }, then: { $multiply: ["$qty", -1] } },
-                                        { case: { $eq: ["$type", "inventory"] }, then: "$qty" }
+                                        // Inventory is special - handled in reduce
+                                        { case: { $eq: ["$type", "inventory"] }, then: 0 }
                                     ],
                                     default: 0
                                 }
@@ -64,6 +67,8 @@ export async function GET(req: NextRequest) {
                             unit: "$unit",
                             date: "$date",
                             cost: "$cost",
+                            type: "move_in", // custom type for target
+                            qty: "$qty",
                             change: { $cond: [{ $eq: ["$type", "move"] }, "$qty", 0] }
                         }
                     ]
@@ -74,10 +79,10 @@ export async function GET(req: NextRequest) {
             // 5. Filter out entries without a warehouseId (target for non-moves)
             { $match: { "movements.warehouseId": { $ne: null } } },
 
-            // 6. Sort by date ASC to get the latest in $last
+            // 6. Sort by date ASC to get correct timeline
             { $sort: { "movements.date": 1 } },
 
-            // 7. Final Grouping by warehouse and item
+            // 7. Group by warehouse and item, and Accumulate logic
             {
                 $group: {
                     _id: {
@@ -86,15 +91,36 @@ export async function GET(req: NextRequest) {
                     },
                     itemName: { $first: "$movements.itemName" },
                     unit: { $first: "$movements.unit" },
-                    quantity: { $sum: "$movements.change" },
-                    lastCost: { $last: "$movements.cost" }
+                    lastCost: { $last: "$movements.cost" },
+                    // Push all movements to array to reduce them
+                    history: { $push: "$movements" }
                 }
             },
 
-            // 8. Optional filtering by warehouse
+            // 8. Calculate Balance using $reduce
+            // Logic: If type is 'inventory', RESET balance to qty. Else add 'change'.
+            {
+                $addFields: {
+                    quantity: {
+                        $reduce: {
+                            input: "$history",
+                            initialValue: 0,
+                            in: {
+                                $cond: [
+                                    { $eq: ["$$this.type", "inventory"] },
+                                    "$$this.qty", // Reset to inventory count
+                                    { $add: ["$$value", "$$this.change"] } // Apply change
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+
+            // 9. Optional filtering by warehouse
             ...(warehouseId ? [{ $match: { "_id.warehouseId": warehouseId } }] : []),
 
-            // 9. Final Sorting
+            // 10. Final Sorting
             { $sort: { itemName: 1 } }
         ];
 

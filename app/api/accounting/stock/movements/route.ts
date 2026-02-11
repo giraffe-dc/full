@@ -12,9 +12,13 @@ export async function GET(req: NextRequest) {
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
         const isDeletedSource = searchParams.get("isDeleted");
+        const warehouseId = searchParams.get("warehouseId");
+        const itemId = searchParams.get("itemId");
 
         const query: any = {};
         if (type) query.type = type;
+        if (warehouseId) query.warehouseId = warehouseId;
+        if (itemId) query["items.itemId"] = itemId;
 
         // Handle isDeleted: 'true' returns ONLY deleted, 'false' or undefined returns ONLY active
         if (isDeletedSource === 'true') {
@@ -194,6 +198,9 @@ export async function DELETE(req: NextRequest) {
 // --- Helper Functions ---
 
 async function processTransaction(db: any, body: any, session: any) {
+    // 0.5 Find Active Shift
+    const activeShift = await db.collection("cash_shifts").findOne({ status: "open" }, { session });
+
     // 1. Create Movement Record
     const movementDoc = {
         type: body.type,
@@ -208,6 +215,7 @@ async function processTransaction(db: any, body: any, session: any) {
         description: body.description || "",
         paymentMethod: body.paymentMethod, // Save to DB
         moneyAccountId: body.moneyAccountId, // Save to DB
+        shiftId: activeShift ? activeShift._id : null,
         createdAt: new Date(),
         isDeleted: false
     };

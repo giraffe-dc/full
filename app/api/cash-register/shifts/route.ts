@@ -62,11 +62,42 @@ export async function GET(request: Request) {
                 cashTxs = await db.collection("cash_transactions").find({ createdAt: { $gte: start, $lte: end } }).toArray();
             }
 
-            // 3. General Transactions (Legacy/Other)
+            // 3. General Transactions (Manual)
+            const settings = await db.collection("settings").findOne({ type: "global" });
+            const posAccountIds = [
+                settings?.finance?.cashAccountId,
+                settings?.finance?.cardAccountId
+            ].filter(Boolean);
+
             const generalTxs = await db.collection("transactions").find({
-                date: { $gte: start, $lte: end },
-                source: { $ne: 'cash-register' }
+                $or: [
+                    { shiftId: shift._id, moneyAccountId: { $in: posAccountIds } },
+                    {
+                        date: { $gte: start, $lte: end },
+                        shiftId: { $exists: false }, // Only fallback if shiftId is missing
+                        $or: [
+                            { source: { $ne: 'cash-register' } },
+                            { moneyAccountId: { $in: posAccountIds } }
+                        ]
+                    }
+                ]
             }).toArray();
+
+            // 4. Fetch Stock Supplies (External Expenses)
+            const supplies = await db.collection("stock_movements")
+                .find({
+                    type: 'supply',
+                    paidAmount: { $gt: 0 },
+                    $or: [
+                        { shiftId: shift._id, moneyAccountId: { $in: posAccountIds } },
+                        {
+                            date: { $gte: start, $lte: end },
+                            shiftId: { $exists: false },
+                            moneyAccountId: { $in: posAccountIds }
+                        }
+                    ]
+                })
+                .toArray();
 
             let income = 0;
             let expenses = 0;
@@ -79,7 +110,7 @@ export async function GET(request: Request) {
                 id: `open-${shiftId}`,
                 type: 'Відкриття зміни',
                 createdAt: new Date(shift.startTime).toISOString(),
-                amount: shift.startBalance, // Fixed field name
+                amount: shift.startBalance,
                 authorName: shift.cashier || 'Касир',
                 comment: '',
                 editedBy: '—'
@@ -90,7 +121,7 @@ export async function GET(request: Request) {
                     id: `close-${shiftId}`,
                     type: 'Закриття зміни',
                     createdAt: new Date(shift.endTime).toISOString(),
-                    amount: shift.actualBalance || shift.endBalance || 0, // Fixed field name
+                    amount: shift.actualBalance || shift.endBalance || 0,
                     authorName: shift.cashier || 'Касир',
                     comment: '',
                     editedBy: '—'
@@ -115,19 +146,44 @@ export async function GET(request: Request) {
                 });
             });
 
-            // Process General Transactions
+            // Process General Transactions (Manual)
             generalTxs.forEach((t: any) => {
-                if (t.type === 'income') income += (t.amount || 0);
-                if (t.type === 'expense') expenses += (t.amount || 0);
+                // Determine if this is a double-count (already in cashTxs?)
+                // cashTxs are source: 'cash-register'. 
+                // generalTxs filter above already handles source: { $ne: 'cash-register' } OR account match.
+                // We should be careful to NOT include source: 'cash-register' from transactions collection 
+                // IF they are already being processed from cash_transactions collection.
+                // Wait, cash-register receipts go to 'transactions' with source: 'cash-register' or 'pos'.
+                if (t.source === 'cash-register' || t.source === 'pos') return;
+
+                const amt = (t.amount || 0);
+                if (t.type === 'income') income += amt;
+                if (t.type === 'expense') expenses += amt;
 
                 detailedTransactions.push({
                     id: t._id.toString(),
                     type: t.category || (t.type === 'income' ? 'Прихід' : 'Витрата'),
                     createdAt: new Date(t.date).toISOString(),
-                    amount: t.type === 'expense' ? -(t.amount || 0) : (t.amount || 0),
+                    amount: t.type === 'expense' ? -amt : amt,
                     authorName: t.user || 'System',
                     comment: t.description,
-                    editedBy: '—'
+                    editedBy: 'Accounting'
+                });
+            });
+
+            // Process Supplies
+            supplies.forEach((s: any) => {
+                const amt = (s.paidAmount || 0);
+                expenses += amt;
+
+                detailedTransactions.push({
+                    id: s._id.toString(),
+                    type: 'Постачання (Stock)',
+                    createdAt: new Date(s.date).toISOString(),
+                    amount: -amt,
+                    authorName: s.supplierName || 'Supplier',
+                    comment: s.description || 'Оплата постачання',
+                    editedBy: 'Stock'
                 });
             });
 

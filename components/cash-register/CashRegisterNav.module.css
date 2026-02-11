@@ -17,7 +17,8 @@
   height: var(--header-height);
 }
 
-.controlsGroup {
+.controlsGroup,
+.rightGroup {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -82,6 +83,16 @@
 
 .incasationBtn:hover {
   background: #d8b4fe;
+}
+
+.promotionsBtn {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.promotionsBtn:hover {
+  background: #fef3c7;
 }
 
 .closeShiftBtn {

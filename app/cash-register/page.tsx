@@ -21,6 +21,21 @@ import { PaymentModal } from "@/components/cash-register/modals/PaymentModal";
 
 type ViewState = 'departments' | 'tables' | 'check';
 
+function PromotionHook({ setShowModal, activeCheck, toast }: any) {
+  useEffect(() => {
+    const handler = () => {
+      if (activeCheck) {
+        setShowModal(true);
+      } else {
+        toast.error("Спочатку відкрийте чек!");
+      }
+    };
+    document.addEventListener('showPromotions', handler);
+    return () => document.removeEventListener('showPromotions', handler);
+  }, [activeCheck, setShowModal, toast]);
+  return null;
+}
+
 export default function CashRegisterPage() {
   const toast = useToast();
 
@@ -424,10 +439,15 @@ export default function CashRegisterPage() {
     if (!activeCheck) return;
 
     let updatedItems = [...activeCheck.items];
-    const existingItemIndex = updatedItems.findIndex(i => i.serviceId === item.serviceId && JSON.stringify(i.modifiers) === JSON.stringify(item.modifiers));
+    const existingItemIndex = updatedItems.findIndex(i =>
+      i.productId === item.productId &&
+      (i.guestId || 'guest-1') === (item.guestId || 'guest-1') &&
+      JSON.stringify(i.modifiers || []) === JSON.stringify(item.modifiers || [])
+    );
 
     if (existingItemIndex >= 0) {
       updatedItems[existingItemIndex].quantity += item.quantity;
+      updatedItems[existingItemIndex].subtotal = updatedItems[existingItemIndex].quantity * updatedItems[existingItemIndex].price;
     } else {
       updatedItems.push(item);
     }
@@ -537,12 +557,28 @@ export default function CashRegisterPage() {
       <CashRegisterNav
         setShowStaffModal={setShowStaffModal}
         activeStaffIds={activeStaffIds}
-        onShowPromotions={() => toast.error("Спочатку відкрийте чек!")}
+        onShowPromotions={() => {
+          if (activeCheck) {
+            setShowPromotionsModal(true);
+          } else if (view === 'check') {
+            setShowPromotionsModal(true);
+          } else {
+            toast.error("Спочатку відкрийте чек!");
+          }
+        }}
         isShiftOpen={!!currentShift}
         onOpenShift={handlePrepareOpenShift}
         onCloseShift={handleInitiateCloseShift}
         onCashOperation={handleTransactionClick}
       />
+
+      <script dangerouslySetInnerHTML={{
+        __html: `window.showPromotions = () => { document.dispatchEvent(new CustomEvent('showPromotions')); }`
+      }} />
+
+      {typeof window !== 'undefined' && (
+        <PromotionHook setShowModal={setShowPromotionsModal} activeCheck={activeCheck} toast={toast} />
+      )}
 
       <main className={styles.main}>
         {view === 'departments' && (
@@ -660,7 +696,29 @@ export default function CashRegisterPage() {
         <ApplyPromotionModal
           check={activeCheck}
           onClose={() => setShowPromotionsModal(false)}
-          onApply={() => { }}
+          onApply={(promo, amount, updatedItems) => {
+            if (!activeCheck) return;
+
+            const subtotal = updatedItems ? updatedItems.reduce((sum, i) => sum + i.subtotal, 0) : activeCheck.subtotal;
+            const total = subtotal - amount;
+
+            const updatedCheck = {
+              ...activeCheck,
+              items: updatedItems || activeCheck.items,
+              discount: amount,
+              total: total,
+              appliedPromotionId: promo ? (promo.id || promo._id) : undefined
+            };
+
+            updateCheckState(updatedCheck);
+            setShowPromotionsModal(false);
+
+            if (promo) {
+              toast.success(`Акція "${promo.name}" застосована!`);
+            } else {
+              toast.success("Акцію скасовано");
+            }
+          }}
         />
       )}
 

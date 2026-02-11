@@ -66,7 +66,8 @@ export async function POST(request: Request) {
                     total,
                     paymentMethod,
                     paymentDetails, // Added details
-                    createdAt: originalCreatedAt ? new Date(originalCreatedAt) : new Date(),
+                    createdAt: new Date(),
+                    openedAt: originalCreatedAt ? new Date(originalCreatedAt) : new Date(),
                     updatedAt: new Date(),
                     // Preserved metadata
                     history,
@@ -131,75 +132,127 @@ export async function POST(request: Request) {
                 }
 
                 // 3. Stock Deduction (Complex: Product -> Recipe -> Ingredients)
-                // Optimization: Fetch all necessary data first to avoid N+1 queries ideally, 
-                // but for now, we'll loop sequentially for simplicity and safety within transaction.
+                // Fetch default warehouse once for all items
+                const defaultWarehouse = await db.collection("warehouses").findOne({}, { session });
+                console.log("[CHECKOUT DEBUG] defaultWarehouse:", defaultWarehouse?._id, defaultWarehouse?.name);
+                console.log("[CHECKOUT DEBUG] items count:", items.length);
 
                 for (const item of items) {
-                    if (!item.productId) continue;
-
-                    // Safe Product Lookup
-                    let product;
-                    try {
-                        const query = ObjectId.isValid(item.productId)
-                            ? { _id: new ObjectId(item.productId) }
-                            : { id: item.productId };
-
-                        // Also check if we can match by _id if productId is a string but technically an ObjectId
-                        // It's safer to use $or if unsure
-                        product = await db.collection("products").findOne(
-                            {
-                                $or: [
-                                    ...(ObjectId.isValid(item.productId) ? [{ _id: new ObjectId(item.productId) }] : []),
-                                    { id: item.productId }
-                                ]
-                            },
-                            { session }
-                        );
-                    } catch (e) {
-                        console.error(`Error finding product ${item.productId}`, e);
+                    console.log("[CHECKOUT DEBUG] item:", { productId: item.productId, serviceId: item.serviceId, serviceName: item.serviceName, quantity: item.quantity });
+                    if (!item.productId) {
+                        console.log("[CHECKOUT DEBUG] SKIP: no productId");
                         continue;
                     }
 
-                    if (!product) continue;
+                    // The cash register menu merges products AND recipes into one list.
+                    // So item.productId can be either a product._id or a recipe._id.
+                    // Strategy: try products first, then fall back to recipes.
 
-                    // Find valid recipe linked to this product (using product._id)
-                    const recipe = await db.collection("menu_recipes").findOne({ productId: product._id }, { session });
+                    let product: any = null;
+                    let recipe: any = null;
 
-                    if (recipe && recipe.ingredients) {
+                    // 1. Try to find in products collection
+                    try {
+                        const query = ObjectId.isValid(item.productId)
+                            ? { $or: [{ _id: new ObjectId(item.productId) }, { id: item.productId }] }
+                            : { id: item.productId };
+                        product = await db.collection("products").findOne(query, { session });
+                    } catch (e) {
+                        console.error(`Error finding product ${item.productId}`, e);
+                    }
+
+                    if (product) {
+                        console.log("[CHECKOUT DEBUG] Found in products:", product._id, product.name);
+                        // Look for a recipe with matching name
+                        recipe = await db.collection("recipes").findOne(
+                            { name: product.name, status: { $ne: 'inactive' } },
+                            { session }
+                        );
+                        console.log("[CHECKOUT DEBUG] Matching recipe:", recipe?._id, recipe?.name, "ingredients:", recipe?.ingredients?.length);
+                    } else {
+                        // 2. Not in products — try recipes collection directly
+                        try {
+                            const query = ObjectId.isValid(item.productId)
+                                ? { $or: [{ _id: new ObjectId(item.productId) }, { id: item.productId }] }
+                                : { id: item.productId };
+                            recipe = await db.collection("recipes").findOne(query, { session });
+                        } catch (e) {
+                            console.error(`Error finding recipe ${item.productId}`, e);
+                        }
+
+                        if (recipe) {
+                            console.log("[CHECKOUT DEBUG] Found in recipes:", recipe._id, recipe.name, "ingredients:", recipe.ingredients?.length);
+                        } else {
+                            console.log("[CHECKOUT DEBUG] SKIP: not found in products or recipes");
+                            continue;
+                        }
+                    }
+
+                    // Now deduct stock
+                    if (!defaultWarehouse) continue;
+
+                    if (recipe && recipe.ingredients && recipe.ingredients.length > 0) {
+                        // Has recipe with ingredients → deduct each ingredient
                         for (const ing of recipe.ingredients) {
-                            // Calculate quantity to deduct:
-                            // Recipe defines quantity for 1 unit of product.
-                            // Total deduction = ing.netQuantity * item.quantity
+                            // Use gross (what's taken from stock) first, fall back to net
+                            const qtyToDeduct = (ing.gross || ing.net) * item.quantity;
+                            console.log("[CHECKOUT DEBUG] ingredient:", { id: ing.id, name: ing.name, net: ing.net, gross: ing.gross, unit: ing.unit, qtyToDeduct });
 
-                            const qtyToDeduct = (ing.net || ing.gross) * item.quantity;
-
-                            // Deduct from Stock Balances
-                            // Assuming default warehouse for now
-                            const defaultWarehouse = await db.collection("warehouses").findOne({}, { session });
-
-                            if (defaultWarehouse && ing.id) {
+                            if (ing.id && qtyToDeduct > 0) {
                                 await db.collection("stock_balances").updateOne(
                                     { warehouseId: defaultWarehouse._id.toString(), itemId: ing.id },
                                     { $inc: { quantity: -qtyToDeduct } },
                                     { upsert: true, session }
                                 );
 
-                                // Also log a movement for traceability
                                 await db.collection("stock_movements").insertOne({
-                                    type: "sale", // Changed from 'writeoff' to 'sale'
+                                    type: "sale",
                                     date: new Date(),
                                     warehouseId: defaultWarehouse._id.toString(),
                                     items: [{
                                         itemId: ing.id,
                                         itemName: ing.name,
-                                        quantity: qtyToDeduct,
-                                        cost: 0 // We'd need to fetch cost to be accurate, setting 0 for now
+                                        qty: qtyToDeduct,
+                                        unit: ing.unit || '',
+                                        cost: 0
                                     }],
-                                    description: `Продаж: Check #${receipt.receiptNumber}`,
-                                    referenceId: receiptId
+                                    description: `Продаж: Чек #${receipt.receiptNumber}`,
+                                    referenceId: receiptId,
+                                    isDeleted: false,
+                                    createdAt: new Date()
                                 }, { session });
                             }
                         }
+                    } else {
+                        // No recipe or empty ingredients → deduct the product/item itself
+                        const itemName = product?.name || recipe?.name || item.serviceName;
+                        const itemId = (product?._id || recipe?._id || item.productId).toString();
+                        const unit = product?.unit || recipe?.unit || 'шт';
+                        const qtyToDeduct = item.quantity;
+                        console.log("[CHECKOUT DEBUG] Direct deduction:", { itemId, itemName, qty: qtyToDeduct, unit });
+
+                        await db.collection("stock_balances").updateOne(
+                            { warehouseId: defaultWarehouse._id.toString(), itemId: itemId },
+                            { $inc: { quantity: -qtyToDeduct } },
+                            { upsert: true, session }
+                        );
+
+                        await db.collection("stock_movements").insertOne({
+                            type: "sale",
+                            date: new Date(),
+                            warehouseId: defaultWarehouse._id.toString(),
+                            items: [{
+                                itemId: itemId,
+                                itemName: itemName,
+                                qty: qtyToDeduct,
+                                unit: unit,
+                                cost: 0
+                            }],
+                            description: `Продаж: Чек #${receipt.receiptNumber}`,
+                            referenceId: receiptId,
+                            isDeleted: false,
+                            createdAt: new Date()
+                        }, { session });
                     }
                 }
 

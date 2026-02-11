@@ -75,12 +75,21 @@ export function CashRegisterNav({
         </div>
 
         {isShiftOpen && (
-          <button
-            onClick={() => setShowStaffModal(true)}
-            className={`${styles.navButton} ${styles.staffBtn}`}
-          >
-            👥 <span>Зміна: {activeStaffIds.length}</span>
-          </button>
+          <div className={styles.rightGroup}>
+            <button
+              onClick={onShowPromotions}
+              className={`${styles.navButton} ${styles.promotionsBtn}`}
+              title="Акції"
+            >
+              🏷️ <span>Акції</span>
+            </button>
+            <button
+              onClick={() => setShowStaffModal(true)}
+              className={`${styles.navButton} ${styles.staffBtn}`}
+            >
+              👥 <span>Зміна: {activeStaffIds.length}</span>
+            </button>
+          </div>
         )}
 
       </div>

@@ -144,9 +144,43 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
         return { promotion: p, discountAmount: totalDiscount, updatedItems };
     };
 
+    const isPromotionEligibleBySettings = (p: Promotion): boolean => {
+        const now = new Date();
+
+        // 1. Date Range
+        if (p.startDate && new Date(p.startDate) > now) return false;
+        if (p.endDate) {
+            const end = new Date(p.endDate);
+            end.setHours(23, 59, 59, 999);
+            if (end < now) return false;
+        }
+
+        // 2. Days of Week
+        if (p.daysOfWeek && p.daysOfWeek.length > 0) {
+            const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday...
+            if (!p.daysOfWeek.includes(currentDay)) return false;
+        }
+
+        // 3. Time Range
+        if (p.timeStart && p.timeEnd) {
+            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            if (currentTimeStr < p.timeStart || currentTimeStr > p.timeEnd) return false;
+        }
+
+        // 4. Audience
+        if (p.audience === 'registered' && !check.customerId) return false;
+
+        return true;
+    };
+
     const availablePromotions = promotions.map(p => {
+        // Settings check (Schedule, Dates, Audience)
+        if (!isPromotionEligibleBySettings(p)) return null;
+
+        // Conditions check
         const isEligible = p.conditions.every(c => validateCondition(c, check.items));
         if (!isEligible) return null;
+
         return calculatePromotion(p);
     }).filter(p => p !== null) as PromotionCalculation[];
 
@@ -182,7 +216,7 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
                                     </div>
                                     {check.appliedPromotionId === (promotion.id || promotion._id) ? (
                                         <button
-                                            onClick={() => onApply(null, 0)}
+                                            onClick={() => onApply(null, 0, check.items.map(i => ({ ...i, discount: 0 })))}
                                             style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}
                                         >
                                             Скасувати
