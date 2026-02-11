@@ -183,8 +183,33 @@ export async function POST(request: Request) {
                         if (recipe) {
                             console.log("[CHECKOUT DEBUG] Found in recipes:", recipe._id, recipe.name, "ingredients:", recipe.ingredients?.length);
                         } else {
-                            console.log("[CHECKOUT DEBUG] SKIP: not found in products or recipes");
-                            continue;
+                            // 3. Fallback: Check if it's an ingredient sold directly
+                            try {
+                                const query = ObjectId.isValid(item.productId)
+                                    ? { $or: [{ _id: new ObjectId(item.productId) }, { id: item.productId }] }
+                                    : { id: item.productId };
+                                const ingredient = await db.collection("ingredients").findOne(query, { session });
+                                if (ingredient) {
+                                    console.log("[CHECKOUT DEBUG] Found in ingredients directly:", ingredient._id, ingredient.name);
+                                    // Treat this ingredient as the product to deduct
+                                    product = ingredient;
+                                } else {
+                                    // 4. Last resort: Match by name if ID fails
+                                    const byName = await db.collection("ingredients").findOne({ name: item.serviceName }, { session })
+                                        || await db.collection("products").findOne({ name: item.serviceName }, { session });
+
+                                    if (byName) {
+                                        console.log("[CHECKOUT DEBUG] Found by name fallback:", byName._id, byName.name);
+                                        product = byName;
+                                    } else {
+                                        console.log("[CHECKOUT DEBUG] SKIP: not found in products, recipes or ingredients even by name");
+                                        continue;
+                                    }
+                                }
+                            } catch (e) {
+                                console.log("[CHECKOUT DEBUG] Final fallback failed", e);
+                                continue;
+                            }
                         }
                     }
 

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
         const aggregation: any[] = [
             // 1. Filter out deleted movements
-            { $match: { isDeleted: false } },
+            { $match: { isDeleted: { $ne: true } } },
 
             // 2. Unwind items to process each separately
             { $unwind: "$items" },
@@ -21,12 +21,13 @@ export async function GET(req: NextRequest) {
                 $project: {
                     type: 1,
                     date: 1,
-                    warehouseId: 1,
-                    toWarehouseId: 1,
-                    itemId: "$items.itemId",
+                    warehouseId: { $toString: "$warehouseId" },
+                    toWarehouseId: { $toString: "$toWarehouseId" },
+                    itemId: { $toString: "$items.itemId" },
                     itemName: "$items.itemName",
                     unit: "$items.unit",
                     qty: { $toDouble: "$items.qty" },
+                    actualQty: { $toDouble: { $ifNull: ["$items.actualQty", "$items.qty"] } },
                     cost: { $toDouble: { $ifNull: ["$items.lastCost", { $ifNull: ["$items.cost", 0] }] } }
                 }
             },
@@ -44,7 +45,8 @@ export async function GET(req: NextRequest) {
                             date: "$date",
                             cost: "$cost",
                             type: "$type",
-                            qty: "$qty", // Absolute qty for inventory
+                            qty: "$qty",
+                            actualQty: "$actualQty",
                             change: {
                                 $switch: {
                                     branches: [
@@ -69,6 +71,7 @@ export async function GET(req: NextRequest) {
                             cost: "$cost",
                             type: "move_in", // custom type for target
                             qty: "$qty",
+                            actualQty: "$actualQty",
                             change: { $cond: [{ $eq: ["$type", "move"] }, "$qty", 0] }
                         }
                     ]
@@ -108,7 +111,7 @@ export async function GET(req: NextRequest) {
                             in: {
                                 $cond: [
                                     { $eq: ["$$this.type", "inventory"] },
-                                    "$$this.qty", // Reset to inventory count
+                                    "$$this.actualQty", // Reset to inventory snapshot count
                                     { $add: ["$$value", "$$this.change"] } // Apply change
                                 ]
                             }

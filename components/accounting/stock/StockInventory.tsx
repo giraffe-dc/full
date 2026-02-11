@@ -111,17 +111,17 @@ export function StockInventory() {
     };
 
     async function submitInventory() {
-        // We only save items where delta != 0 to keep history clean, OR all items if we want a full snapshot.
-        // The user asked to "take into account current balances", so we save deltas.
+        // We now save ALL items from the inventory list to create a full "snapshot".
+        // This ensures every item has a reset point in the history-based balance calculation.
         const movementItems = items.map(i => ({
             itemId: i.itemId,
             itemName: i.itemName,
             unit: i.unit,
-            qty: i.actualQty - i.theoreticalQty, // This is the delta saved to DB
-            actualQty: i.actualQty, // For display
-            theoreticalQty: i.theoreticalQty, // For display
+            qty: i.actualQty - i.theoreticalQty, // Delta for legacy current-state updates
+            actualQty: i.actualQty, // THE MOST IMPORTANT FIELD: snapshot of actual count
+            theoreticalQty: i.theoreticalQty, // Theoretical count at time of inventory
             cost: i.cost
-        })).filter(i => Math.abs(i.qty) > 0.000001);
+        }));
 
         const body = {
             type: 'inventory',
