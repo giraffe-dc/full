@@ -24,6 +24,11 @@ export function XReportView({ report }: XReportViewProps) {
     <div className={styles.container}>
       {/* Header Cards */}
       <div className={styles.summaryGrid}>
+        <div className={styles.summaryCard} style={{ background: '#eff6ff', borderColor: '#dbeafe' }}>
+          <h3>🏁 Початковий залишок</h3>
+          <div className={styles.amount}>{report.startBalance.toFixed(2)} ₴</div>
+          <div className={styles.subText}>Залишок на початок зміни</div>
+        </div>
         <div className={styles.summaryCard} style={{ background: '#f0fdf4', borderColor: '#dcfce7' }}>
           <h3>💵 Готівка в касі</h3>
           <div className={styles.amount}>{report.currentBalance.toFixed(2)} ₴</div>
@@ -154,7 +159,8 @@ export function XReportView({ report }: XReportViewProps) {
       </div>
 
       <div style={{ marginTop: '16px', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>
-        Звіт сформовано: {new Date(report.createdAt).toLocaleString('uk-UA')}
+        <div>Зміну відкрито: {report.shiftStartTime ? new Date(report.shiftStartTime).toLocaleString('uk-UA') : 'Unknown'}</div>
+        <div>Звіт сформовано: {new Date(report.createdAt).toLocaleString('uk-UA')}</div>
       </div>
     </div>
   );

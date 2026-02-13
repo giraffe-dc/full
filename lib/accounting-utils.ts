@@ -100,9 +100,13 @@ export function calculatePaymentTotals(rows: PaymentRow[]): PaymentTotals {
  * Розрахувати статистику доходів
  */
 export function calculateIncomeStats(transactions: any[]) {
-  const incomeTx = transactions.filter((t) => t.type === "income" && t.category !== "incasation" && t.type !== "incasation");
+  // STRICTLY Sales for "Total Income"
+  const incomeTx = transactions.filter((t) =>
+    t.type === "income" && t.category === "sales"
+  );
   const totalIncomeAmount = incomeTx.reduce((sum, t) => sum + t.amount, 0);
   const averageCheck = incomeTx.length > 0 ? totalIncomeAmount / incomeTx.length : 0;
+  // Visits are usually only attached to sales receipts
   const totalVisits = incomeTx.reduce((sum, t) => sum + (t.visits || 0), 0);
 
   return {
@@ -110,6 +114,24 @@ export function calculateIncomeStats(transactions: any[]) {
     totalIncomeAmount,
     averageCheck,
     totalVisits,
+  };
+}
+
+/**
+ * Розрахувати загальні витрати для дашборду (всі витрати мінус інкасація)
+ */
+export function calculateDashboardExpenseStats(transactions: any[]) {
+  const expenseTx = transactions.filter((t) =>
+    t.type === "expense" &&
+    t.category !== "incasation" &&
+    t.type !== "incasation"
+  );
+
+  const totalExpenseAmount = expenseTx.reduce((sum, t) => sum + t.amount, 0);
+
+  return {
+    expenseTx,
+    totalExpenseAmount
   };
 }
 

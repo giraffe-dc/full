@@ -29,19 +29,86 @@ export async function GET(
             .filter(r => r.paymentMethod === 'card')
             .reduce((sum, r) => sum + (r.total || 0), 0);
 
-        const totalIncome = transactions
+        // 3. General Transactions (External Manual)
+        const settings = await db.collection("settings").findOne({ type: "global" });
+        const posAccountIds = [
+            settings?.finance?.cashAccountId,
+            settings?.finance?.cardAccountId
+        ].filter(Boolean);
+
+        const startTime = new Date(shift.startTime);
+        const endTime = shift.endTime ? new Date(shift.endTime) : new Date();
+
+        const externalTransactions = await db.collection("transactions").find({
+            $or: [
+                { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
+                {
+                    date: { $gte: startTime, $lte: endTime },
+                    shiftId: { $exists: false },
+                    moneyAccountId: { $in: posAccountIds }
+                }
+            ]
+        }).toArray();
+
+        // 4. Stock Supplies
+        const supplies = await db.collection("stock_movements")
+            .find({
+                type: 'supply',
+                paidAmount: { $gt: 0 },
+                $or: [
+                    { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
+                    {
+                        date: { $gte: startTime, $lte: endTime },
+                        shiftId: { $exists: false },
+                        moneyAccountId: { $in: posAccountIds }
+                    }
+                ]
+            })
+            .toArray();
+
+        // Map external transactions to match cash_transaction structure roughly for calculation
+        const mappedExternal = externalTransactions.map(t => ({
+            ...t,
+            type: t.type, // 'income' or 'expense'
+            amount: t.amount,
+            category: t.category,
+            source: t.source
+        }));
+
+        const mappedSupplies = supplies.map(s => ({
+            ...s,
+            type: 'expense',
+            amount: s.paidAmount, // It is an expense, so we need the amount. Logic below sums amounts based on type.
+            category: 'supply',
+            source: 'stock'
+        }));
+
+        // Merge all transactions
+        const allTransactions = [
+            ...transactions,
+            ...mappedExternal,
+            ...mappedSupplies
+        ];
+
+        // Filter out sales-related transactions to match X-Report logic
+        const manualTransactions = allTransactions.filter(t =>
+            t.category !== 'sales' && t.source !== 'cash-register'
+        );
+
+        const totalIncome = manualTransactions
             .filter(t => t.type === 'income')
             .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-        const totalExpenses = transactions
-            .filter(t => t.type === 'expense')
+        const totalExpenses = manualTransactions
+            .filter(t => t.type === 'expense' || t.category === 'supply')
             .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-        const totalIncasation = transactions
+        const totalIncasation = manualTransactions
             .filter(t => t.type === 'incasation')
             .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         const startBalance = shift.startBalance || 0;
+        // Logic: Start Balance + Cash Sales + Manual Income - Manual Expenses - Incasation
         const expectedBalance = startBalance + totalSalesCash + totalIncome - totalExpenses - totalIncasation;
 
         const data = {

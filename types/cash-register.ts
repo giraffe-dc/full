@@ -130,10 +130,12 @@ export interface XReport {
   totalSalesCash: number;
   totalSalesCard: number;
   totalIncome: number;
+  startBalance: number;
   totalExpenses: number;
   totalIncasation: number;
   salesByCategory: Record<ServiceCategory, number>;
   transactions: ShiftTransaction[];
+  shiftStartTime?: string;
 }
 
 // Z-Звіт (закриття зміни)

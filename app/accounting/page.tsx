@@ -57,6 +57,7 @@ import {
   calculateDailyStats,
   calculateMaxDailyValue,
   calculateTotals,
+  calculateDashboardExpenseStats,
 } from "../../lib/accounting-utils";
 import { MarketingSection } from "@/components/accounting/MarketingSection";
 import { FinanceSettings } from "@/components/accounting/FinanceSettings";
@@ -142,6 +143,7 @@ function AccountingContent() {
   // Агрегати для дашборда на основі поточних транзакцій (з мемоізацією)
   const dashboardStats = useMemo(() => {
     const incomeStats = calculateIncomeStats(tx);
+    const expenseStats = calculateDashboardExpenseStats(tx);
     const incomeCategoryStatsRaw = calculateIncomeCategoryStats(tx);
     const expenseCategoryStatsRaw = calculateExpenseCategoryStats(tx);
 
@@ -172,6 +174,7 @@ function AccountingContent() {
 
     return {
       ...incomeStats,
+      totalExpenseAmount: expenseStats.totalExpenseAmount, // Add this
       incomeCategoryStats: Object.entries(incomeCategoryStatsRaw)
         .map(([key, total]) => ({
           key,
@@ -620,7 +623,11 @@ function AccountingContent() {
 
         {activeSection === "dashboard" && (
           <DashboardSection
-            totals={totals}
+            totals={{
+              income: dashboardStats.totalIncomeAmount,
+              expense: dashboardStats.totalExpenseAmount,
+              balance: dashboardStats.totalIncomeAmount - dashboardStats.totalExpenseAmount,
+            }}
             totalIncomeAmount={dashboardStats.totalIncomeAmount}
             averageCheck={dashboardStats.averageCheck}
             totalVisits={dashboardStats.totalVisits}

@@ -120,7 +120,14 @@ export default function ReportsPage() {
     let totalExpenses = 0;
     let totalIncasation = 0;
 
-    transactions.forEach(t => {
+    // Filter out sales transactions that are automatically created
+    // We only want manual transactions (income/expense/incasation) to appear in the transaction list and "Cash In" block
+    const filteredTransactions = transactions.filter(t => {
+      const isSale = (t as any).category === 'sales' || (t as any).source === 'cash-register';
+      return !isSale;
+    });
+
+    filteredTransactions.forEach(t => {
       const amt = t.amount || 0;
       // We look at 't.type' or just the sign if normalized, but backend normalized 'amount' to be negative for expenses.
       // However, frontend ZReportView might expect separate absolute totals.
@@ -148,12 +155,14 @@ export default function ReportsPage() {
       totalSales,
       totalSalesCash,
       totalSalesCard,
+      startBalance: state.currentShift.startBalance,
       totalIncome,
       totalExpenses,
       totalIncasation,
       currentBalance,
       salesByCategory: salesByCategory as Record<ServiceCategory, number>,
-      transactions: transactions as ShiftTransaction[],
+      transactions: filteredTransactions as ShiftTransaction[],
+      shiftStartTime: state.currentShift.startTime,
     };
   };
 

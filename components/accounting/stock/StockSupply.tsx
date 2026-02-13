@@ -62,6 +62,7 @@ export function StockSupply() {
     const [items, setItems] = useState<SupplyItem[]>([]);
     const [ingredientSearch, setIngredientSearch] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [lastPrices, setLastPrices] = useState<Record<string, { cost: number; date: string; supplierName: string }>>({});
 
     useEffect(() => {
         fetchUserRole();
@@ -157,18 +158,27 @@ export function StockSupply() {
         if (data.data) setAccounts(data.data);
     };
 
+    const fetchLastPrices = async () => {
+        try {
+            const res = await fetch('/api/accounting/stock/last-prices');
+            const data = await res.json();
+            if (data.data) setLastPrices(data.data);
+        } catch (e) { console.error('Failed to fetch last prices:', e); }
+    };
+
     const getName = (list: any[], id: string) => list.find(i => i._id === id)?.name || 'Unknown';
 
     // --- Form Logic ---
     const openCreateModal = () => {
         resetForm();
+        fetchLastPrices();
         setShowModal(true);
     };
 
     const openEditModal = (sup: SupplyRecord) => {
         // Для користувачів 'user' завжди встановлюємо готівку
         const cashAccount = userRole === 'user' ? accounts.find(acc => acc.type === 'cash') : null;
-        
+
         setFormData({
             date: new Date(sup.date).toISOString().split('T')[0],
             warehouseId: sup.warehouseId,
@@ -190,16 +200,19 @@ export function StockSupply() {
             unit: i.unit
         })));
         setEditingId(sup._id);
+        fetchLastPrices();
         setShowModal(true);
     };
 
     const addItem = (item: any) => {
+        const itemId = item._id || item.id;
+        const lastPrice = lastPrices[itemId];
         setItems([...items, {
             id: Math.random().toString(36),
-            itemId: item._id || item.id,
+            itemId,
             itemName: item.name,
             qty: 0,
-            cost: item.costPerUnit || 0,
+            cost: lastPrice ? lastPrice.cost : (item.costPerUnit || 0),
             unit: item.unit || item.yieldUnit || 'шт'
         }]);
         setIngredientSearch('');
@@ -304,10 +317,10 @@ export function StockSupply() {
 
     const resetForm = () => {
         setItems([]);
-        
+
         // Для користувачів 'user' автоматично встановлюємо готівковий рахунок
         const cashAccount = userRole === 'user' ? accounts.find(acc => acc.type === 'cash') : null;
-        
+
         setFormData({
             date: new Date().toISOString().split('T')[0],
             warehouseId: '',
@@ -485,11 +498,11 @@ export function StockSupply() {
                                 <div className={styles.paymentSection}>
                                     <div className={styles.paymentHeader}>Оплата постачання</div>
                                     {userRole === 'user' && (
-                                        <div style={{ 
-                                            background: '#fef3c7', 
-                                            border: '1px solid #fbbf24', 
-                                            borderRadius: '8px', 
-                                            padding: '10px 14px', 
+                                        <div style={{
+                                            background: '#fef3c7',
+                                            border: '1px solid #fbbf24',
+                                            borderRadius: '8px',
+                                            padding: '10px 14px',
                                             marginBottom: '12px',
                                             fontSize: '13px',
                                             color: '#92400e',
@@ -641,6 +654,20 @@ export function StockSupply() {
                                                             className={styles.input}
                                                             style={{ padding: '4px' }}
                                                         />
+                                                        {lastPrices[item.itemId] && (() => {
+                                                            const last = lastPrices[item.itemId];
+                                                            const currentCost = Number(item.cost);
+                                                            const diff = currentCost - last.cost;
+                                                            const isSame = Math.abs(diff) < 0.01;
+                                                            const color = isSame ? '#22c55e' : diff > 0 ? '#ef4444' : '#f59e0b';
+                                                            const arrow = isSame ? '' : diff > 0 ? '↑' : '↓';
+                                                            return (
+                                                                <div style={{ fontSize: '11px', color, marginTop: '2px', lineHeight: 1.2 }}>
+                                                                    {arrow} Остання: {last.cost.toFixed(2)} ₴
+                                                                    {last.supplierName && <span style={{ color: '#9ca3af', marginLeft: '4px' }}>({last.supplierName})</span>}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td>
                                                         <input
