@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './StockSection.module.css';
+import { useToast } from '../../ui/ToastContext';
+import { ConfirmModal } from '../../ui/ConfirmModal';
 
 interface StockBalance {
     _id: string;
@@ -23,6 +25,9 @@ export function StockBalances() {
     const [selectedWarehouse, setSelectedWarehouse] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isRecalculating, setIsRecalculating] = useState(false);
+    const [recalcConfirmOpen, setRecalcConfirmOpen] = useState(false);
+    const toast = useToast();
 
     // Accordion state
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -58,8 +63,34 @@ export function StockBalances() {
             }
         } catch (error) {
             console.error('Error fetching balances:', error);
+            toast.error('Помилка завантаження залишків');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleRecalculate = async () => {
+        try {
+            setIsRecalculating(true);
+            setRecalcConfirmOpen(false);
+
+            const res = await fetch('/api/accounting/stock/recalculate', {
+                method: 'POST'
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success('Історію списань успішно перераховано');
+                fetchBalances();
+            } else {
+                toast.error(`Помилка: ${data.error || 'Невідома помилка'}`);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Помилка підключення до сервера');
+        } finally {
+            setIsRecalculating(false);
         }
     };
 
@@ -173,11 +204,30 @@ export function StockBalances() {
                             <option key={w._id} value={w._id}>{w.name}</option>
                         ))}
                     </select>
-                    <button className={styles.toolbarButton} onClick={fetchBalances} disabled={isLoading}>
+                    <button
+                        className={styles.toolbarButton}
+                        onClick={() => setRecalcConfirmOpen(true)}
+                        disabled={isLoading || isRecalculating}
+                        style={{ marginRight: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.2)' }}
+                        title="Виправити помилки минулих списань"
+                    >
+                        {isRecalculating ? '⏳ ...' : '📂 Перерахувати'}
+                    </button>
+                    <button className={styles.toolbarButton} onClick={fetchBalances} disabled={isLoading || isRecalculating}>
                         {isLoading ? '⏳ ...' : '🔄 Оновити'}
                     </button>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={recalcConfirmOpen}
+                onClose={() => setRecalcConfirmOpen(false)}
+                onConfirm={handleRecalculate}
+                title="Перерахувати історію списань?"
+                message="Це призведе до повного перерахунку складських рухів на основі чеків за весь час. Це може зайняти деякий час і змінити поточні залишки на правильні значення. Бажаєте продовжити?"
+                confirmText="Так, перерахувати"
+                cancelText="Скасувати"
+            />
 
             {searchTerm && (
                 <div style={{

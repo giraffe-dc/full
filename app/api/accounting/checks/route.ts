@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -179,11 +178,41 @@ export async function DELETE(request: Request) {
 
         const client = await clientPromise;
         const db = client.db("giraffe");
+        const session = client.startSession();
 
-        await db.collection("receipts").deleteOne({ _id: new ObjectId(id) });
+        try {
+            await session.withTransaction(async () => {
+                const oid = new ObjectId(id);
+                const receipt = await db.collection("receipts").findOne({ _id: oid }, { session });
+                if (!receipt) throw new Error("Receipt not found");
 
-        return NextResponse.json({ success: true });
+                // Revert Stock Movements
+                const { revertBalances } = await import('@/lib/stock-utils');
+                const movements = await db.collection("stock_movements").find({
+                    referenceId: oid,
+                    isDeleted: { $ne: true }
+                }, { session }).toArray();
+
+                for (const move of movements) {
+                    await revertBalances(db, move, session);
+                    await db.collection("stock_movements").updateOne(
+                        { _id: move._id },
+                        { $set: { isDeleted: true, updatedAt: new Date() } },
+                        { session }
+                    );
+                }
+
+                await db.collection("receipts").deleteOne({ _id: oid }, { session });
+            });
+
+            return NextResponse.json({ success: true, message: "Receipt deleted and stock returned" });
+        } catch (error: any) {
+            return NextResponse.json({ error: error.message || "Failed to delete receipt" }, { status: 500 });
+        } finally {
+            await session.endSession();
+        }
     } catch (e) {
+        console.error("Delete receipt error:", e);
         return NextResponse.json({ error: "Failed to delete receipt" }, { status: 500 });
     }
 }

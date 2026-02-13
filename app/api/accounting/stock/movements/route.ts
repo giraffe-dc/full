@@ -1,7 +1,7 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
+import { applyBalances, revertBalances } from "@/lib/stock-utils";
 
 export async function GET(req: NextRequest) {
     try {
@@ -223,111 +223,9 @@ async function processTransaction(db: any, body: any, session: any) {
     const insertRes = await db.collection("stock_movements").insertOne(movementDoc, { session });
 
     // 2. Apply Balances
-    const applied = await applyBalances(db, body, session);
+    await applyBalances(db, body, session);
 
     return insertRes.insertedId;
-}
-
-// Logic to APPLY stock changes
-async function applyBalances(db: any, data: any, session: any) {
-    for (const item of data.items) {
-        const qty = parseFloat(item.qty);
-        const cost = parseFloat(item.cost || 0);
-
-        if (data.type === 'supply') {
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                {
-                    $inc: { quantity: qty },
-                    $set: {
-                        itemName: item.itemName,
-                        unit: item.unit,
-                        lastCost: cost, // Update last cost only on supply
-                        updatedAt: new Date()
-                    }
-                },
-                { upsert: true, session }
-            );
-        } else if (data.type === 'writeoff' || data.type === 'sale') {
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                { $inc: { quantity: -qty }, $set: { updatedAt: new Date() } },
-                { upsert: true, session }
-            );
-        } else if (data.type === 'move') {
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                { $inc: { quantity: -qty }, $set: { updatedAt: new Date() } },
-                { upsert: true, session }
-            );
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.toWarehouseId, itemId: item.itemId },
-                {
-                    $inc: { quantity: qty },
-                    $set: { itemName: item.itemName, unit: item.unit, updatedAt: new Date() }
-                },
-                { upsert: true, session }
-            );
-        } else if (data.type === 'inventory') {
-            // For inventory, qty is the DELTA (Actual - Theoretical)
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                {
-                    $inc: { quantity: qty },
-                    $set: {
-                        itemName: item.itemName,
-                        unit: item.unit,
-                        updatedAt: new Date(),
-                        // Store the last inventory metadata if needed
-                        lastInventoryDate: new Date(data.date),
-                        lastInventoryQty: item.actualQty // If provided 
-                    }
-                },
-                { upsert: true, session }
-            );
-        }
-    }
-}
-
-// Logic to REVERT stock changes (Exactly inverse of apply)
-async function revertBalances(db: any, data: any, session: any) {
-    for (const item of data.items) {
-        const qty = parseFloat(item.qty);
-
-        if (data.type === 'supply') {
-            // Revert Supply: Decrease Balance
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                { $inc: { quantity: -qty } },
-                { session }
-            );
-        } else if (data.type === 'writeoff' || data.type === 'sale') {
-            // Revert Writeoff/Sale: Increase Balance
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                { $inc: { quantity: qty } },
-                { session }
-            );
-        } else if (data.type === 'move') {
-            // Revert Move: Increase Source, Decrease Target
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                { $inc: { quantity: qty } },
-                { session }
-            );
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.toWarehouseId, itemId: item.itemId },
-                { $inc: { quantity: -qty } },
-                { session }
-            );
-        } else if (data.type === 'inventory') {
-            await db.collection("stock_balances").updateOne(
-                { warehouseId: data.warehouseId, itemId: item.itemId },
-                { $inc: { quantity: -qty } }, // Revert delta
-                { session }
-            );
-        }
-    }
 }
 
 async function checkInventoryLock(db: any, warehouseId: string, date: any) {

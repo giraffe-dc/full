@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ReceiptRow } from '@/types/accounting';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
@@ -12,7 +13,7 @@ export async function GET(
     const db = client.db('giraffe');
     const collection = db.collection<ReceiptRow>('receipts');
 
-    const result = await collection.findOne({ id});
+    const result = await collection.findOne({ id });
 
     if (!result) {
       return NextResponse.json(
@@ -97,21 +98,54 @@ export async function DELETE(
     const { id } = await params;
     const client = await clientPromise;
     const db = client.db('giraffe');
-    const collection = db.collection<ReceiptRow>('receipts');
+    const session = client.startSession();
 
-    const result = await collection.deleteOne({ id });
+    try {
+      await session.withTransaction(async () => {
+        const collection = db.collection<ReceiptRow>('receipts');
 
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Чек не знайдений' },
-        { status: 404 }
-      );
+        // 1. Find the receipt to get its ID (if needed, but we have it from params as 'id')
+        // Actually, some routes use _id (ObjectId) and some use 'id' (string). 
+        // Let's find by both to be safe.
+        const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
+        const receipt = await collection.findOne(query, { session });
+
+        if (!receipt) {
+          throw new Error('Чек не знайдений');
+        }
+
+        const receiptOid = receipt._id;
+
+        // 2. Find and Revert Stock Movements
+        const { revertBalances } = await import('@/lib/stock-utils');
+        const movements = await db.collection("stock_movements").find({
+          referenceId: receiptOid,
+          isDeleted: { $ne: true }
+        }, { session }).toArray();
+
+        for (const move of movements) {
+          await revertBalances(db, move, session);
+          await db.collection("stock_movements").updateOne(
+            { _id: move._id },
+            { $set: { isDeleted: true, updatedAt: new Date() } },
+            { session }
+          );
+        }
+
+        // 3. Delete Receipt
+        const result = await collection.deleteOne(query, { session });
+        if (result.deletedCount === 0) {
+          throw new Error('Помилка при видаленні чека');
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Чек успішно видалений, товар повернуто на склад',
+      });
+    } finally {
+      await session.endSession();
     }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Чек успішно видалений',
-    });
   } catch (error) {
     console.error('Error deleting receipt:', error);
     return NextResponse.json(
