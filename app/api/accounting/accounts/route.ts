@@ -92,15 +92,28 @@ export async function GET(req: NextRequest) {
             accountBalances[acc._id.toString()] = startBal;
         });
 
-        // Process Transactions (Income/Expense/Transfer?)
+        // Process Transactions (Income/Expense/Transfer)
         transactions.forEach(tx => {
-            const accId = getTxAccountId(tx);
-            if (accId && accountBalances[accId] !== undefined) {
-                const amt = Number(tx.amount) || 0;
-                if (tx.type === 'income') {
-                    accountBalances[accId] += amt;
-                } else if (tx.type === 'expense') {
-                    accountBalances[accId] -= amt;
+            const amt = Number(tx.amount) || 0;
+
+            if (tx.type === 'transfer') {
+                const fromId = tx.moneyAccountId;
+                const toId = tx.toMoneyAccountId;
+
+                if (fromId && accountBalances[fromId] !== undefined) {
+                    accountBalances[fromId] -= amt;
+                }
+                if (toId && accountBalances[toId] !== undefined) {
+                    accountBalances[toId] += amt;
+                }
+            } else {
+                const accId = getTxAccountId(tx);
+                if (accId && accountBalances[accId] !== undefined) {
+                    if (tx.type === 'income') {
+                        accountBalances[accId] += amt;
+                    } else if (tx.type === 'expense') {
+                        accountBalances[accId] -= amt;
+                    }
                 }
             }
         });
@@ -162,11 +175,27 @@ export async function GET(req: NextRequest) {
         });
 
         periodTransactions.forEach(tx => {
-            const accId = getTxAccountId(tx);
-            if (accId && periodIncome[accId] !== undefined) {
-                const amt = Number(tx.amount) || 0;
-                if (tx.type === 'income') periodIncome[accId] += amt;
-                else if (tx.type === 'expense') periodExpense[accId] += amt;
+            const amt = Number(tx.amount) || 0;
+
+            if (tx.type === 'transfer') {
+                const fromId = tx.moneyAccountId;
+                const toId = tx.toMoneyAccountId;
+
+                if (fromId && periodExpense[fromId] !== undefined) {
+                    periodExpense[fromId] += amt;
+                }
+                if (toId && periodIncome[toId] !== undefined) {
+                    periodIncome[toId] += amt;
+                }
+            } else {
+                const accId = getTxAccountId(tx);
+                if (accId && periodIncome[accId] !== undefined) {
+                    if (tx.type === 'income') {
+                        periodIncome[accId] += amt;
+                    } else if (tx.type === 'expense') {
+                        periodExpense[accId] += amt;
+                    }
+                }
             }
         });
 
