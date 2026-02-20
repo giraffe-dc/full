@@ -13,6 +13,7 @@ export type Transaction = {
   visits?: number;
   createdAt: string;
   moneyAccountId?: string;
+  toMoneyAccountId?: string;
 };
 
 export type Totals = {

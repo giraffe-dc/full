@@ -50,11 +50,11 @@ export async function GET(request: Request) {
 
             const totalSalesCash = shiftReceipts
                 .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-                .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.cashPart || r.total) : r.total), 0);
+                .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
 
             const totalSalesCard = shiftReceipts
-                .filter((r: any) => r.paymentMethod === 'card')
-                .reduce((acc: number, r: any) => acc + r.total, 0);
+                .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
+                .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
 
             // 2. Fetch Cash Transactions
             let cashTxs = await db.collection("cash_transactions").find({ shiftId: shift._id }).toArray();
@@ -70,11 +70,12 @@ export async function GET(request: Request) {
             ].filter(Boolean);
 
             const generalTxs = await db.collection("transactions").find({
+                paymentMethod: 'cash', // Only cash impacts book balance
                 $or: [
                     { shiftId: shift._id, moneyAccountId: { $in: posAccountIds } },
                     {
                         date: { $gte: start, $lte: end },
-                        shiftId: { $exists: false }, // Only fallback if shiftId is missing
+                        shiftId: { $exists: false },
                         $or: [
                             { source: { $ne: 'cash-register' } },
                             { moneyAccountId: { $in: posAccountIds } }
@@ -88,6 +89,7 @@ export async function GET(request: Request) {
                 .find({
                     type: 'supply',
                     paidAmount: { $gt: 0 },
+                    paymentMethod: 'cash', // Only cash
                     $or: [
                         { shiftId: shift._id, moneyAccountId: { $in: posAccountIds } },
                         {
@@ -118,10 +120,19 @@ export async function GET(request: Request) {
 
             if (shift.status === 'closed' && shift.endTime) {
                 detailedTransactions.push({
-                    id: `close-${shiftId}`,
-                    type: 'Закриття зміни',
+                    id: `close-cash-${shiftId}`,
+                    type: 'Закриття готівкової каси',
                     createdAt: new Date(shift.endTime).toISOString(),
-                    amount: shift.actualBalance || shift.endBalance || 0,
+                    amount: totalSalesCash,
+                    authorName: shift.cashier || 'Касир',
+                    comment: '',
+                    editedBy: '—'
+                });
+                detailedTransactions.push({
+                    id: `close-card-${shiftId}`,
+                    type: 'Закриття безготівкової каси',
+                    createdAt: new Date(shift.endTime).toISOString(),
+                    amount: totalSalesCard,
                     authorName: shift.cashier || 'Касир',
                     comment: '',
                     editedBy: '—'
@@ -340,8 +351,12 @@ export async function PUT(request: Request) {
         const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
 
         const totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
-        const totalSalesCash = receipts.filter(r => r.paymentMethod === 'cash').reduce((sum, r) => sum + (r.total || 0), 0);
-        const totalSalesCard = receipts.filter(r => r.paymentMethod === 'card').reduce((sum, r) => sum + (r.total || 0), 0);
+        const totalSalesCash = receipts
+            .filter(r => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
+            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
+        const totalSalesCard = receipts
+            .filter(r => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
+            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
 
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
         const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);

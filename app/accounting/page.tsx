@@ -97,6 +97,7 @@ function AccountingContent() {
     source: "onsite",
     visits: "",
     moneyAccountId: "",
+    toMoneyAccountId: "",
   });
 
   // Detailed mock shifts matching new UI
@@ -335,6 +336,7 @@ function AccountingContent() {
       source: "onsite",
       visits: "",
       moneyAccountId: "",
+      toMoneyAccountId: "",
     });
     setEditingTx(null);
     setShowForm(false);
@@ -352,6 +354,7 @@ function AccountingContent() {
       source: t.source || "onsite",
       visits: t.visits !== undefined ? String(t.visits) : "",
       moneyAccountId: t.moneyAccountId || "",
+      toMoneyAccountId: t.toMoneyAccountId || "",
     });
     setShowForm(true);
   }
@@ -373,6 +376,7 @@ function AccountingContent() {
       source: "cash-register", // Mark as cash register
       visits: "",
       moneyAccountId: "",
+      toMoneyAccountId: "",
     });
     setEditingTx(null);
     setShowForm(true);
@@ -391,6 +395,7 @@ function AccountingContent() {
       source: "cash-register",
       visits: "",
       moneyAccountId: "",
+      toMoneyAccountId: "",
     });
     setShowForm(true);
   }
@@ -489,6 +494,7 @@ function AccountingContent() {
       source: "onsite",
       visits: "",
       moneyAccountId: "",
+      toMoneyAccountId: "",
     });
     setEditingTx(null);
     setShowForm(true);

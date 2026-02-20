@@ -267,20 +267,122 @@
 }
 
 .table th {
-    padding: 16px 24px;
+    padding: 12px 24px;
     text-align: left;
     font-weight: 600;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    color: var(--gray-400);
+    text-transform: none;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--gray-100);
 }
 
 .table td {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--gray-100);
+    padding: 12px 24px;
+    border-bottom: none;
     color: var(--gray-900);
     font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.hiddenThead {
+    visibility: collapse;
+    /* Or display: none if you don't need fixed widths */
+}
+
+/* Group Headers */
+.groupHeaderRow td {
+    padding: 16px 24px 8px 24px !important;
+    background: white;
+}
+
+.groupDateCell {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--gray-900);
+    white-space: nowrap;
+}
+
+/* Tx Rows */
+.txRow:hover {
+    background-color: var(--gray-50);
+}
+
+.timeCell {
+    width: 120px;
+}
+
+.categoryCell {
+    width: 250px;
+}
+
+.categoryBadgeWrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--gray-800);
+}
+
+.dropdownArrow {
+    font-size: 0.7em;
+    color: var(--gray-400);
+}
+
+.descriptionCell {
+    max-width: 400px;
+}
+
+.txDescription {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+.amountCell {
+    text-align: right;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.accountCell {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+}
+
+.transferPath {
+    color: var(--primary-600);
+    font-weight: 500;
+}
+
+.actionsCell {
+    text-align: right;
+}
+
+.editLink {
+    background: none;
+    border: none;
+    color: var(--primary-600);
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    margin-right: 12px;
+}
+
+.editLink:hover {
+    text-decoration: underline;
+}
+
+.moreBtn {
+    background: none;
+    border: none;
+    color: var(--primary-600);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    line-height: 1;
+}
+
+.moreBtn:hover {
+    color: var(--primary-800);
 }
 
 .table tbody tr:hover {

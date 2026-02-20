@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const user = await getUserFromReq(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { date, description, amount, type, category, paymentMethod, source, visits } = await req.json();
+    const { date, description, amount, type, category, paymentMethod, source, visits, moneyAccountId, toMoneyAccountId } = await req.json();
     const client = await clientPromise;
     const db = client.db("giraffe");
 
@@ -35,6 +35,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
     if (source !== undefined) updateData.source = source;
     if (visits !== undefined) updateData.visits = Number(visits);
+    if (moneyAccountId !== undefined) updateData.moneyAccountId = moneyAccountId;
+    if (toMoneyAccountId !== undefined) updateData.toMoneyAccountId = toMoneyAccountId;
 
     // 1. Try updating 'transactions' collection
     const result = await db

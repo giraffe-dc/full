@@ -34,6 +34,7 @@ export async function GET(
         const endTime = shift.endTime ? new Date(shift.endTime) : new Date();
 
         const externalTransactions = await db.collection("transactions").find({
+            paymentMethod: 'cash',
             $or: [
                 { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
                 {
@@ -49,6 +50,7 @@ export async function GET(
             .find({
                 type: 'supply',
                 paidAmount: { $gt: 0 },
+                paymentMethod: 'cash',
                 $or: [
                     { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
                     {

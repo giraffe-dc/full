@@ -95,9 +95,17 @@ export default function ReportsPage() {
     let totalSalesCard = 0;
 
     state.currentShift.receipts.forEach((receipt) => {
-      totalSales += receipt.total || 0;
-      if (receipt.paymentMethod === 'cash') totalSalesCash += receipt.total || 0;
-      if (receipt.paymentMethod === 'card') totalSalesCard += receipt.total || 0;
+      const total = receipt.total || 0;
+      totalSales += total;
+
+      if (receipt.paymentMethod === 'cash') {
+        totalSalesCash += total;
+      } else if (receipt.paymentMethod === 'card') {
+        totalSalesCard += total;
+      } else if (receipt.paymentMethod === 'mixed' && receipt.paymentDetails) {
+        totalSalesCash += (receipt.paymentDetails.cash || 0);
+        totalSalesCard += (receipt.paymentDetails.card || 0);
+      }
 
       receipt.items.forEach((item) => {
         const category = item.category || 'other';
@@ -335,10 +343,15 @@ export default function ReportsPage() {
                               {receipt.paymentMethod === 'cash' ? '💵 Готівка' :
                                 receipt.paymentMethod === 'card' ? '💳 Карта' : '💰 Змішана'}
                             </span>
-                            {receipt.subtotal && (
+                            {receipt.paymentMethod === 'mixed' && receipt.paymentDetails && (
+                              <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '10px' }}>
+                                (Готівка: {receipt.paymentDetails.cash?.toFixed(2)} ₴ | Картка: {receipt.paymentDetails.card?.toFixed(2)} ₴)
+                              </span>
+                            )}
+                            {receipt.subtotal !== undefined && (
                               <span className={styles.subtotalInfo}>
                                 Підсумок: {receipt.subtotal.toFixed(2)} ₴
-                                {receipt.tax && ` | Податок: ${receipt.tax.toFixed(2)} ₴`}
+                                {receipt.tax ? ` | Податок: ${receipt.tax.toFixed(2)} ₴` : ''}
                               </span>
                             )}
                           </div>

@@ -23,11 +23,11 @@ export async function GET(
 
         const totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
         const totalSalesCash = receipts
-            .filter(r => r.paymentMethod === 'cash')
-            .reduce((sum, r) => sum + (r.total || 0), 0);
+            .filter(r => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
+            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
         const totalSalesCard = receipts
-            .filter(r => r.paymentMethod === 'card')
-            .reduce((sum, r) => sum + (r.total || 0), 0);
+            .filter(r => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
+            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
 
         // 3. General Transactions (External Manual)
         const settings = await db.collection("settings").findOne({ type: "global" });
@@ -40,6 +40,7 @@ export async function GET(
         const endTime = shift.endTime ? new Date(shift.endTime) : new Date();
 
         const externalTransactions = await db.collection("transactions").find({
+            paymentMethod: 'cash',
             $or: [
                 { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
                 {
@@ -55,6 +56,7 @@ export async function GET(
             .find({
                 type: 'supply',
                 paidAmount: { $gt: 0 },
+                paymentMethod: 'cash',
                 $or: [
                     { shiftId: new ObjectId(id), moneyAccountId: { $in: posAccountIds } },
                     {

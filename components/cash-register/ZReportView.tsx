@@ -61,8 +61,16 @@ export function ZReportView({ report }: ZReportViewProps) {
           <span>{(report.startBalance ?? 0).toFixed(2)} ₴</span>
         </div>
         <div className={styles.balanceRow}>
-          <span>Продажи:</span>
+          <span>Продажи (всього):</span>
           <span>{(report.totalSales ?? 0).toFixed(2)} ₴</span>
+        </div>
+        <div className={styles.balanceRow} style={{ paddingLeft: '20px', fontSize: '0.9em', color: '#666' }}>
+          <span>Готівка:</span>
+          <span>{(report.totalSalesCash ?? 0).toFixed(2)} ₴</span>
+        </div>
+        <div className={styles.balanceRow} style={{ paddingLeft: '20px', fontSize: '0.9em', color: '#666', borderBottom: '1px solid #f0f0f0', marginBottom: '5px' }}>
+          <span>Картка:</span>
+          <span>{(report.totalSalesCard ?? 0).toFixed(2)} ₴</span>
         </div>
         <div className={styles.balanceRow}>
           <span>Витрати:</span>

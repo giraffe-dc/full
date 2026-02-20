@@ -60,8 +60,16 @@ export async function GET(req: NextRequest) {
       .toArray();
 
     // 3. Fetch Receipts (Income)
-    const receiptsPromise = includeReceipts || moneyAccountId
+    const receiptsPromise = includeReceipts || moneyAccountId || includeCashTx
       ? db.collection("receipts").find({ ...matchDate("createdAt") }).toArray()
+      : Promise.resolve([]);
+
+    // 3.5 Fetch Closed Shifts for summaries
+    const shiftsPromise = includeReceipts || moneyAccountId || includeCashTx
+      ? db.collection("cash_shifts").find({
+        status: 'closed',
+        ...matchDate("endTime")
+      }).toArray()
       : Promise.resolve([]);
 
     // 4. Fetch Cash Transactions (Income/Expense/Incasation)
@@ -77,13 +85,14 @@ export async function GET(req: NextRequest) {
       ? db.collection("money_accounts").findOne({ _id: new ObjectId(moneyAccountId) })
       : Promise.resolve(null);
 
-    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, settings, accountDoc] = await Promise.all([
+    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, settings, accountDoc, shiftsRaw] = await Promise.all([
       txPromise,
       suppliesPromise,
       receiptsPromise,
       cashTxPromise,
       settingsPromise,
-      accountPromise
+      accountPromise,
+      shiftsPromise
     ]);
 
     // Resolve Cash Account ID from Settings
@@ -99,14 +108,74 @@ export async function GET(req: NextRequest) {
         _id: t._id.toString(),
         date: t.date,
         category: t.category || "other",
-        source: "manual",
+        source: t.source || "manual",
         paymentMethod: t.paymentMethod || "cash",
         type: t.type || "income",
         amount: t.amount || 0,
-        moneyAccountId: t.moneyAccountId || (t.paymentMethod === 'cash' ? cashAccountId : t.paymentMethod === 'card' ? cardAccountId : null)
+        moneyAccountId: t.moneyAccountId,
+        toMoneyAccountId: t.toMoneyAccountId
       })),
-      // Receipts -> Income
-      ...receiptsRaw.flatMap((r: any) => {
+
+      // Shift Summaries (Income)
+      ...shiftsRaw.flatMap((s: any) => {
+        const items = [];
+        const shiftNum = s.shiftNumber || s._id.toString().slice(-4);
+
+        // Recalculate totals if missing (for legacy or on-the-fly sync)
+        let totalSalesCash = s.totalSalesCash;
+        let totalSalesCard = s.totalSalesCard;
+
+        if (totalSalesCash === undefined || totalSalesCard === undefined) {
+          const shiftReceipts = receiptsRaw.filter((r: any) =>
+            r.shiftId?.toString() === s._id.toString() ||
+            (new Date(r.createdAt) >= new Date(s.startTime) && new Date(r.createdAt) <= new Date(s.endTime))
+          );
+
+          totalSalesCash = shiftReceipts
+            .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
+            .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
+
+          totalSalesCard = shiftReceipts
+            .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
+            .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+        }
+
+        // Cash Sales
+        if (totalSalesCash > 0) {
+          items.push({
+            _id: s._id.toString() + '_cash',
+            date: s.endTime,
+            description: `Закриття готівкової каси (Зміна #${shiftNum})`,
+            amount: totalSalesCash,
+            type: 'income',
+            category: 'sales',
+            paymentMethod: 'cash',
+            source: 'pos',
+            createdAt: s.endTime,
+            moneyAccountId: cashAccountId
+          });
+        }
+
+        // Card Sales
+        if (totalSalesCard > 0) {
+          items.push({
+            _id: s._id.toString() + '_card',
+            date: s.endTime,
+            description: `Закриття безготівкової каси (Зміна #${shiftNum})`,
+            amount: totalSalesCard,
+            type: 'income',
+            category: 'sales',
+            paymentMethod: 'card',
+            source: 'pos',
+            createdAt: s.endTime,
+            moneyAccountId: cardAccountId
+          });
+        }
+        return items;
+      }),
+
+      // Receipts -> Income (Fallback for open shifts or standalone checks)
+      ...receiptsRaw.filter((r: any) => !r.shiftId).flatMap((r: any) => {
         const items = [];
         if (r.paymentMethod === 'mixed') {
           if (r.paymentDetails?.cash) {
@@ -168,28 +237,13 @@ export async function GET(req: NextRequest) {
             date: ct.createdAt,
             description: ct.comment || (ct.type === 'incasation' ? 'Інкасація (вилучення)' : (ct.type === 'income' ? 'Внесення' : 'Витрата')),
             amount: amt,
-            type: ct.type,
+            type: ct.type === 'incasation' ? 'expense' : ct.type, // Treatment for balance
             category: ct.category || (ct.type === 'incasation' ? 'incasation' : 'other'),
             paymentMethod: 'cash',
             source: 'cash-register',
             createdAt: ct.createdAt,
-            moneyAccountId: cashAccountId
-          });
-        }
-
-        // Impact on Safe Account for Incasation
-        if (ct.type === 'incasation' && safeAccountId) {
-          items.push({
-            _id: ct._id.toString() + '_safe',
-            date: ct.createdAt,
-            description: `Інкасація (надходження в сейф) ${ct.comment || ''}`,
-            amount: amt,
-            type: 'incasation',
-            category: 'incasation',
-            paymentMethod: 'transfer',
-            source: 'cash-register',
-            createdAt: ct.createdAt,
-            moneyAccountId: safeAccountId
+            moneyAccountId: cashAccountId,
+            toMoneyAccountId: ct.type === 'incasation' ? safeAccountId : undefined
           });
         }
         return items;
@@ -220,7 +274,11 @@ export async function GET(req: NextRequest) {
     if (pCat) filtered = filtered.filter(t => t.category === pCat);
     if (pMethod) filtered = filtered.filter(t => t.paymentMethod === pMethod);
     if (pSource) filtered = filtered.filter(t => t.source === pSource);
-    if (moneyAccountId) filtered = filtered.filter(t => t.moneyAccountId === moneyAccountId);
+
+    // If we are looking for a specific account, check both from/to
+    if (moneyAccountId) {
+      filtered = filtered.filter(t => t.moneyAccountId === moneyAccountId || t.toMoneyAccountId === moneyAccountId);
+    }
 
     // Sort Descending
     filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -229,92 +287,31 @@ export async function GET(req: NextRequest) {
     const totals = filtered.reduce<{ income: number; expense: number; balance: number; incasation: number; safeBalance: number }>(
       (acc, t) => {
         const amt = Number(t.amount) || 0;
-        if (t.type === "income") {
-          acc.income += amt;
-        } else if (t.type === "incasation") {
-          acc.incasation += amt;
+
+        // If specific account mode
+        if (moneyAccountId) {
+          if (t.type === 'transfer') {
+            if (t.moneyAccountId === moneyAccountId) acc.expense += amt;
+            if (t.toMoneyAccountId === moneyAccountId) acc.income += amt;
+          } else {
+            if (t.type === "income") acc.income += amt;
+            else acc.expense += amt;
+          }
         } else {
-          acc.expense += amt;
+          // Global mode
+          if (t.type === "income") acc.income += amt;
+          else if (t.type === "expense") acc.expense += amt;
+          // transfers cancel out globally
         }
-        acc.balance = acc.income - acc.expense - acc.incasation;
-        acc.safeBalance = acc.incasation - acc.expense;
+
+        acc.balance = acc.income - acc.expense;
         return acc;
       },
       { income: 0, expense: 0, balance: 0, incasation: 0, safeBalance: 0 }
     );
 
-    // Calculate Opening and Closing Balances if account is specified
     let openingBalance = 0;
     let closingBalance = 0;
-
-    if (moneyAccountId && accountDoc) {
-      // 1. Start with account initial balance
-      const initialBal = (accountDoc.initialBalance !== undefined) ? Number(accountDoc.initialBalance) : (Number(accountDoc.balance) || 0);
-
-      // 2. We need to calculate balance BEFORE startDate
-      // This is complex because we filtered everything already.
-      // Let's perform a separate aggregation for the balance at startDate
-
-      const startD = startDate ? new Date(startDate) : null;
-
-      // For simplicity and performance, we'll fetch all impact before startDate
-      // Note: In a production app, we might store daily snapshots or use a more efficient ledger
-
-      const [preTx, preSupplies, preReceipts, preCashTx] = await Promise.all([
-        db.collection("transactions").find({ moneyAccountId, date: { $lt: startD } }).toArray(),
-        db.collection("stock_movements").find({ moneyAccountId, type: 'supply', date: { $lt: startD } }).toArray(),
-        // Receipts and CashTx are trickier because they use defaults if no accountId
-        // But for "History" we usually care about the account they WERE assigned to.
-        // If moneyAccountId is the default cash/card account, we include them.
-        (financeSettings.cashAccountId === moneyAccountId || financeSettings.cardAccountId === moneyAccountId)
-          ? db.collection("receipts").find({
-            createdAt: { $lt: startD },
-            paymentMethod: financeSettings.cashAccountId === moneyAccountId ? 'cash' : 'card'
-          }).toArray()
-          : Promise.resolve([]),
-        financeSettings.cashAccountId === moneyAccountId || financeSettings.safeAccountId === moneyAccountId
-          ? db.collection("cash_transactions").find({ createdAt: { $lt: startD } }).toArray()
-          : Promise.resolve([])
-      ]);
-
-      let preBalance = initialBal;
-      preTx.forEach((t: any) => {
-        const amt = Number(t.amount) || 0;
-        preBalance += (t.type === 'income' ? amt : -amt);
-      });
-      preSupplies.forEach((s: any) => {
-        preBalance -= (Number(s.paidAmount) || 0);
-      });
-      preReceipts.forEach((r: any) => {
-        // Handle Mixed Payments
-        if (r.paymentMethod === 'mixed') {
-          if (moneyAccountId === financeSettings.cashAccountId && r.paymentDetails?.cash) {
-            preBalance += (Number(r.paymentDetails.cash) || 0);
-          }
-          if (moneyAccountId === financeSettings.cardAccountId && r.paymentDetails?.card) {
-            preBalance += (Number(r.paymentDetails.card) || 0);
-          }
-        } else {
-          // Standard Payments
-          if (r.paymentMethod === 'cash' && moneyAccountId === financeSettings.cashAccountId) {
-            preBalance += (Number(r.total) || 0);
-          } else if (r.paymentMethod === 'card' && moneyAccountId === financeSettings.cardAccountId) {
-            preBalance += (Number(r.total) || 0);
-          }
-        }
-      });
-      preCashTx.forEach((ct: any) => {
-        const amt = Number(ct.amount) || 0;
-        if (moneyAccountId === financeSettings.cashAccountId) {
-          preBalance += (ct.type === 'income' ? amt : -amt);
-        } else if (ct.type === 'incasation' && moneyAccountId === financeSettings.safeAccountId) {
-          preBalance += amt;
-        }
-      });
-
-      openingBalance = preBalance;
-      closingBalance = openingBalance + totals.balance;
-    }
 
     // Slice for pagination if needed
     const resultData = filtered.slice(0, 500);
@@ -346,7 +343,8 @@ export async function POST(req: NextRequest) {
       paymentMethod = "cash",
       source = "manual",
       visits,
-      moneyAccountId, // Optional: Explicitly selected account
+      moneyAccountId,
+      toMoneyAccountId, // Target account for transfers
     } = await req.json();
 
     if (!description || amount === undefined) {
@@ -356,36 +354,14 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db("giraffe");
 
-    let targetAccountId: ObjectId | null = null;
-
-    // 1. Resolve Account
-    if (moneyAccountId) {
-      try { targetAccountId = new ObjectId(moneyAccountId); } catch (e) { }
-    }
-
-    // 2. If no explicit account, try defaults from Settings
-    if (!targetAccountId) {
-      const settings = await db.collection("settings").findOne({ type: "global" });
-      if (settings && settings.finance) {
-        if (paymentMethod === 'cash' && settings.finance.cashAccountId) {
-          try { targetAccountId = new ObjectId(settings.finance.cashAccountId); } catch (e) { }
-        } else if (paymentMethod === 'card' && settings.finance.cardAccountId) {
-          try { targetAccountId = new ObjectId(settings.finance.cardAccountId); } catch (e) { }
-        }
-      }
-    }
-
     const session = client.startSession();
     let insertId;
 
     try {
       await session.withTransaction(async () => {
         const numericAmount = Number(amount);
-
-        // 2.5 Find Active Shift if any
         const activeShift = await db.collection("cash_shifts").findOne({ status: "open" });
 
-        // 3. Create Transaction
         const result = await db.collection("transactions").insertOne({
           date: date ? new Date(date) : new Date(),
           description,
@@ -398,28 +374,12 @@ export async function POST(req: NextRequest) {
           createdBy: user.sub,
           createdAt: new Date(),
           updatedAt: new Date(),
-          moneyAccountId: targetAccountId ? targetAccountId.toString() : null,
+          moneyAccountId: moneyAccountId || null,
+          toMoneyAccountId: toMoneyAccountId || null,
           shiftId: activeShift ? activeShift._id : null
         }, { session });
 
         insertId = result.insertedId;
-
-        // 4. Update Account Balance if linked
-        // REMOVED: Balance is now calculated dynamically. 
-        // We do NOT update money_accounts.balance here anymore.
-        /*
-        if (targetAccountId) {
-          const balanceChange = type === 'income' ? numericAmount : -numericAmount;
-          await db.collection("money_accounts").updateOne(
-            { _id: targetAccountId },
-            {
-              $inc: { balance: balanceChange },
-              $set: { updatedAt: new Date() }
-            },
-            { session }
-          );
-        }
-        */
       });
     } finally {
       await session.endSession();

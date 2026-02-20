@@ -33,6 +33,7 @@ interface TransactionsSectionProps {
     source: string,
     visits: string,
     moneyAccountId: string,
+    toMoneyAccountId: string,
   };
   onFormChange: (next: TransactionsSectionProps["form"]) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -278,71 +279,90 @@ export function TransactionsSection({
       {/* Table */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
-          <thead>
+          <thead className={styles.hiddenThead}>
             <tr>
-              <th>Дата</th>
-              <th>Опис</th>
-              <th>Категорія</th>
-              <th>Сума</th>
-              <th>Тип</th>
-              <th>Джерело</th>
-              <th>Дії</th>
+              <th style={{ width: '120px' }}>Дата</th>
+              <th>Опис / Категорія</th>
+              <th>Опис / Категорія</th>
+              <th style={{ textAlign: 'right' }}>Сума</th>
+              <th>Рахунок</th>
+              <th style={{ width: '100px', textAlign: 'right' }}>Дії</th>
             </tr>
           </thead>
           <tbody>
             {tx.length === 0 ? (
               <tr>
-                <td colSpan={7} className={styles.empty}>
+                <td colSpan={6} className={styles.empty}>
                   Транзакцій не знайдено
                 </td>
               </tr>
             ) : (
-              tx.map((t) => (
-                <tr key={t._id}>
-                  <td>
-                    <div style={{ fontWeight: 500 }}>{new Date(t.date).toLocaleDateString("uk-UA")}</div>
-                    <div style={{ fontSize: '0.85em', color: 'var(--gray-500)' }}>
-                      {new Date(t.date).toLocaleTimeString("uk-UA", { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 500 }}>{t.description}</div>
-                    {t.paymentMethod && (
-                      <div style={{ fontSize: '0.85em', color: 'var(--gray-500)' }}>
-                        Оплата: {t.paymentMethod === 'cash' ? 'Готівка' : t.paymentMethod === 'card' ? 'Картка' : t.paymentMethod}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <span className={styles.categoryBadge}>
-                      {t.category || "Інше"}
-                    </span>
-                  </td>
-                  <td className={t.type === 'income' ? styles.incomeAmount : styles.expenseAmount}>
-                    {t.type === 'income' ? '+' : '-'} {Number(t.amount).toFixed(2)} ₴
-                  </td>
-                  <td>
-                    <span className={`${styles.typeBadge} ${t.type === "income" ? styles.income : styles.expense}`}>
-                      {t.type === "income" ? "Надходження" : "Витрата"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={styles.sourceBadge}>
-                      {t.source === 'manual' ? 'Ручна' : t.source === 'stock' ? 'Склад' : t.source === 'pos' ? 'Каса' : t.source}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.rowActions}>
-                      <button onClick={() => onEdit(t)} className={styles.actionBtn}>
-                        ✎
-                      </button>
-                      <button onClick={() => onDelete(t._id)} className={`${styles.actionBtn} ${styles.deleteBtn}`}>
-                        🗑
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              (() => {
+                // Group by date
+                const groups: Record<string, any[]> = {};
+                const sortedTx = [...tx].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                sortedTx.forEach(t => {
+                  const d = new Date(t.date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
+                  if (!groups[d]) groups[d] = [];
+                  groups[d].push(t);
+                });
+
+                return Object.entries(groups).map(([dateLabel, groupTx]) => (
+                  <React.Fragment key={dateLabel}>
+                    {/* Date Header Row */}
+                    <tr className={styles.groupHeaderRow}>
+                      <td className={styles.groupDateCell}>{dateLabel}</td>
+                      <td colSpan={5}></td>
+                    </tr>
+                    {groupTx.map((t) => {
+                      const fromAcc = accounts.find(a => a.id === t.moneyAccountId);
+                      const toAcc = accounts.find(a => a.id === t.toMoneyAccountId);
+
+                      return (
+                        <tr key={t._id} className={styles.txRow}>
+                          <td className={styles.timeCell}>
+                            {/* Small empty cell for spacing under date */}
+                          </td>
+                          <td className={styles.categoryCell}>
+                            <div className={styles.categoryBadgeWrapper}>
+                              {t.type === 'transfer' ? 'Перекази' : (
+                                t.category === 'sales' ? 'Касові зміни' :
+                                  (t.category === 'incasation' ? 'Інкасація' : (categoryLabels[t.category] || t.category || "Інше"))
+                              )}
+                              {!(t.type === 'transfer' || t.category === 'sales' || t.category === 'incasation') && (
+                                <span className={styles.dropdownArrow}>▾</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className={styles.descriptionCell}>
+                            <div className={styles.txDescription}>{t.description}</div>
+                          </td>
+                          <td className={`${styles.amountCell} ${t.type === 'income' ? styles.incomeAmount : (t.type === 'expense' ? styles.expenseAmount : '')}`}>
+                            {t.type === 'income' ? '' : (t.type === 'expense' ? '-' : '')}
+                            {Number(t.amount).toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+                          </td>
+                          <td className={styles.accountCell}>
+                            {t.type === 'transfer' ? (
+                              <div className={styles.transferPath}>
+                                {fromAcc?.name || '...'} → {toAcc?.name || '...'}
+                              </div>
+                            ) : (
+                              fromAcc?.name || 'Готівка'
+                            )}
+                          </td>
+                          <td className={styles.actionsCell}>
+                            <div className={styles.rowActions}>
+                              <button onClick={() => onEdit(t)} className={styles.editLink}>Ред.</button>
+                              <button onClick={() => onDelete(t._id)} className={styles.moreBtn}>•••</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ));
+              })()
             )}
           </tbody>
         </table>

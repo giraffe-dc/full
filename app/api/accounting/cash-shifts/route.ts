@@ -35,11 +35,11 @@ export async function GET(request: NextRequest) {
 
       const cashRevenue = shiftReceipts
         .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-        .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.cashPart || r.total) : r.total), 0);
+        .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
 
       const cashlessRevenue = shiftReceipts
-        .filter((r: any) => r.paymentMethod === 'card')
-        .reduce((acc: number, r: any) => acc + r.total, 0);
+        .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
+        .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
 
       // 2. Fetch Manual Cash Transactions (Income/Expense/Incasation)
       // Use shiftId if possible, else date range
@@ -77,10 +77,19 @@ export async function GET(request: NextRequest) {
 
       if (shift.endTime) {
         detailedTransactions.push({
-          id: `close-${shiftId}`,
-          type: 'Закриття зміни',
+          id: `close-cash-${shiftId}`,
+          type: 'Закриття готівкової каси',
           createdAt: new Date(shift.endTime).toISOString(),
-          amount: shift.actualBalance || shift.currentCash || 0,
+          amount: cashRevenue,
+          authorName: shift.cashier,
+          comment: '',
+          editedBy: '—'
+        });
+        detailedTransactions.push({
+          id: `close-card-${shiftId}`,
+          type: 'Закриття безготівкової каси',
+          createdAt: new Date(shift.endTime).toISOString(),
+          amount: cashlessRevenue,
           authorName: shift.cashier,
           comment: '',
           editedBy: '—'

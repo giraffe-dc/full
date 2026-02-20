@@ -65,7 +65,7 @@ export function TransactionModal({
                         {/* Type */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: 500 }}>Тип операції</label>
-                            <div style={{ display: 'flex', gap: '10px' }}>
+                            <div style={{ display: 'flex', gap: '8px' }}>
                                 <button
                                     type="button"
                                     onClick={() => onFormChange({ ...form, type: 'income' })}
@@ -77,7 +77,8 @@ export function TransactionModal({
                                         background: form.type === 'income' ? '#dcfce7' : 'white',
                                         color: form.type === 'income' ? '#166534' : 'inherit',
                                         fontWeight: form.type === 'income' ? 600 : 400,
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem'
                                     }}
                                 >
                                     Прихід
@@ -93,10 +94,28 @@ export function TransactionModal({
                                         background: form.type === 'expense' ? '#fee2e2' : 'white',
                                         color: form.type === 'expense' ? '#991b1b' : 'inherit',
                                         fontWeight: form.type === 'expense' ? 600 : 400,
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem'
                                     }}
                                 >
                                     Витрата
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onFormChange({ ...form, type: 'transfer' })}
+                                    style={{
+                                        flex: 1,
+                                        padding: '8px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #e5e7eb',
+                                        background: form.type === 'transfer' ? '#dbeafe' : 'white',
+                                        color: form.type === 'transfer' ? '#1e40af' : 'inherit',
+                                        fontWeight: form.type === 'transfer' ? 600 : 400,
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem'
+                                    }}
+                                >
+                                    Переміщення
                                 </button>
                             </div>
                         </div>
@@ -130,32 +149,63 @@ export function TransactionModal({
                             </div>
                         </div>
 
-                        {/* Category */}
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: 500 }}>Категорія</label>
-                            <select
-                                value={form.category}
-                                onChange={(e) => onFormChange({ ...form, category: e.target.value })}
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-                            >
-                                {categories.map((catKey) => (
-                                    <option key={catKey} value={catKey}>{categoryLabels[catKey] || catKey}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Account (Optional for Cash Shift context, but good to have) */}
-                        {accounts && accounts.length > 0 && (
+                        {/* Accounts Selection */}
+                        <div style={{ display: 'grid', gridTemplateColumns: form.type === 'transfer' ? '1fr 1fr' : '1fr', gap: '12px' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: 500 }}>Рахунок</label>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: 500 }}>
+                                    {form.type === 'transfer' ? 'З рахунку' : 'Рахунок'}
+                                </label>
                                 <select
                                     value={form.moneyAccountId}
-                                    onChange={(e) => onFormChange({ ...form, moneyAccountId: e.target.value })}
+                                    onChange={(e) => {
+                                        const newId = e.target.value;
+                                        const selectedAcc = accounts?.find(a => a.id === newId);
+                                        onFormChange({
+                                            ...form,
+                                            moneyAccountId: newId,
+                                            // Mapping paymentMethod to the account's type (cash, card, bank, etc.)
+                                            paymentMethod: selectedAcc ? (selectedAcc.type || 'card') : 'cash'
+                                        });
+                                    }}
+                                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                                    required={form.type === 'transfer'}
+                                >
+                                    <option value="">{form.type === 'transfer' ? '-- Оберіть --' : 'Основний (готівка)'}</option>
+                                    {accounts?.map((acc: any) => (
+                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {form.type === 'transfer' && (
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: 500 }}>На рахунок</label>
+                                    <select
+                                        value={form.toMoneyAccountId}
+                                        onChange={(e) => onFormChange({ ...form, toMoneyAccountId: e.target.value })}
+                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+                                        required
+                                    >
+                                        <option value="">-- Оберіть --</option>
+                                        {accounts?.filter((acc: any) => acc.id !== form.moneyAccountId).map((acc: any) => (
+                                            <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Category (Hidden for transfers?) */}
+                        {form.type !== 'transfer' && (
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', fontWeight: 500 }}>Категорія</label>
+                                <select
+                                    value={form.category}
+                                    onChange={(e) => onFormChange({ ...form, category: e.target.value })}
                                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
                                 >
-                                    <option value="">Основний (готівка)</option>
-                                    {accounts.map((acc) => (
-                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    {categories.map((catKey) => (
+                                        <option key={catKey} value={catKey}>{categoryLabels[catKey] || catKey}</option>
                                     ))}
                                 </select>
                             </div>

@@ -151,6 +151,8 @@ export interface ZReport {
   endBalance: number;
   receiptsCount: number;
   totalSales: number;
+  totalSalesCash: number;
+  totalSalesCard: number;
   totalExpenses: number;
   cashDifference: number;
   salesByCategory: Record<ServiceCategory, number>;
