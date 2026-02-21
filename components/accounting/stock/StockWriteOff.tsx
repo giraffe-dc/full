@@ -30,7 +30,7 @@ export function StockWriteOff() {
     const [deletedWriteoffs, setDeletedWriteoffs] = useState<WriteOffRecord[]>([]);
 
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-    const [ingredients, setIngredients] = useState<any[]>([]);
+    const [warehouseBalances, setWarehouseBalances] = useState<any[]>([]);
 
     // Search
     const [searchTerm, setSearchTerm] = useState('');
@@ -49,9 +49,16 @@ export function StockWriteOff() {
 
     useEffect(() => {
         fetchWarehouses();
-        fetchIngredients();
         fetchWriteoffs();
     }, []);
+
+    useEffect(() => {
+        if (formData.warehouseId) {
+            fetchWarehouseBalances(formData.warehouseId);
+        } else {
+            setWarehouseBalances([]);
+        }
+    }, [formData.warehouseId]);
 
     useEffect(() => {
         if (mode === 'trash') {
@@ -63,14 +70,14 @@ export function StockWriteOff() {
 
     useEffect(() => {
         if (ingredientSearch.length > 1) {
-            const results = ingredients.filter(i =>
-                i.name.toLowerCase().includes(ingredientSearch.toLowerCase())
+            const results = warehouseBalances.filter(i =>
+                i.itemName.toLowerCase().includes(ingredientSearch.toLowerCase())
             );
             setSearchResults(results.slice(0, 10));
         } else {
             setSearchResults([]);
         }
-    }, [ingredientSearch, ingredients]);
+    }, [ingredientSearch, warehouseBalances]);
 
     // Fetching
     const fetchWriteoffs = async () => {
@@ -91,10 +98,16 @@ export function StockWriteOff() {
         if (data.data) setWarehouses(data.data);
     };
 
-    const fetchIngredients = async () => {
-        const res = await fetch('/api/accounting/ingredients');
-        const data = await res.json();
-        if (data.data) setIngredients(data.data);
+    const fetchWarehouseBalances = async (whId: string) => {
+        try {
+            const res = await fetch(`/api/accounting/stock/balances?warehouseId=${whId}`);
+            const data = await res.json();
+            if (data.data) {
+                setWarehouseBalances(data.data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch warehouse balances:", e);
+        }
     };
 
     const getName = (list: any[], id: string) => list.find(i => i._id === id)?.name || 'Unknown';
@@ -122,13 +135,13 @@ export function StockWriteOff() {
         setShowModal(true);
     };
 
-    const addItem = (ingredient: any) => {
+    const addItem = (item: any) => {
         setItems([...items, {
             id: Math.random().toString(36),
-            itemId: ingredient._id,
-            itemName: ingredient.name,
+            itemId: item.itemId, // Note: stock/balances uses itemId, not _id
+            itemName: item.itemName,
             qty: 0,
-            unit: ingredient.unit
+            unit: item.unit
         }]);
         setIngredientSearch('');
         setSearchResults([]);
@@ -356,13 +369,14 @@ export function StockWriteOff() {
                                     </div>
                                 </div>
 
-                                <div className={styles.searchContainer}>
-                                    <label className={styles.label}>Додати товар</label>
+                                <div className={styles.searchContainer} style={{ opacity: formData.warehouseId ? 1 : 0.5 }}>
+                                    <label className={styles.label}>Додати товар {formData.warehouseId ? '' : '(спершу оберіть склад)'}</label>
                                     <input
                                         value={ingredientSearch}
                                         onChange={e => setIngredientSearch(e.target.value)}
                                         className={styles.input}
-                                        placeholder="Почніть вводити назву..."
+                                        placeholder={formData.warehouseId ? "Почніть вводити назву..." : "Оберіть склад..."}
+                                        disabled={!formData.warehouseId}
                                     />
                                     {searchResults.length > 0 && (
                                         <div className={styles.searchResults}>
@@ -372,8 +386,8 @@ export function StockWriteOff() {
                                                     onClick={() => addItem(item)}
                                                     className={styles.searchItem}
                                                 >
-                                                    <span className={styles.searchItemName}>{item.name}</span>
-                                                    <span className={styles.searchItemMeta}>{item.unit}</span>
+                                                    <span className={styles.searchItemName}>{item.itemName}</span>
+                                                    <span className={styles.searchItemMeta}>{item.unit} ({item.quantity})</span>
                                                 </div>
                                             ))}
                                         </div>
