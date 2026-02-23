@@ -46,6 +46,7 @@ export interface CartItem {
 export interface Receipt {
   id: string;
   receiptNumber: number;
+  comment?: string;
   customerId?: string;
   customerName?: string;
   waiterId?: string;

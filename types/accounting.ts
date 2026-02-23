@@ -257,3 +257,21 @@ export type ExpenseCategory = {
   status: 'active' | 'inactive';
   createdAt?: string;
 };
+
+export interface Visit {
+  id: string;
+  _id?: string;
+  date: string;
+  serviceName: string;
+  childName: string;
+  parentName: string;
+  childAge: number;
+  phone: string;
+  duration: string;
+  startTime: string;
+  endTime: string;
+  paymentStatus: 'paid' | 'unpaid';
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+}

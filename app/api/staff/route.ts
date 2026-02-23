@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const { name, email, phone, position, status = "active", hireDate, salary } = await req.json();
     if (!name || !email) {

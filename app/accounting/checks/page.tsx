@@ -305,6 +305,11 @@ export default function AccountingChecksPage() {
                                                     >
                                                         Історія
                                                     </div>
+                                                    <div
+                                                        className={styles.newValue}
+                                                    >
+                                                        {r.comment}
+                                                    </div>
                                                 </div>
 
                                                 <div className={styles.tabContent}>

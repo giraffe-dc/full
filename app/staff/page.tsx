@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useToast } from "@/components/ui/ToastContext";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Preloader } from "@/components/ui/Preloader";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
+import { StaffDetailsModal } from "@/components/accounting/StaffDetailsModal";
 
 type StaffMember = {
   _id: string;
@@ -19,6 +22,7 @@ type StaffMember = {
 };
 
 export default function StaffPage() {
+  const router = useRouter();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -34,6 +38,11 @@ export default function StaffPage() {
     isOpen: false,
     id: null,
   });
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -71,10 +80,15 @@ export default function StaffPage() {
       .then((data) => {
         if (data.authenticated) {
           setUserRole(data.user.role);
+        } else {
+          router.push('/login');
         }
       })
-      .catch(() => setUserRole(null));
-  }, []);
+      .catch(() => {
+        router.push('/login');
+        setUserRole(null);
+      });
+  }, [router]);
 
   useEffect(() => {
     fetchStaff();
@@ -181,6 +195,11 @@ export default function StaffPage() {
           <option value="inactive">Неактивні</option>
           <option value="on_leave">У відпустці</option>
         </select>
+        <DateRangePicker
+          startDate={dateRange.startDate}
+          endDate={dateRange.endDate}
+          onChange={(s, e) => setDateRange({ startDate: s, endDate: e })}
+        />
         {userRole === "admin" && (<button onClick={() => setShowForm(true)} className={styles.addBtn}>
           + Додати співробітника
         </button>)}
@@ -263,7 +282,7 @@ export default function StaffPage() {
           <div className={styles.empty}>Співробітників не знайдено</div>
         ) : (
           staff.map((member) => (
-            <div key={member._id} className={styles.card}>
+            <div key={member._id} className={styles.card} onClick={() => setSelectedStaffId(member._id)} style={{ cursor: 'pointer' }}>
               <div className={styles.cardHeader}>
                 <div>
                   <h3>{member.name}</h3>
@@ -299,10 +318,10 @@ export default function StaffPage() {
               </div>
               <div className={styles.cardFooter}>
                 {userRole === "admin" && (<div className={styles.actions}>
-                  <button onClick={() => handleEdit(member)} className={styles.editBtn}>
+                  <button onClick={(e) => { e.stopPropagation(); handleEdit(member); }} className={styles.editBtn}>
                     Редагувати
                   </button>
-                  <button onClick={() => handleDelete(member._id)} className={styles.deleteBtn}>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(member._id); }} className={styles.deleteBtn}>
                     Видалити
                   </button>
                 </div>)}
@@ -319,6 +338,14 @@ export default function StaffPage() {
         onConfirm={executeDelete}
         onClose={() => setConfirmDelete({ isOpen: false, id: null })}
       />
+
+      {selectedStaffId && (
+        <StaffDetailsModal
+          staffId={selectedStaffId}
+          dateRange={dateRange}
+          onClose={() => setSelectedStaffId(null)}
+        />
+      )}
     </div>
   );
 }

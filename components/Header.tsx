@@ -48,6 +48,7 @@ export default function Header() {
         { href: '/cash-register', label: 'Каса', icon: '💰' },
         { href: '/supply', label: 'Постачання', icon: '📦' },
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
+        { href: '/visits', label: 'Відвідування', icon: '🕒' },
         { href: '/staff', label: 'Персонал', icon: '👥' },
         { href: '/projects', label: 'Проекти', icon: '📁' },
     ];
