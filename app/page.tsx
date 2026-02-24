@@ -31,6 +31,7 @@ export default async function Home() {
         { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати', roles: ['user', 'admin'] },
         { href: '/projects', icon: '📁', title: 'Проекти', description: 'Управління проектами', roles: ['user', 'admin'] },
         { href: '/docs', icon: '📄', title: 'Документи', description: 'Документація та файли', roles: ['user', 'admin'] },
+        { href: '/visits', icon: '🕒', title: 'Відвідування', description: 'Реєстрація відвідувачів', roles: ['user', 'admin'] },
     ]
 
     const visibleModules = modules.filter(m => m.roles.includes(userRole))
