@@ -28,7 +28,7 @@ export default async function Home() {
         { href: '/cash-register', icon: '💰', title: 'Каса', description: 'Продажі, чеки, звіти', roles: ['user', 'admin'] },
         { href: '/supply', icon: '📦', title: 'Постачання', description: 'Прихід товарів та інгредієнтів', roles: ['user', 'admin'] },
         { href: '/accounting', icon: '📊', title: 'Бухгалтерія', description: 'Фінанси, транзакції, аналітика', roles: ['admin'] },
-        { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати', roles: ['admin'] },
+        { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати', roles: ['user', 'admin'] },
         { href: '/projects', icon: '📁', title: 'Проекти', description: 'Управління проектами', roles: ['user', 'admin'] },
         { href: '/docs', icon: '📄', title: 'Документи', description: 'Документація та файли', roles: ['user', 'admin'] },
     ]
