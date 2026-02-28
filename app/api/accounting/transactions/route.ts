@@ -121,11 +121,12 @@ export async function GET(req: NextRequest) {
         const items = [];
         const shiftNum = s.shiftNumber || s._id.toString().slice(-4);
 
-        // Recalculate totals if missing (for legacy or on-the-fly sync)
+        // Calculate totals if missing (for legacy or on-the-fly sync)
         let totalSalesCash = s.totalSalesCash;
         let totalSalesCard = s.totalSalesCard;
+        let totalGuests = s.totalGuests || 0;
 
-        if (totalSalesCash === undefined || totalSalesCard === undefined) {
+        if (totalSalesCash === undefined || totalSalesCard === undefined || totalGuests === 0) {
           const shiftReceipts = receiptsRaw.filter((r: any) =>
             r.shiftId?.toString() === s._id.toString() ||
             (new Date(r.createdAt) >= new Date(s.startTime) && new Date(r.createdAt) <= new Date(s.endTime))
@@ -138,6 +139,8 @@ export async function GET(req: NextRequest) {
           totalSalesCard = shiftReceipts
             .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
             .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+
+          totalGuests = shiftReceipts.reduce((acc: number, r: any) => acc + (Number(r.guestsCount) || 1), 0);
         }
 
         // Cash Sales
@@ -151,6 +154,7 @@ export async function GET(req: NextRequest) {
             category: 'sales',
             paymentMethod: 'cash',
             source: 'pos',
+            visits: totalGuests, // Use total guests from shift as visits
             createdAt: s.endTime,
             moneyAccountId: cashAccountId
           });
@@ -167,6 +171,7 @@ export async function GET(req: NextRequest) {
             category: 'sales',
             paymentMethod: 'card',
             source: 'pos',
+            visits: 0, // Avoid double counting visits as they are already in cash row
             createdAt: s.endTime,
             moneyAccountId: cardAccountId
           });
@@ -188,7 +193,7 @@ export async function GET(req: NextRequest) {
               category: 'sales',
               paymentMethod: 'cash',
               source: 'pos',
-              visits: 1,
+              visits: Number(r.guestsCount) || 1,
               createdAt: r.createdAt,
               moneyAccountId: cashAccountId
             });
@@ -218,7 +223,7 @@ export async function GET(req: NextRequest) {
             category: 'sales',
             paymentMethod: r.paymentMethod,
             source: 'pos',
-            visits: 1,
+            visits: Number(r.guestsCount) || 1,
             createdAt: r.createdAt,
             moneyAccountId: r.paymentMethod === 'cash' ? cashAccountId : r.paymentMethod === 'card' ? cardAccountId : null
           });
