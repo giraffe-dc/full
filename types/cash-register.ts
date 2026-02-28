@@ -1,5 +1,8 @@
 // Типи даних для системи управління касою
 
+// Підрахунок купюр (номінал -> кількість). Суто інформативне поле.
+export type DenominationCounts = Record<string, number>;
+
 // Послуги та категорії
 export type ServiceCategory = 'bowling' | 'billiards' | 'karaoke' | 'games' | 'bar';
 
@@ -117,6 +120,7 @@ export interface CashShift {
   cashier: string;
   activeStaffIds?: string[]; // IDs of staff currently on shift
   notes?: string;
+  denominationCounts?: DenominationCounts; // Інформативний підрахунок готівки по купюрно
 }
 
 // X-Звіт (поточна зміна)
@@ -137,6 +141,7 @@ export interface XReport {
   salesByCategory: Record<ServiceCategory, number>;
   transactions: ShiftTransaction[];
   shiftStartTime?: string;
+  denominationCounts?: DenominationCounts; // Поточний збережений підрахунок купюр
 }
 
 // Z-Звіт (закриття зміни)
@@ -163,6 +168,7 @@ export interface ZReport {
     quantity: number;
     total: number;
   }>;
+  denominationCounts?: DenominationCounts;
   createdAt: string;
 }
 

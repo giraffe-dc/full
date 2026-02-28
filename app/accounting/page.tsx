@@ -61,6 +61,7 @@ import {
 } from "../../lib/accounting-utils";
 import { MarketingSection } from "@/components/accounting/MarketingSection";
 import { FinanceSettings } from "@/components/accounting/FinanceSettings";
+import { PnLSection } from "@/components/accounting/PnLSection";
 import { Preloader } from '@/components/ui/Preloader';
 import { useToast } from "@/components/ui/ToastContext";
 
@@ -571,7 +572,9 @@ function AccountingContent() {
                                 ? "Усі заклади"
                                 : activeSection === "settings"
                                   ? "Налаштування"
-                                  : "";
+                                  : activeSection === "pnl"
+                                    ? "P&L Звіт"
+                                    : "";
 
   const sectionDescription =
     activeSection === "dashboard"
@@ -604,7 +607,9 @@ function AccountingContent() {
                                 ? "Мережа закладів та їхні показники. (планується)"
                                 : activeSection === "settings"
                                   ? "Налаштування фінансових параметрів."
-                                  : "";
+                                  : activeSection === "pnl"
+                                    ? "Звіт про прибутки та збитки."
+                                    : "";
 
   if (loading) {
     return <Preloader message="Отримуємо дані бухгалтерії..." />;
@@ -787,6 +792,13 @@ function AccountingContent() {
 
         {activeSection === "menuIngredientCategories" && (
           <StockSection title="Категорії інгредієнтів" subtitle="Організація інгредієнтів" />
+        )}
+
+        {activeSection === "pnl" && (
+          <PnLSection
+            filters={filters}
+            onFilterChange={(k, v) => setFilters(prev => ({ ...prev, [k]: v }))}
+          />
         )}
 
         {/* Global Transaction Modal */}

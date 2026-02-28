@@ -50,7 +50,7 @@ export default function Header() {
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
         { href: '/visits', label: 'Відвідування', icon: '🕒' },
         { href: '/staff', label: 'Персонал', icon: '👥' },
-        { href: '/projects', label: 'Проекти', icon: '📁' },
+        // { href: '/projects', label: 'Проекти', icon: '📁' },
     ];
 
     return (

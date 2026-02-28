@@ -1,0 +1,435 @@
+.pnlContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* --- Filter Bar --- */
+.filterBar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filterLabel {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.filterInput {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.filterInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* --- Hero Cards --- */
+.heroGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .heroGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.heroCard {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.heroCard:hover {
+    transform: translateY(-2px);
+}
+
+.heroCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.heroCardRevenue::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.heroCardExpense::before {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.heroCardProfit::before {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.heroLabel {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.heroValue {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.heroSub {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-top: auto;
+}
+
+.incomeText {
+    color: #10b981;
+}
+
+.expenseText {
+    color: #ef4444;
+}
+
+.profitPos {
+    color: #3b82f6;
+}
+
+.profitNeg {
+    color: #ef4444;
+}
+
+/* --- P&L Table --- */
+.pnlCard {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.pnlCardHeader {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.pnlCardTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.pnlTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pnlTable th,
+.pnlTable td {
+    padding: 12px 24px;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.pnlTable th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.pnlTable th:last-child,
+.pnlTable td:last-child {
+    text-align: right;
+}
+
+.sectionHeader {
+    background: #f0fdf4;
+    font-weight: 600;
+    color: #065f46;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.sectionHeader:hover {
+    background: #dcfce7;
+}
+
+.sectionHeaderExpense {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.sectionHeaderExpense:hover {
+    background: #fee2e2;
+}
+
+.sectionHeaderCogs {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.sectionHeaderCogs:hover {
+    background: #ffedd5;
+}
+
+.sectionIcon {
+    display: inline-block;
+    width: 16px;
+    margin-right: 8px;
+    transition: transform 0.2s;
+}
+
+.sectionIconExpanded {
+    transform: rotate(90deg);
+}
+
+.categoryRow {
+    border-bottom: 1px solid #f3f4f6;
+    color: #4b5563;
+}
+
+.categoryRow td:first-child {
+    padding-left: 48px;
+}
+
+.subtotalRow {
+    font-weight: 700;
+    border-top: 2px solid #e5e7eb;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.subtotalRow.grossProfit {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.subtotalRow.operatingProfit {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.subtotalRow.netProfit {
+    background: #f0f9ff;
+    color: #0c4a6e;
+    font-size: 1.1rem;
+}
+
+.subtotalRow.netProfitNeg {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.amount {
+    font-variant-numeric: tabular-nums;
+    font-family: 'Inter', monospace;
+}
+
+.positiveAmount {
+    color: #10b981;
+}
+
+.negativeAmount {
+    color: #ef4444;
+}
+
+/* --- Chart Section --- */
+.chartCard {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chartTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.chartLegend {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.legendDot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.legendIncome {
+    background: #10b981;
+}
+
+.legendExpense {
+    background: #ef4444;
+}
+
+.legendProfit {
+    background: #3b82f6;
+}
+
+.timelineScroll {
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
+
+.timelineList {
+    display: flex;
+    gap: 24px;
+    padding: 0 10px;
+    list-style: none;
+    min-width: max-content;
+}
+
+.timelineItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.timelineDate {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+.timelineGraph {
+    height: 150px;
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+}
+
+.graphBar {
+    width: 14px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: height 0.3s ease;
+}
+
+.graphBar.inc {
+    background: #10b981;
+    opacity: 0.8;
+}
+
+.graphBar.exp {
+    background: #ef4444;
+    opacity: 0.8;
+}
+
+.graphBar.prof {
+    background: #3b82f6;
+    opacity: 0.7;
+}
+
+.timelineValues {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.valInc {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.valExp {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.valProf {
+    color: #3b82f6;
+    font-weight: bold;
+    margin-top: 4px;
+    border-top: 1px solid #eee;
+    padding-top: 2px;
+}
+
+/* --- Loading & Empty --- */
+.loadingState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    color: #6b7280;
+    font-size: 1rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.emptyState {
+    text-align: center;
+    color: #9ca3af;
+    padding: 40px;
+    background: #f9fafb;
+    border-radius: 12px;
+}
+
+/* --- Margin percent --- */
+.marginBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.marginBadgePos {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.marginBadgeNeg {
+    background: #fef2f2;
+    color: #991b1b;
+}

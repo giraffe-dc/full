@@ -193,14 +193,29 @@ export default function CashRegisterPage() {
       const res = await fetch('/api/cash-register/shifts?status=closed&limit=1', { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.data.length > 0) {
-        setShiftStartBalance(data.data[0].endBalance?.toString() || "");
+        const lastShift = data.data[0];
+
+        // Calculate total from denominations if available
+        let suggestedBalance = lastShift.endBalance;
+
+        if (lastShift.denominationCounts) {
+          const BANKNOTES = [1000, 500, 200, 100, 50, 20, 10];
+          const COINS = [10, 5, 2, 1, 0.5];
+          const sum = [...BANKNOTES, ...COINS].reduce(
+            (acc, d) => acc + (lastShift.denominationCounts[String(d)] || 0) * d,
+            0
+          );
+          if (sum > 0) suggestedBalance = sum;
+        }
+
+        setShiftStartBalance(suggestedBalance?.toString() || "0");
       } else {
-        setShiftStartBalance("");
+        setShiftStartBalance("0");
       }
       setShowShiftModal(true);
     } catch (e) {
       console.error("Failed to fetch last shift", e);
-      setShiftStartBalance("");
+      setShiftStartBalance("0");
       setShowShiftModal(true);
     } finally {
       setIsLoading(false);

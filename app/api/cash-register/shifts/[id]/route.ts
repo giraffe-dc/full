@@ -93,8 +93,7 @@ export async function GET(
                 _id: undefined,
                 shiftId: t.shiftId?.toString(),
                 authorId: t.authorId?.toString(),
-                createdAt: t.createdAt, // Ensure this property is explicitly here
-                // Normalize for UI
+                createdAt: t.createdAt,
                 amount: t.type === 'expense' || t.type === 'incasation' ? -t.amount : t.amount
             })),
             ...mappedExternal,
@@ -106,6 +105,8 @@ export async function GET(
             ...shift,
             id: shift._id.toString(),
             _id: undefined,
+            // Include denominationCounts if present (informational only)
+            denominationCounts: shift.denominationCounts || null,
             receipts: receipts.map(r => ({
                 ...r,
                 id: r._id.toString(),
@@ -123,3 +124,35 @@ export async function GET(
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+
+// PATCH — save denomination counts (informational only, does not affect balances)
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        if (!id) return NextResponse.json({ error: "Shift ID required" }, { status: 400 });
+
+        const body = await request.json();
+        const { denominationCounts } = body;
+
+        if (!denominationCounts || typeof denominationCounts !== 'object') {
+            return NextResponse.json({ error: "denominationCounts is required" }, { status: 400 });
+        }
+
+        const client = await clientPromise;
+        const db = client.db("giraffe");
+
+        await db.collection("cash_shifts").updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { denominationCounts, denominationUpdatedAt: new Date() } }
+        );
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error saving denomination counts:', error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+

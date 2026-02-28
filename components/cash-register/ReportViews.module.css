@@ -303,3 +303,39 @@
     page-break-inside: avoid;
   }
 }
+
+.tableWrapper {
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.analyticsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.analyticsTable th {
+  text-align: left;
+  padding: 12px;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.analyticsTable td {
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.tableTotalRow {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.tableTotalRow td {
+  border-top: 2px solid #e5e7eb;
+  padding: 16px 12px;
+}

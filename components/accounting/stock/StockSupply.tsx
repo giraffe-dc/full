@@ -570,7 +570,7 @@ export function StockSupply() {
                                                             .filter(acc => {
                                                                 // Для user role - лише готівкові рахунки
                                                                 if (userRole === 'user') {
-                                                                    return acc.type === 'cash';
+                                                                    return acc.id === '6962aee8bc8c74cda983c828';
                                                                 }
                                                                 return true;
                                                             })

@@ -39,7 +39,8 @@ export type AccountingSection =
   | "menuIngredients"
   | "menuProductCategories"
   | "menuIngredientCategories"
-  | "expenseCategories";
+  | "expenseCategories"
+  | "pnl";
 
 interface AccordionSection {
   id: string;
@@ -112,6 +113,7 @@ export function AccountingSidebar() {
         { id: 'cashShifts', label: 'Касові зміни' },
         { id: 'salary', label: 'Зарплата' },
         { id: 'accounts', label: 'Рахунки' },
+        { id: 'pnl', label: 'P&L Звіт' },
         { id: 'taxes', label: 'Податки' },
       ],
     },

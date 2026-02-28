@@ -1,10 +1,20 @@
 
 import React from 'react';
 import { XReport, ServiceCategory } from '../../types/cash-register';
+import { CashDenominations } from './CashDenominations';
 import styles from './XReportView.module.css';
+
+interface PrevDenomInfo {
+  shiftNumber: number;
+  countedTotal: number;
+  endBalance: number;
+  diff: number;
+}
 
 interface XReportViewProps {
   report: XReport;
+  shiftId: string;
+  prevDenomInfo?: PrevDenomInfo | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -16,8 +26,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: '📦 Інше'
 };
 
-export function XReportView({ report }: XReportViewProps) {
+export function XReportView({ report, shiftId, prevDenomInfo }: XReportViewProps) {
   // Ensure we have numbers
+
   const totalSales = report.totalSales || 0;
 
   return (
@@ -150,6 +161,35 @@ export function XReportView({ report }: XReportViewProps) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Cash Denomination Counter */}
+      <div className={styles.section}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
+          <h4 className={styles.sectionTitle} style={{ borderBottom: 'none', marginBottom: 0, paddingBottom: 0 }}>🪙 Підрахунок готівки по купюрно</h4>
+          {prevDenomInfo && (
+            <div style={{ fontSize: '0.85rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>Мин. зміна (#{prevDenomInfo.shiftNumber}):</span>
+              <span style={{
+                fontWeight: 600,
+                color: Math.abs(prevDenomInfo.diff) < 0.005 ? '#15803d' : '#c2410c',
+                background: Math.abs(prevDenomInfo.diff) < 0.005 ? '#dcfce7' : '#ffedd5',
+                padding: '2px 8px',
+                borderRadius: '12px'
+              }}>
+                {Math.abs(prevDenomInfo.diff) < 0.005
+                  ? 'Все ок'
+                  : `${prevDenomInfo.diff > 0 ? '+' : ''}${prevDenomInfo.diff.toFixed(2)} ₴`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <CashDenominations
+          shiftId={shiftId}
+          expectedBalance={report.currentBalance}
+          initialCounts={report.denominationCounts}
+        />
       </div>
 
       <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '10px' }}>

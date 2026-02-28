@@ -1,5 +1,6 @@
 import React from 'react';
 import { ZReport, ServiceCategory } from '../../types/cash-register';
+import { CashDenominations } from './CashDenominations';
 import styles from './ReportViews.module.css';
 
 interface ZReportViewProps {
@@ -88,6 +89,15 @@ export function ZReportView({ report }: ZReportViewProps) {
             </span>
           </div>
         )}
+      </div>
+
+      <div style={{ padding: '0 20px 20px' }}>
+        <CashDenominations
+          shiftId={report.shiftId}
+          expectedBalance={report.endBalance}
+          initialCounts={report.denominationCounts}
+          readOnly={true}
+        />
       </div>
 
       <div className={styles.categoryBreakdown}>

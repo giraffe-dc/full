@@ -5,9 +5,17 @@ import styles from "./page.module.css";
 import { CashRegisterState, XReport, ZReport, ServiceCategory, ShiftTransaction } from "../../../types/cash-register";
 import { XReportView } from "../../../components/cash-register/XReportView";
 import { ZReportView } from "../../../components/cash-register/ZReportView";
+import { DenomAnalyticsView } from "../../../components/cash-register/DenomAnalyticsView";
 import { Preloader } from "@/components/ui/Preloader";
 
-type ReportType = "x-report" | "z-report" | "receipts";
+type ReportType = "x-report" | "z-report" | "receipts" | "denom-analytics";
+
+interface PrevDenomInfo {
+  shiftNumber: number;
+  countedTotal: number;
+  endBalance: number;
+  diff: number; // countedTotal - endBalance
+}
 
 export default function ReportsPage() {
   const [state, setState] = useState<CashRegisterState | null>(null);
@@ -16,6 +24,7 @@ export default function ReportsPage() {
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
   const [expandedReceipt, setExpandedReceipt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [prevDenomInfo, setPrevDenomInfo] = useState<PrevDenomInfo | null>(null);
 
   // Завантажити дані з API
   useEffect(() => {
@@ -33,9 +42,13 @@ export default function ReportsPage() {
         if (data.success && data.data.length > 0) {
           const activeShift = data.data[0];
 
-          // Fetch full shift details including receipts
-          const detailsRes = await fetch(`/api/cash-register/shifts/${activeShift.id}`);
+          // Fetch full shift details + last closed shift in parallel
+          const [detailsRes, prevRes] = await Promise.all([
+            fetch(`/api/cash-register/shifts/${activeShift.id}`),
+            fetch('/api/cash-register/shifts?status=closed&limit=1'),
+          ]);
           const detailsData = await detailsRes.json();
+          const prevData = await prevRes.json();
 
           if (detailsData.success) {
             setState(prev => ({
@@ -46,14 +59,50 @@ export default function ReportsPage() {
               currentShift: detailsData.data
             }));
           }
+
+          // Calculate prev shift denomination diff
+          if (prevData.success && prevData.data.length > 0) {
+            const prev = prevData.data[0];
+            const dc = prev.denominationCounts as Record<string, number> | undefined;
+            if (dc && Object.keys(dc).length > 0) {
+              const countedTotal = Object.entries(dc).reduce(
+                (sum, [nom, qty]) => sum + Number(nom) * (qty || 0), 0
+              );
+              const endBal = prev.endBalance ?? 0;
+              setPrevDenomInfo({
+                shiftNumber: prev.shiftNumber,
+                countedTotal,
+                endBalance: endBal,
+                diff: countedTotal - endBal,
+              });
+            } else {
+              setPrevDenomInfo(null);
+            }
+          } else {
+            setPrevDenomInfo(null);
+          }
         } else {
           // No open shift
           setState(prev => ({ ...prev!, currentShift: null }));
+          setPrevDenomInfo(null);
         }
       }
 
       if (reportType === 'z-report') {
         const res = await fetch(`/api/cash-register/reports?type=z-reports&startDate=${startDate}&endDate=${endDate}`);
+        const data = await res.json();
+        if (data.success) {
+          setState(prev => ({
+            ...prev || {
+              currentShift: null, currentCart: [], customers: [], services: [],
+              receipts: [], shifts: [], zReports: [], lastReceiptNumber: 0, lastShiftNumber: 0
+            },
+            zReports: data.data
+          }));
+        }
+      }
+      if (reportType === 'denom-analytics') {
+        const res = await fetch(`/api/cash-register/reports?type=z-reports&startDate=${startDate}&endDate=${endDate}&limit=100`);
         const data = await res.json();
         if (data.success) {
           setState(prev => ({
@@ -171,6 +220,8 @@ export default function ReportsPage() {
       salesByCategory: salesByCategory as Record<ServiceCategory, number>,
       transactions: filteredTransactions as ShiftTransaction[],
       shiftStartTime: state.currentShift.startTime,
+      // Informational denomination counts — saved separately, does NOT affect balances
+      denominationCounts: state.currentShift.denominationCounts,
     };
   };
 
@@ -205,12 +256,22 @@ export default function ReportsPage() {
         >
           Архів чеків
         </button>
+        <button
+          className={`${styles.tab} ${reportType === "denom-analytics" ? styles.tabActive : ""}`}
+          onClick={() => setReportType("denom-analytics")}
+        >
+          🪙 Купюрка
+        </button>
       </div>
 
       <div className={styles.content}>
         {reportType === "x-report" && (
           xReport ? (
-            <XReportView report={xReport} />
+            <XReportView
+              report={xReport}
+              shiftId={state!.currentShift!.id}
+              prevDenomInfo={prevDenomInfo}
+            />
           ) : (
             <div className={styles.emptyState}>
               <p>Немає відкритої зміни. Відкрийте зміну на касі для перегляду X-звіту.</p>
@@ -316,6 +377,9 @@ export default function ReportsPage() {
                         <span className={styles.receiptDate}>
                           {new Date(receipt.createdAt).toLocaleString('uk-UA')}
                         </span>
+                        <span style={{ color: 'green' }}>
+                          {receipt.comment}
+                        </span>
                       </div>
                       <div className={styles.receiptSummaryRight}>
                         <span className={styles.receiptTotal}>{receipt.total.toFixed(2)} ₴</span>
@@ -333,7 +397,8 @@ export default function ReportsPage() {
                             <div key={idx} className={styles.receiptItem}>
                               <span>{item.serviceName}</span>
                               <span className={styles.itemQuantity}>x{item.quantity}</span>
-                              <span className={styles.itemPrice}>{item.subtotal.toFixed(2)} ₴</span>
+                              <span className={styles.itemPrice}>{(item.subtotal - (item.discount ?? 0)).toFixed(2)} ₴</span>
+                              <span style={{ color: 'red' }}> Знижка: {item.discount?.toFixed(2)} ₴</span>
                             </div>
                           ))}
                         </div>
@@ -350,9 +415,10 @@ export default function ReportsPage() {
                             )}
                             {receipt.subtotal !== undefined && (
                               <span className={styles.subtotalInfo}>
-                                Підсумок: {receipt.subtotal.toFixed(2)} ₴
+                                Підсумок: {receipt.total.toFixed(2)} ₴
                                 {receipt.tax ? ` | Податок: ${receipt.tax.toFixed(2)} ₴` : ''}
                               </span>
+
                             )}
                           </div>
                         </div>
@@ -367,6 +433,35 @@ export default function ReportsPage() {
               )}
             </div>
           </>
+        )}
+
+        {reportType === "denom-analytics" && (
+          <div className={styles.denomAnalyticsList}>
+            <div className={styles.dateRange}>
+              <label>
+                Від:
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </label>
+              <span>—</span>
+              <label>
+                До:
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={styles.dateInput}
+                />
+              </label>
+            </div>
+            {state?.zReports && (
+              <DenomAnalyticsView reports={state.zReports} />
+            )}
+          </div>
         )}
       </div>
     </div>
