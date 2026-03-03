@@ -56,6 +56,14 @@
   --warning-text: #d97706;
   --warning-main: #f59e0b;
 
+  --info-bg: #eff6ff;
+  --info-text: #2563eb;
+  --info-main: #3b82f6;
+
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+
   /* Background Colors */
   --bg-app: #f8fafc;
   /* Cool Light Gray */

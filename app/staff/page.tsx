@@ -313,7 +313,7 @@ export default function StaffPage() {
                 )}
                 <div className={styles.infoRow}>
                   <span className={styles.label}>Дата найму:</span>
-                  <span>{new Date(member.hireDate).toLocaleDateString("uk-UA")}</span>
+                  <span>{member.hireDate}</span>
                 </div>
               </div>
               <div className={styles.cardFooter}>

@@ -39,12 +39,12 @@ export function StockSupply() {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [ingredients, setIngredients] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]); // Added
-    const [recipes, setRecipes] = useState<any[]>([]); // Added
+    const [products, setProducts] = useState<any[]>([]);
     const [accounts, setAccounts] = useState<any[]>([]);
 
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedWarehouseForSearch, setSelectedWarehouseForSearch] = useState<string>('');
 
     // Form State
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -63,14 +63,14 @@ export function StockSupply() {
     const [ingredientSearch, setIngredientSearch] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [lastPrices, setLastPrices] = useState<Record<string, { cost: number; date: string; supplierName: string }>>({});
+    const [previousWarehouseId, setPreviousWarehouseId] = useState<string>('');
 
     useEffect(() => {
         fetchUserRole();
         fetchWarehouses();
         fetchSuppliers();
         fetchIngredients();
-        fetchProducts(); // Added
-        fetchRecipes(); // Added
+        fetchProducts();
         fetchSupplies();
         fetchAccounts();
     }, []);
@@ -95,19 +95,54 @@ export function StockSupply() {
         }
         const lower = ingredientSearch.toLowerCase();
 
-        // Combine all searchable items
-        const allItems = [
+        // Get all searchable items (EXCLUDE RECIPES - they are made from ingredients)
+        let availableItems = [
             ...ingredients.map(i => ({ ...i, type: 'ingredient' })),
-            ...products.map(p => ({ ...p, type: 'product' })),
-            ...recipes.map(r => ({ ...r, type: 'recipe' }))
+            ...products.map(p => ({ ...p, type: 'product' }))
         ];
 
-        const filtered = allItems.filter(item =>
+        // FILTER by selected warehouse based on business logic:
+        if (formData.warehouseId) {
+            const selectedWarehouse = warehouses.find(w => w._id === formData.warehouseId);
+            const warehouseName = selectedWarehouse?.name.toLowerCase() || '';
+
+            // Check if this is an "Ingredients" warehouse
+            const isIngredientsWarehouse = warehouseName.includes('інгредієнт') || 
+                                          warehouseName.includes('ingredient') ||
+                                          warehouseName.includes('склад') && warehouseName.includes('інгред');
+
+            // Check if this is an "Entertainment" warehouse
+            const isEntertainmentWarehouse = warehouseName.includes('розваж') || 
+                                            warehouseName.includes('entertainment') ||
+                                            warehouseName.includes('послуг');
+
+            availableItems = availableItems.filter(item => {
+                // For Ingredients warehouse: show only ingredients
+                if (isIngredientsWarehouse) {
+                    return item.type === 'ingredient';
+                }
+
+                // For Entertainment warehouse: show only products with "Розважальні послуги" category
+                if (isEntertainmentWarehouse) {
+                    return item.type === 'product' && 
+                           (item.category === 'Розважальні послуги' || 
+                            item.category?.toLowerCase().includes('розваж') ||
+                            item.category?.toLowerCase().includes('entertainment'));
+                }
+
+                // For other warehouses: show products (excluding entertainment)
+                return item.type === 'product' && 
+                       item.category !== 'Розважальні послуги' &&
+                       !item.category?.toLowerCase().includes('розваж');
+            });
+        }
+
+        const filtered = availableItems.filter(item =>
             item.name.toLowerCase().includes(lower) ||
             (item.code && item.code.toLowerCase().includes(lower))
         );
-        setSearchResults(filtered.slice(0, 10)); // Limit results
-    }, [ingredientSearch, ingredients, products, recipes]);
+        setSearchResults(filtered.slice(0, 20)); // Limit results
+    }, [ingredientSearch, ingredients, products, formData.warehouseId, warehouses]);
 
     // Data Fetching
     const fetchSupplies = async () => {
@@ -144,12 +179,6 @@ export function StockSupply() {
         const res = await fetch('/api/accounting/products');
         const data = await res.json();
         if (data.data) setProducts(data.data);
-    };
-
-    const fetchRecipes = async () => {
-        const res = await fetch('/api/accounting/recipes');
-        const data = await res.json();
-        if (data.data) setRecipes(data.data);
     };
 
     const fetchAccounts = async () => {
@@ -463,13 +492,50 @@ export function StockSupply() {
                                         <label className={styles.label}>Склад (куди)</label>
                                         <select
                                             value={formData.warehouseId}
-                                            onChange={e => setFormData({ ...formData, warehouseId: e.target.value })}
+                                            onChange={e => {
+                                                const newWarehouseId = e.target.value;
+                                                
+                                                // If warehouse changed and items already added, warn user
+                                                if (formData.warehouseId && newWarehouseId && 
+                                                    formData.warehouseId !== newWarehouseId && 
+                                                    items.length > 0) {
+                                                    const confirmed = confirm(
+                                                        `⚠️ Увага! У вас є ${items.length} доданих позицій з іншого складу.\\n\\n` +
+                                                        `При зміні складу всі додані товари будуть видалені.\\n\\n` +
+                                                        `Продовжити?`
+                                                    );
+                                                    
+                                                    if (!confirmed) {
+                                                        return; // Cancel warehouse change
+                                                    }
+                                                    
+                                                    // Clear items if user confirms
+                                                    setItems([]);
+                                                    toast.success('Позиції видалено через зміну складу');
+                                                }
+                                                
+                                                setFormData({ ...formData, warehouseId: newWarehouseId });
+                                                setPreviousWarehouseId(formData.warehouseId);
+                                            }}
                                             className={styles.select}
                                             required
                                         >
                                             <option value="">Оберіть склад</option>
                                             {warehouses.map(w => <option key={w._id} value={w._id}>{w.name}</option>)}
                                         </select>
+                                        {/* {items.length > 0 && (
+                                            <div style={{
+                                                fontSize: '11px',
+                                                color: '#f59e0b',
+                                                marginTop: '4px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}>
+                                                <span>⚠️</span>
+                                                <span>Додано {items.length} поз. Зміна складу видалить їх</span>
+                                            </div>
+                                        )} */}
                                     </div>
                                     <div className={styles.formGroup}>
                                         <label className={styles.label}>Постачальник</label>
@@ -588,6 +654,50 @@ export function StockSupply() {
 
                                 <div className={styles.searchContainer}>
                                     <label className={styles.label}> Додати товар</label>
+                                    {formData.warehouseId && (
+                                        <div style={{
+                                            fontSize: '12px',
+                                            color: '#059669',
+                                            background: '#d1fae5',
+                                            padding: '6px 10px',
+                                            borderRadius: '6px',
+                                            marginBottom: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}>
+                                            <span>✅</span>
+                                            <span>
+                                                Склад: <strong>{warehouses.find(w => w._id === formData.warehouseId)?.name}</strong>
+                                                {(() => {
+                                                    const whName = warehouses.find(w => w._id === formData.warehouseId)?.name.toLowerCase() || '';
+                                                    if (whName.includes('інгред') || whName.includes('ingredient')) {
+                                                        return <span> • Тільки інгредієнти</span>;
+                                                    } else if (whName.includes('розваж') || whName.includes('entertainment')) {
+                                                        return <span> • Тільки розважальні послуги</span>;
+                                                    } else {
+                                                        return <span> • Тільки товари</span>;
+                                                    }
+                                                })()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {!formData.warehouseId && (
+                                        <div style={{
+                                            fontSize: '12px',
+                                            color: '#dc2626',
+                                            background: '#fee2e2',
+                                            padding: '6px 10px',
+                                            borderRadius: '6px',
+                                            marginBottom: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}>
+                                            <span>⚠️</span>
+                                            <span>Оберіть склад для фільтрації товарів</span>
+                                        </div>
+                                    )}
                                     <input
                                         value={ingredientSearch}
                                         onChange={e => setIngredientSearch(e.target.value)}

@@ -275,3 +275,138 @@ export interface Visit {
   createdAt: string;
   updatedAt: string;
 }
+
+// ============================================
+// P&L (Profit & Loss) Types
+// ============================================
+
+export type CategoryItem = {
+  name: string;
+  amount: number;
+};
+
+export type DailyPoint = {
+  dateKey: string;
+  income: number;
+  expense: number;
+  profit: number;
+};
+
+export type PnLData = {
+  revenue: { total: number; categories: CategoryItem[] };
+  cogs: { 
+    total: number; 
+    categories: CategoryItem[];
+    details?: {
+      openingStock?: number;
+      purchases?: number;
+      closingStock?: number;
+      recipeCOGS?: number;
+    }
+  };
+  grossProfit: number;
+  opex: { total: number; categories: CategoryItem[] };
+  operatingProfit: number;
+  netProfit: number;
+  taxes?: number;
+  ebitda?: number;
+  dailyStats: DailyPoint[];
+};
+
+export type PnLVariance = {
+  revenue: number;
+  cogs: number;
+  grossProfit: number;
+  opex: number;
+  operatingProfit: number;
+  netProfit: number;
+};
+
+export type PnLVariancePercent = {
+  revenue: number;
+  cogs: number;
+  grossProfit: number;
+  opex: number;
+  operatingProfit: number;
+  netProfit: number;
+};
+
+export type PnLComparison = {
+  currentPeriod: PnLData;
+  previousPeriod: PnLData;
+  variance: PnLVariance;
+  variancePercent: PnLVariancePercent;
+};
+
+export type FinancialRatios = {
+  grossMarginPercent: number;
+  operatingMarginPercent: number;
+  netMarginPercent: number;
+  ebitdaMarginPercent?: number;
+};
+
+export type PnLWithComparison = PnLData & {
+  comparison?: PnLComparison;
+  financialRatios: FinancialRatios;
+  comparisonPeriod?: 'previous' | 'same_last_year' | 'none';
+};
+
+// ============================================
+// Budget Types
+// ============================================
+
+export type BudgetItem = {
+  _id?: string;
+  id?: string;
+  categoryId: string;
+  categoryName: string;
+  month: string; // YYYY-MM format
+  plannedAmount: number;
+  actualAmount?: number;
+  variance?: number;
+  variancePercent?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type BudgetTotals = {
+  totalPlanned: number;
+  totalActual: number;
+  totalVariance: number;
+  totalVariancePercent: number;
+};
+
+export type BudgetWithTotals = {
+  items: BudgetItem[];
+  totals: BudgetTotals;
+};
+
+export type ComparisonPeriod = 'previous' | 'same_last_year' | 'none';
+
+// ============================================
+// Notification Types
+// ============================================
+
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'system';
+
+export type NotificationSource = 'telegram' | 'website' | 'system' | 'api' | 'external';
+
+export type Notification = {
+  _id?: string;
+  id?: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  source: NotificationSource;
+  isRead: boolean;
+  externalId?: string; // ID from external system (e.g., Telegram message ID)
+  metadata?: Record<string, any>; // Additional data from external source
+  createdAt: string;
+  readAt?: string;
+};
+
+export type NotificationStats = {
+  total: number;
+  unread: number;
+  byType: Record<NotificationType, number>;
+};

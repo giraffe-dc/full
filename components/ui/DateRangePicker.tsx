@@ -11,45 +11,83 @@ interface DateRangePickerProps {
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, endDate, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [viewDate, setViewDate] = useState(new Date(startDate || new Date()));
-    const [tempStart, setTempStart] = useState<Date | null>(startDate ? new Date(startDate) : null);
-    const [tempEnd, setTempEnd] = useState<Date | null>(endDate ? new Date(endDate) : null);
+    const [viewDate, setViewDate] = useState(() => {
+        if (startDate) {
+            const [y, m, d] = startDate.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+        return new Date();
+    });
+    const [tempStart, setTempStart] = useState<Date | null>(() => {
+        if (startDate) {
+            const [y, m, d] = startDate.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+        return null;
+    });
+    const [tempEnd, setTempEnd] = useState<Date | null>(() => {
+        if (endDate) {
+            const [y, m, d] = endDate.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+        return null;
+    });
     const popoverRef = useRef<HTMLDivElement>(null);
 
     const presets = [
-        { label: 'Сьогодні', getRange: () => [new Date(), new Date()] },
+        {
+            label: 'Сьогодні', getRange: () => {
+                const now = new Date();
+                return [
+                    new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                    new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                ];
+            }
+        },
         {
             label: 'Вчора', getRange: () => {
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
-                return [yesterday, yesterday];
+                return [
+                    new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()),
+                    new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
+                ];
             }
         },
         {
             label: 'Останні 7 днів', getRange: () => {
                 const start = new Date();
                 start.setDate(start.getDate() - 6);
-                return [start, new Date()];
+                return [
+                    new Date(start.getFullYear(), start.getMonth(), start.getDate()),
+                    new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+                ];
             }
         },
         {
             label: 'Останні 30 днів', getRange: () => {
                 const start = new Date();
                 start.setDate(start.getDate() - 29);
-                return [start, new Date()];
+                return [
+                    new Date(start.getFullYear(), start.getMonth(), start.getDate()),
+                    new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+                ];
             }
         },
-        { label: 'Січень', getRange: () => [new Date(2026, 0, 1), new Date(2026, 0, 31)] },
-        { label: 'Грудень', getRange: () => [new Date(2025, 11, 1), new Date(2025, 11, 31)] },
+        // { label: 'Січень', getRange: () => [new Date(2026, 0, 1), new Date(2026, 0, 31)] },
+        // { label: 'Грудень', getRange: () => [new Date(2025, 11, 1), new Date(2025, 11, 31)] },
         { label: 'За весь час', getRange: () => [new Date(2024, 0, 1), new Date()] },
     ];
 
     const handlePresetClick = (getRange: () => (Date | null)[]) => {
         const [s, e] = getRange();
         if (s && e) {
+            // Format date manually to avoid UTC conversion
+            const startStr = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`;
+            const endStr = `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, '0')}-${String(e.getDate()).padStart(2, '0')}`;
             setTempStart(s);
             setTempEnd(e);
-            onChange(s.toISOString().split('T')[0], e.toISOString().split('T')[0]);
+            onChange(startStr, endStr);
             setIsOpen(false);
         }
     };
@@ -59,8 +97,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, end
         d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
 
-    const isBetween = (day: Date, start: Date, end: Date) =>
-        day > start && day < end;
+    const isBetween = (day: Date, start: Date, end: Date) => {
+        // Strip time for comparison
+        const dayDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+        const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        return dayDate > startDate && dayDate < endDate;
+    };
 
     const renderCalendar = (monthDate: Date) => {
         const year = monthDate.getFullYear();
@@ -141,8 +184,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, end
 
     const formattedLabel = useMemo(() => {
         if (!startDate) return "Оберіть період";
-        const s = new Date(startDate);
-        const e = new Date(endDate);
+        // Parse date string manually to avoid timezone issues
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const [ey, em, ed] = endDate.split('-').map(Number);
+        const s = new Date(sy, sm - 1, sd);
+        const e = new Date(ey, em - 1, ed);
+
         if (isSameDay(s, e)) {
             return s.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
         }
@@ -151,10 +198,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, end
 
     const handleApply = () => {
         if (tempStart && tempEnd) {
-            onChange(tempStart.toISOString().split('T')[0], tempEnd.toISOString().split('T')[0]);
+            // Format date manually to avoid UTC conversion
+            const startStr = `${tempStart.getFullYear()}-${String(tempStart.getMonth() + 1).padStart(2, '0')}-${String(tempStart.getDate()).padStart(2, '0')}`;
+            const endStr = `${tempEnd.getFullYear()}-${String(tempEnd.getMonth() + 1).padStart(2, '0')}-${String(tempEnd.getDate()).padStart(2, '0')}`;
+            onChange(startStr, endStr);
             setIsOpen(false);
         } else if (tempStart) {
-            onChange(tempStart.toISOString().split('T')[0], tempStart.toISOString().split('T')[0]);
+            const startStr = `${tempStart.getFullYear()}-${String(tempStart.getMonth() + 1).padStart(2, '0')}-${String(tempStart.getDate()).padStart(2, '0')}`;
+            onChange(startStr, startStr);
             setIsOpen(false);
         }
     };

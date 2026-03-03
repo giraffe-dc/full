@@ -214,7 +214,7 @@ export default function AccountingChecksPage() {
                                     <td>{r.waiterName || r.waiter}</td>
                                     <td>
                                         <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-                                            {new Date(r.createdAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' })}
+                                            {r.createdAt ? new Date(r.createdAt).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' }) : '-'}
                                         </div>
                                         <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
                                             {new Date(r.createdAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}

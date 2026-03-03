@@ -35,11 +35,149 @@
     font-size: 0.9rem;
     outline: none;
     transition: all 0.2s;
+    background: white;
 }
 
 .filterInput:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.filterActions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.budgetButton {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    margin-top: auto;
+}
+
+.budgetButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.exportButton {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    margin-top: auto;
+}
+
+.exportButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.exportButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --- KPI Cards --- */
+.kpiGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 1024px) {
+    .kpiGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .kpiGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kpiCard {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpiLabel {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.kpiValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.kpiSub {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: auto;
+}
+
+.kpiGood {
+    color: #10b981;
+}
+
+.kpiMedium {
+    color: #f59e0b;
+}
+
+.kpiBad {
+    color: #ef4444;
+}
+
+/* --- Variance Badge --- */
+.varianceBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.variancePos {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.varianceNeg {
+    background: #fef2f2;
+    color: #991b1b;
 }
 
 /* --- Hero Cards --- */
@@ -103,12 +241,33 @@
     font-size: 2rem;
     font-weight: 700;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.heroValueWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .heroSub {
     font-size: 0.85rem;
     color: #9ca3af;
     margin-top: auto;
+}
+
+.heroBudget {
+    font-size: 0.8rem;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    align-self: flex-start;
 }
 
 .incomeText {
@@ -213,6 +372,39 @@
     transform: rotate(90deg);
 }
 
+.cogsDetailBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 8px;
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.cogsDetailRow {
+    background: #fff7ed;
+    font-size: 0.9rem;
+}
+
+.cogsDetailRow td:first-child {
+    padding-left: 48px;
+    font-style: italic;
+    color: #6b7280;
+}
+
+.cogsTotalRow {
+    background: #ffedd5 !important;
+    font-weight: 700;
+    border-top: 1px solid #fed7aa;
+}
+
+.cogsTotalRow td:first-child {
+    padding-left: 48px;
+    color: #9a3412;
+}
+
 .categoryRow {
     border-bottom: 1px solid #f3f4f6;
     color: #4b5563;
@@ -268,6 +460,11 @@
     padding: 24px;
     border-radius: 16px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.chartContainer {
+    margin-top: 20px;
+    min-height: 300px;
 }
 
 .chartHeader {
@@ -406,6 +603,47 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
+.errorState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+.errorState h3 {
+    font-size: 1.25rem;
+    color: #dc2626;
+    margin: 0 0 12px 0;
+}
+
+.errorState p {
+    color: #6b7280;
+    margin: 0 0 24px 0;
+    max-width: 500px;
+}
+
+.retryButton {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.retryButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
 .emptyState {
     text-align: center;
     color: #9ca3af;
@@ -432,4 +670,78 @@
 .marginBadgeNeg {
     background: #fef2f2;
     color: #991b1b;
+}
+
+/* --- Budget Section --- */
+.budgetCard {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.budgetCardHeader {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.budgetCardTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.budgetTotal {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    padding: 8px 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.budgetTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.budgetTable th,
+.budgetTable td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.budgetTable th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.budgetTable th:last-child,
+.budgetTable td:last-child {
+    text-align: right;
+}
+
+.budgetTable tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.budgetTable tbody tr:hover {
+    background: #f9fafb;
+}
+
+.varianceOk {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.varianceOver {
+    color: #ef4444;
+    font-weight: 600;
 }

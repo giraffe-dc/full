@@ -242,7 +242,7 @@ export default function VisitingTimePage() {
                             </tr>
                         ) : visits.map(v => (
                             <tr key={v.id}>
-                                <td>{new Date(v.date).toLocaleDateString('uk-UA')}</td>
+                                <td>{v.date}</td>
                                 <td>{v.serviceName}</td>
                                 <td>
                                     <div>{v.childName}</div>

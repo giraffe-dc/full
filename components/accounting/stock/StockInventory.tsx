@@ -112,16 +112,31 @@ export function StockInventory() {
             const itemsData = await itemsRes.json();
             const allSourceItems = itemsData.data || [];
 
-            // 3. Merge
+            // 3. Merge with balances and calculate cost
             const merged = allSourceItems.map((si: any) => {
                 const bal = balances.find((b: any) => b.itemId === si._id);
+                
+                // Priority for cost: balance.lastCost > item.costPerUnit > last purchase price > 0
+                let cost = 0;
+                if (bal && bal.lastCost) {
+                    cost = bal.lastCost;
+                } else if (si.costPerUnit) {
+                    cost = si.costPerUnit;
+                } else {
+                    // Try to fetch last purchase price from stock_movements
+                    const lastPurchase = balances.find((b: any) => b.itemId === si._id && b.lastPurchaseCost);
+                    if (lastPurchase && lastPurchase.lastPurchaseCost) {
+                        cost = lastPurchase.lastPurchaseCost;
+                    }
+                }
+
                 return {
                     itemId: si._id,
                     itemName: si.name,
                     unit: si.unit || si.yieldUnit || 'шт',
                     theoreticalQty: bal ? bal.quantity : 0,
                     actualQty: bal ? bal.quantity : 0, // Default to theoretical
-                    cost: bal ? bal.lastCost : (si.costPerUnit || 0)
+                    cost: cost
                 };
             });
 
@@ -240,13 +255,27 @@ export function StockInventory() {
             const merged = allSourceItems.map((si: any) => {
                 const bal = balances.find((b: any) => b.itemId === si._id);
                 const draftItem = draftData.items.find((di: any) => di.itemId === si._id);
+                
+                // Priority for cost: balance.lastCost > item.costPerUnit > last purchase price > 0
+                let cost = 0;
+                if (bal && bal.lastCost) {
+                    cost = bal.lastCost;
+                } else if (si.costPerUnit) {
+                    cost = si.costPerUnit;
+                } else {
+                    const lastPurchase = balances.find((b: any) => b.itemId === si._id && b.lastPurchaseCost);
+                    if (lastPurchase && lastPurchase.lastPurchaseCost) {
+                        cost = lastPurchase.lastPurchaseCost;
+                    }
+                }
+
                 return {
                     itemId: si._id,
                     itemName: si.name,
                     unit: si.unit || si.yieldUnit || 'шт',
                     theoreticalQty: bal ? bal.quantity : 0,
                     actualQty: draftItem ? draftItem.actualQty : (bal ? bal.quantity : 0),
-                    cost: bal ? bal.lastCost : (si.costPerUnit || 0)
+                    cost: cost
                 };
             });
 

@@ -81,8 +81,8 @@ function AccountingContent() {
   const [showForm, setShowForm] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [filters, setFilters] = useState({
-    startDate: "",
-    endDate: "",
+    startDate: new Date().toISOString().split("T")[0].slice(0, 8) + "01", // First day of current month
+    endDate: new Date().toISOString().split("T")[0], // Today
     type: "",
     category: "",
     paymentMethod: "",

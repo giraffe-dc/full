@@ -95,6 +95,16 @@ export async function GET(req: NextRequest) {
                     itemName: { $first: "$movements.itemName" },
                     unit: { $first: "$movements.unit" },
                     lastCost: { $last: "$movements.cost" },
+                    // Get last purchase cost (from supply movements)
+                    lastPurchaseCost: {
+                        $last: {
+                            $cond: [
+                                { $eq: ["$movements.type", "supply"] },
+                                "$movements.cost",
+                                "$$REMOVE"
+                            ]
+                        }
+                    },
                     // Push all movements to array to reduce them
                     history: { $push: "$movements" }
                 }
@@ -137,7 +147,8 @@ export async function GET(req: NextRequest) {
             itemName: b.itemName,
             unit: b.unit,
             quantity: b.quantity,
-            lastCost: b.lastCost
+            lastCost: b.lastCost,
+            lastPurchaseCost: b.lastPurchaseCost
         }));
 
         return NextResponse.json({ data: formattedBalances });
