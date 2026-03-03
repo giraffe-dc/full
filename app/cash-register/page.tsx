@@ -198,15 +198,15 @@ export default function CashRegisterPage() {
         // Calculate total from denominations if available
         let suggestedBalance = lastShift.endBalance;
 
-        if (lastShift.denominationCounts) {
-          const BANKNOTES = [1000, 500, 200, 100, 50, 20, 10];
-          const COINS = [10, 5, 2, 1, 0.5];
-          const sum = [...BANKNOTES, ...COINS].reduce(
-            (acc, d) => acc + (lastShift.denominationCounts[String(d)] || 0) * d,
-            0
-          );
-          if (sum > 0) suggestedBalance = sum;
-        }
+        // if (lastShift.denominationCounts) {
+        //   const BANKNOTES = [1000, 500, 200, 100, 50, 20, 10];
+        //   const COINS = [10, 5, 2, 1, 0.5];
+        //   const sum = [...BANKNOTES, ...COINS].reduce(
+        //     (acc, d) => acc + (lastShift.denominationCounts[String(d)] || 0) * d,
+        //     0
+        //   );
+        //   if (sum > 0) suggestedBalance = sum;
+        // }
 
         setShiftStartBalance(suggestedBalance?.toString() || "0");
       } else {
