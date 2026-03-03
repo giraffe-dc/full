@@ -16,10 +16,47 @@ export default function Header() {
     const [lastCheckTime, setLastCheckTime] = useState<Date>(new Date());
     const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hasPlayedSound, setHasPlayedSound] = useState(false);
     const notificationsRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const router = useRouter();
     const pathname = usePathname();
+
+    // Initialize audio
+    useEffect(() => {
+        // Create audio element for notification sound
+        audioRef.current = new Audio('/single-snorting-giraffe.mp3');
+        audioRef.current.volume = 0.5;
+        audioRef.current.preload = 'auto';
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    // Play notification sound from MP3 file
+    const playNotificationSound = () => {
+        if (hasPlayedSound || !audioRef.current) return;
+
+        // Reset audio to start
+        audioRef.current.currentTime = 0;
+
+        audioRef.current.play().catch(e => {
+            console.log('Sound play blocked by browser:', e);
+        });
+
+        setHasPlayedSound(true);
+    };
+
+    // Reset sound flag when dropdown is opened
+    useEffect(() => {
+        if (isNotificationsOpen) {
+            setHasPlayedSound(false);
+        }
+    }, [isNotificationsOpen]);
 
     // Fetch notifications every 5 minutes
     useEffect(() => {
@@ -33,15 +70,19 @@ export default function Header() {
                     const data = await res.json();
                     const newNotifications = data.data || [];
                     const newStats = data.stats;
-                    
+
                     // Check if there are new notifications since last check
                     const previousUnreadCount = stats?.unread || 0;
                     const newUnreadCount = newStats?.unread || 0;
-                    
+
                     if (newUnreadCount > previousUnreadCount) {
                         setHasNewNotifications(true);
+                        // Play sound only if dropdown is not open (user is not already looking at notifications)
+                        if (!isNotificationsOpen) {
+                            playNotificationSound();
+                        }
                     }
-                    
+
                     setNotifications(newNotifications);
                     setStats(newStats);
                     setLastCheckTime(new Date());
