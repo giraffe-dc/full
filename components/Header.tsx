@@ -12,7 +12,12 @@ export default function Header() {
     const [stats, setStats] = useState<NotificationStats | null>(null);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+    const [hasNewNotifications, setHasNewNotifications] = useState(false);
+    const [lastCheckTime, setLastCheckTime] = useState<Date>(new Date());
+    const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const notificationsRef = useRef<HTMLDivElement>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -26,8 +31,20 @@ export default function Header() {
                 const res = await fetch('/api/notifications?limit=20&unread=false');
                 if (res.ok) {
                     const data = await res.json();
-                    setNotifications(data.data || []);
-                    setStats(data.stats);
+                    const newNotifications = data.data || [];
+                    const newStats = data.stats;
+                    
+                    // Check if there are new notifications since last check
+                    const previousUnreadCount = stats?.unread || 0;
+                    const newUnreadCount = newStats?.unread || 0;
+                    
+                    if (newUnreadCount > previousUnreadCount) {
+                        setHasNewNotifications(true);
+                    }
+                    
+                    setNotifications(newNotifications);
+                    setStats(newStats);
+                    setLastCheckTime(new Date());
                 }
             } catch (e) {
                 console.error("Failed to fetch notifications:", e);
@@ -75,13 +92,35 @@ export default function Header() {
                 if (stats) {
                     setStats(prev => prev ? { ...prev, unread: Math.max(0, prev.unread - 1) } : null);
                 }
+                // Clear new notification indicator when user interacts
+                setHasNewNotifications(false);
+                // Update selected notification if it's open
+                if (selectedNotification?.id === id) {
+                    setSelectedNotification(prev => prev ? { ...prev, isRead: true, readAt: new Date().toISOString() } : null);
+                }
             }
         } catch (e) {
             console.error("Failed to mark as read:", e);
         }
     };
 
-    // Mark all as read
+    // Open notification details modal
+    const openNotificationModal = (notification: Notification) => {
+        setSelectedNotification(notification);
+        setIsModalOpen(true);
+        // Mark as read when opening modal
+        if (!notification.isRead && notification.id) {
+            markAsRead(notification.id);
+        }
+    };
+
+    // Close modal
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setSelectedNotification(null);
+    };
+
+    // Close notifications dropdown and clear new indicator
     const markAllAsRead = async () => {
         try {
             const res = await fetch('/api/notifications', {
@@ -92,9 +131,20 @@ export default function Header() {
             if (res.ok) {
                 setNotifications(prev => prev.map(n => ({ ...n, isRead: true, readAt: new Date().toISOString() })));
                 setStats(prev => prev ? { ...prev, unread: 0 } : null);
+                setHasNewNotifications(false);
             }
         } catch (e) {
             console.error("Failed to mark all as read:", e);
+        }
+    };
+
+    // Close notifications dropdown and clear new indicator
+    const toggleNotifications = () => {
+        const newState = !isNotificationsOpen;
+        setIsNotificationsOpen(newState);
+        // Clear new indicator when opening dropdown
+        if (newState) {
+            setHasNewNotifications(false);
         }
     };
 
@@ -220,11 +270,14 @@ export default function Header() {
                             {/* Notifications */}
                             <div className={styles.notificationsWrapper} ref={notificationsRef}>
                                 <button
-                                    className={`${styles.iconButton} ${unreadCount > 0 ? styles.hasNotifications : ''}`}
+                                    className={`${styles.iconButton} ${unreadCount > 0 ? styles.hasNotifications : ''} ${hasNewNotifications ? styles.hasNewNotifications : ''}`}
                                     aria-label="Notifications"
-                                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                                    onClick={toggleNotifications}
                                 >
                                     <span className={styles.notificationIcon}>🔔</span>
+                                    {hasNewNotifications && (
+                                        <span className={styles.newNotificationDot} />
+                                    )}
                                     {unreadCount > 0 && (
                                         <span className={styles.notificationBadge}>
                                             {unreadCount > 99 ? '99+' : unreadCount}
@@ -259,7 +312,7 @@ export default function Header() {
                                                     <div
                                                         key={notification.id}
                                                         className={`${styles.notificationItem} ${!notification.isRead ? styles.unread : ''} ${getNotificationColor(notification.type)}`}
-                                                        onClick={() => notification.id && markAsRead(notification.id)}
+                                                        onClick={() => openNotificationModal(notification)}
                                                     >
                                                         <div className={styles.notificationIconWrapper}>
                                                             <span className={styles.notificationTypeIcon}>
@@ -318,6 +371,114 @@ export default function Header() {
                     )}
                 </div>
             </div>
+
+            {/* Notification Details Modal */}
+            {isModalOpen && selectedNotification && (
+                <div className={styles.modalOverlay} onClick={closeModal}>
+                    <div className={styles.modalContent} ref={modalRef} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.modalTitleRow}>
+                                <span className={styles.modalTypeIcon}>{getNotificationIcon(selectedNotification.type)}</span>
+                                <h3 className={styles.modalTitle}>{selectedNotification.title}</h3>
+                            </div>
+                            <button className={styles.modalCloseBtn} onClick={closeModal}>×</button>
+                        </div>
+
+                        <div className={styles.modalBody}>
+                            <div className={styles.modalMessage}>
+                                {selectedNotification.message}
+                            </div>
+
+                            {/* Metadata */}
+                            {selectedNotification.metadata && Object.keys(selectedNotification.metadata).length > 0 && (
+                                <div className={styles.modalMetadata}>
+                                    <h4 className={styles.metadataTitle}>Деталі</h4>
+                                    <div className={styles.metadataGrid}>
+                                        {selectedNotification.metadata.customerName && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Клієнт:</span>
+                                                <span className={styles.metadataValue}>{selectedNotification.metadata.customerName}</span>
+                                            </div>
+                                        )}
+                                        {selectedNotification.metadata.phone && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Телефон:</span>
+                                                <span className={styles.metadataValue}>
+                                                    <a href={`tel:${selectedNotification.metadata.phone}`}>
+                                                        {selectedNotification.metadata.phone}
+                                                    </a>
+                                                </span>
+                                            </div>
+                                        )}
+                                        {selectedNotification.metadata.date && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Дата:</span>
+                                                <span className={styles.metadataValue}>
+                                                    {new Date(selectedNotification.metadata.date).toLocaleDateString('uk-UA')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {selectedNotification.metadata.time && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Час:</span>
+                                                <span className={styles.metadataValue}>{selectedNotification.metadata.time}</span>
+                                            </div>
+                                        )}
+                                        {selectedNotification.metadata.status && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Статус:</span>
+                                                <span className={`${styles.metadataValue} ${styles[`status${selectedNotification.metadata.status}`]}`}>
+                                                    {selectedNotification.metadata.status}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {selectedNotification.metadata.notes && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Нотатки:</span>
+                                                <span className={styles.metadataValue}>{selectedNotification.metadata.notes}</span>
+                                            </div>
+                                        )}
+                                        {selectedNotification.metadata.createdAt && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>Створено:</span>
+                                                <span className={styles.metadataValue}>
+                                                    {new Date(selectedNotification.metadata.createdAt).toLocaleString('uk-UA')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {/* {selectedNotification.metadata._id && (
+                                            <div className={styles.metadataItem}>
+                                                <span className={styles.metadataLabel}>ID:</span>
+                                                <span className={styles.metadataValue}>{selectedNotification.metadata._id}</span>
+                                            </div>
+                                        )} */}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Additional info */}
+                            <div className={styles.modalFooter}>
+                                <div className={styles.modalInfo}>
+                                    <span>Джерело: <strong>{selectedNotification.source}</strong></span>
+                                    <span> • </span>
+                                    <span>Отримано: <strong>{timeAgo(selectedNotification.createdAt)}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.modalActions}>
+                            {!selectedNotification.isRead && (
+                                <button className={styles.markReadBtn} onClick={() => selectedNotification.id && markAsRead(selectedNotification.id)}>
+                                    ✅ Відмітити як прочитане
+                                </button>
+                            )}
+                            <button className={styles.closeModalBtn} onClick={closeModal}>
+                                Закрити
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
     );
 }

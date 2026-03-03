@@ -252,9 +252,42 @@
   animation: pulse 2s infinite;
 }
 
+.hasNewNotifications {
+  animation: pulse-fast 1s infinite;
+}
+
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+}
+
+@keyframes pulse-fast {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.newNotificationDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--error);
+  border: 2px solid white;
+  animation: bounce 1s infinite;
+  z-index: 10;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
 }
 
 .notificationsDropdown {
@@ -449,4 +482,273 @@
 .viewAllLink:hover {
   color: var(--primary-700);
   text-decoration: underline;
+}
+
+/* ============================================
+   Notification Details Modal
+   ============================================ */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modalContent {
+  background: white;
+  border-radius: var(--radius-xl);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--gray-50);
+}
+
+.modalTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modalTypeIcon {
+  font-size: 1.5rem;
+}
+
+.modalTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.modalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  transition: all 0.2s;
+}
+
+.modalCloseBtn:hover {
+  background: var(--gray-200);
+  color: var(--gray-600);
+}
+
+.modalBody {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modalMessage {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--gray-700);
+  margin-bottom: 24px;
+}
+
+.modalMetadata {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.metadataTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metadataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.metadataItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metadataLabel {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.metadataValue {
+  font-size: 0.95rem;
+  color: var(--gray-900);
+  font-weight: 500;
+}
+
+.metadataValue a {
+  color: var(--primary-600);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.metadataValue a:hover {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+.statusnew {
+  color: var(--primary-600);
+  background: var(--primary-100);
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.statusconfirmed {
+  color: var(--success);
+  background: var(--success-bg);
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.statuscancelled {
+  color: var(--error);
+  background: var(--error-bg);
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.modalFooter {
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.modalInfo {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+
+.modalInfo strong {
+  color: var(--gray-700);
+}
+
+.modalActions {
+  padding: 16px 24px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.markReadBtn {
+  padding: 10px 20px;
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.markReadBtn:hover {
+  background: var(--success);
+  color: white;
+}
+
+.closeModalBtn {
+  padding: 10px 20px;
+  background: white;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeModalBtn:hover {
+  background: var(--gray-100);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .modalContent {
+    max-height: 90vh;
+  }
+
+  .modalHeader {
+    padding: 16px 20px;
+  }
+
+  .modalBody {
+    padding: 20px;
+  }
+
+  .modalActions {
+    flex-direction: column;
+  }
+
+  .markReadBtn,
+  .closeModalBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .metadataGrid {
+    grid-template-columns: 1fr;
+  }
 }
