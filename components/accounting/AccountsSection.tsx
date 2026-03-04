@@ -430,18 +430,18 @@ export function AccountsSection({
                                             padding: '10px 8px',
                                             textAlign: 'right',
                                             fontWeight: 600,
-                                            color: (t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#059669' : '#dc2626'
+                                            color: (t.type === 'income' || (t.type === 'incasation' || t.category === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#059669' : '#dc2626'
                                         }}>
-                                            {(t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '+' : '-'} {Number(t.amount).toFixed(2)}
+                                            {(t.type === 'income' || (t.type === 'incasation' || t.category === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '+' : '-'} {Number(t.amount).toFixed(2)}
                                         </td>
                                         <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                             <span style={{
                                                 fontSize: '0.75em',
                                                 padding: '2px 8px',
                                                 borderRadius: '999px',
-                                                backgroundColor: (t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#ecfdf5' : '#fef2f2',
-                                                color: (t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#065f46' : '#991b1b',
-                                                border: `1px solid ${(t.type === 'income' || (t.type === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#a7f3d0' : '#fecaca'}`
+                                                backgroundColor: (t.type === 'income' || (t.type === 'incasation' || t.category === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#ecfdf5' : '#fef2f2',
+                                                color: (t.type === 'income' || (t.type === 'incasation' || t.category === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#065f46' : '#991b1b',
+                                                border: `1px solid ${(t.type === 'income' || (t.type === 'incasation' || t.category === 'incasation' && selectedAccountForHistory?.type === 'safe')) ? '#a7f3d0' : '#fecaca'}`
                                             }}>
                                                 {t.type === 'income' ? 'Надходження' : t.type === 'incasation' ? 'Інкасація' : 'Витрата'}
                                             </span>
@@ -464,7 +464,7 @@ export function AccountsSection({
                             </div>
                             <div style={{ fontSize: '0.9em' }}>
                                 <div style={{ color: '#6b7280', fontSize: '0.8em', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Витрати</div>
-                                <strong style={{ color: '#dc2626', fontSize: '1.1em' }}>-{selectedAccountForHistory?.type === 'cash' ? (periodTotals.expense+periodTotals.incasation).toFixed(2) : periodTotals.expense.toFixed(2)}</strong>
+                                <strong style={{ color: '#dc2626', fontSize: '1.1em' }}>-{selectedAccountForHistory?.type === 'cash' ? (periodTotals.expense + periodTotals.incasation).toFixed(2) : periodTotals.expense.toFixed(2)}</strong>
                             </div>
                             {/* Added Incasation summary */}
                             {/* {periodTotals.incasation > 0 && (
