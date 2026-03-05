@@ -358,7 +358,7 @@ export default function Header() {
                                     aria-label="Notifications"
                                     onClick={toggleNotifications}
                                 >
-                                    <span className={styles.notificationIcon}>�</span>
+                                    <span className={styles.notificationIcon}>🔔</span>
                                     {hasNewNotifications && (
                                         <span className={styles.newNotificationDot} />
                                     )}
