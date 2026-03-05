@@ -31,6 +31,7 @@ export default function RootLayout({
         <ToastProvider>
           <Header />
           <main className={styles.siteContainer}>{children}</main>
+
         </ToastProvider>
       </body>
     </html>

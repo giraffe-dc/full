@@ -5,6 +5,8 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Header.module.css";
 import type { Notification, NotificationStats } from "@/types/accounting";
+import { AdminChatOverlay } from "./admin/AdminChatOverlay";
+import { useChatAdmin } from "@/lib/use-chat-admin";
 
 export default function Header() {
     const [user, setUser] = useState<{ email: string; role: string } | null>(null);
@@ -22,6 +24,28 @@ export default function Header() {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const router = useRouter();
     const pathname = usePathname();
+    const [isAdminChatOpen, setIsAdminChatOpen] = useState(false);
+    const prevUnreadChatsCount = useRef(0);
+
+    // Background chat polling
+    const { chats: adminChats } = useChatAdmin({
+        pollingInterval: 60000,
+        autoStart: !!user,
+        adminModeOnly: true,
+    });
+
+    const unreadChatsCount = adminChats.filter(chat => {
+        const lastMsg = chat.messages[chat.messages.length - 1];
+        return lastMsg?.role === "user";
+    }).length;
+
+    // Chat sound notification
+    useEffect(() => {
+        if (unreadChatsCount > prevUnreadChatsCount.current) {
+            playNotificationSound(true);
+        }
+        prevUnreadChatsCount.current = unreadChatsCount;
+    }, [unreadChatsCount]);
 
     // Initialize audio
     useEffect(() => {
@@ -38,8 +62,9 @@ export default function Header() {
     }, []);
 
     // Play notification sound from MP3 file
-    const playNotificationSound = () => {
-        if (hasPlayedSound || !audioRef.current) return;
+    const playNotificationSound = (force = false) => {
+        if (!force && (hasPlayedSound || !audioRef.current)) return;
+        if (!audioRef.current) return;
 
         // Reset audio to start
         audioRef.current.currentTime = 0;
@@ -48,7 +73,9 @@ export default function Header() {
             console.log('Sound play blocked by browser:', e);
         });
 
-        setHasPlayedSound(true);
+        if (!force) {
+            setHasPlayedSound(true);
+        }
     };
 
     // Reset sound flag when dropdown is opened
@@ -308,6 +335,22 @@ export default function Header() {
                 <div className={styles.rightSection}>
                     {user ? (
                         <>
+                            {/* Admin Chat Toggle */}
+                            <div className={styles.notificationsWrapper}>
+                                <button
+                                    className={`${styles.iconButton} ${isAdminChatOpen ? styles.navItemActive : ''}`}
+                                    aria-label="Chat Support"
+                                    onClick={() => setIsAdminChatOpen(!isAdminChatOpen)}
+                                >
+                                    <span className={styles.notificationIcon}>💬</span>
+                                    {unreadChatsCount > 0 && (
+                                        <span className={styles.notificationBadge}>
+                                            {unreadChatsCount > 99 ? '99+' : unreadChatsCount}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+
                             {/* Notifications */}
                             <div className={styles.notificationsWrapper} ref={notificationsRef}>
                                 <button
@@ -315,7 +358,7 @@ export default function Header() {
                                     aria-label="Notifications"
                                     onClick={toggleNotifications}
                                 >
-                                    <span className={styles.notificationIcon}>🔔</span>
+                                    <span className={styles.notificationIcon}>�</span>
                                     {hasNewNotifications && (
                                         <span className={styles.newNotificationDot} />
                                     )}
@@ -487,12 +530,6 @@ export default function Header() {
                                                 </span>
                                             </div>
                                         )}
-                                        {/* {selectedNotification.metadata._id && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>ID:</span>
-                                                <span className={styles.metadataValue}>{selectedNotification.metadata._id}</span>
-                                            </div>
-                                        )} */}
                                     </div>
                                 </div>
                             )}
@@ -519,6 +556,11 @@ export default function Header() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Admin Chat Overlay */}
+            {isAdminChatOpen && (
+                <AdminChatOverlay onClose={() => setIsAdminChatOpen(false)} />
             )}
         </header>
     );

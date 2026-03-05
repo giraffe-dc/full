@@ -410,3 +410,54 @@ export type NotificationStats = {
   unread: number;
   byType: Record<NotificationType, number>;
 };
+
+// ============================================
+// Chat Types (for customer support chat)
+// ============================================
+
+export type ChatRole = 'user' | 'operator' | 'system';
+
+export type ChatMode = 'admin' | 'bot' | 'mixed';
+
+export type ChatMessage = {
+  role: ChatRole;
+  content: string;
+  timestamp: string;
+  adminName?: string; // For operator messages
+};
+
+export type ChatSession = {
+  sessionId: string;
+  deviceId: string;
+  mode: ChatMode;
+  createdAt: string;
+  updatedAt: string;
+  lastPingAt?: string;
+  status: 'active' | 'closed' | 'archived';
+};
+
+export type ChatLog = {
+  _id?: string;
+  id?: string;
+  sessionId: string;
+  deviceId: string;
+  mode: ChatMode;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+  lastPingAt?: string;
+  status: 'active' | 'closed' | 'archived';
+};
+
+export type ChatLogResponse = {
+  sessionId: string;
+  deviceId: string;
+  mode: ChatMode;
+  updatedAt: string;
+  messages: ChatMessage[];
+};
+
+export type ChatLogsResponse = {
+  total: number;
+  logs: ChatLogResponse[];
+};
