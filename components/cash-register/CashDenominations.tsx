@@ -8,11 +8,19 @@ import styles from './CashDenominations.module.css';
 const BANKNOTES = [1000, 500, 200, 100, 50, 20, 10];
 const COINS = [10, 5, 2, 1, 0.5];
 
+function getKey(type: 'banknote' | 'coin', denom: number): string {
+    return `${type}_${denom}`;
+}
+
 function calcTotal(counts: DenominationCounts): number {
-    return [...BANKNOTES, ...COINS].reduce(
-        (sum, d) => sum + (counts[String(d)] || 0) * d,
-        0
-    );
+    let sum = 0;
+    for (const d of BANKNOTES) {
+        sum += (counts[getKey('banknote', d)] || 0) * d;
+    }
+    for (const d of COINS) {
+        sum += (counts[getKey('coin', d)] || 0) * d;
+    }
+    return sum;
 }
 
 interface CashDenominationsProps {
@@ -24,15 +32,41 @@ interface CashDenominationsProps {
 
 export function CashDenominations({ shiftId, expectedBalance, initialCounts, readOnly = false }: CashDenominationsProps) {
     const [open, setOpen] = useState(false);
-    const [counts, setCounts] = useState<DenominationCounts>(initialCounts || {});
+    const [counts, setCounts] = useState<DenominationCounts>({});
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Sync when initialCounts loaded from API
+    // Migrate old keys (e.g., "10") to new format ("banknote_10" or "coin_10")
+    // and sync when initialCounts loaded from API
     useEffect(() => {
-        if (initialCounts && Object.keys(initialCounts).length > 0) {
-            setCounts(initialCounts);
+        if (!initialCounts || Object.keys(initialCounts).length === 0) {
+            setCounts({});
+            return;
         }
+
+        const migrated: DenominationCounts = {};
+        for (const [key, value] of Object.entries(initialCounts)) {
+            // Check if it's an old-style numeric key
+            if (!isNaN(Number(key))) {
+                const denom = Number(key);
+                // Determine if it's a banknote or coin based on denomination value
+                const isBanknote = BANKNOTES.includes(denom);
+                const isCoin = COINS.includes(denom);
+                
+                if (isBanknote && !isCoin) {
+                    migrated[getKey('banknote', denom)] = value;
+                } else if (isCoin && !isBanknote) {
+                    migrated[getKey('coin', denom)] = value;
+                } else if (isBanknote && isCoin) {
+                    // Both exist (e.g., 10) - prefer banknote for backward compatibility
+                    migrated[getKey('banknote', denom)] = value;
+                }
+            } else {
+                // Already in new format or unknown - keep as is
+                migrated[key] = value;
+            }
+        }
+        setCounts(migrated);
     }, [initialCounts]);
 
     const saveToDB = useCallback(async (newCounts: DenominationCounts) => {
@@ -51,10 +85,11 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
         }
     }, [shiftId, readOnly]);
 
-    const setCount = (denom: number, val: string) => {
+    const setCount = (type: 'banknote' | 'coin', denom: number, val: string) => {
         if (readOnly) return;
         const n = Math.max(0, parseInt(val, 10) || 0);
-        const newCounts = { ...counts, [String(denom)]: n };
+        const key = getKey(type, denom);
+        const newCounts = { ...counts, [key]: n };
         setCounts(newCounts);
 
         // Debounce autosave — 800ms
@@ -119,10 +154,10 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                                     <td colSpan={3}>Банкноти</td>
                                 </tr>
                                 {BANKNOTES.map(d => {
-                                    const qty = counts[String(d)] || 0;
+                                    const qty = counts[getKey('banknote', d)] || 0;
                                     const rowTotal = qty * d;
                                     return (
-                                        <tr key={d}>
+                                        <tr key={`banknote_${d}`}>
                                             <td>
                                                 <span className={styles.denomBadge}>{d} ₴</span>
                                             </td>
@@ -134,7 +169,7 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                                                     placeholder="0"
                                                     disabled={readOnly}
                                                     className={styles.denomQtyInput}
-                                                    onChange={e => setCount(d, e.target.value)}
+                                                    onChange={e => setCount('banknote', d, e.target.value)}
                                                 />
                                             </td>
                                             <td className={`${styles.denomRowTotal} ${rowTotal > 0 ? styles.denomRowTotalActive : ''}`}>
@@ -149,11 +184,11 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                                     <td colSpan={3}>Монети</td>
                                 </tr>
                                 {COINS.map(d => {
-                                    const qty = counts[String(d)] || 0;
+                                    const qty = counts[getKey('coin', d)] || 0;
                                     const rowTotal = qty * d;
                                     const label = d >= 1 ? `${d} ₴` : `${Math.round(d * 100)} коп.`;
                                     return (
-                                        <tr key={d}>
+                                        <tr key={`coin_${d}`}>
                                             <td>
                                                 <span className={`${styles.denomBadge} ${styles.denomBadgeCoin}`}>{label}</span>
                                             </td>
@@ -165,7 +200,7 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                                                     placeholder="0"
                                                     disabled={readOnly}
                                                     className={styles.denomQtyInput}
-                                                    onChange={e => setCount(d, e.target.value)}
+                                                    onChange={e => setCount('coin', d, e.target.value)}
                                                 />
                                             </td>
                                             <td className={`${styles.denomRowTotal} ${rowTotal > 0 ? styles.denomRowTotalActive : ''}`}>
