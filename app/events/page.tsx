@@ -25,8 +25,8 @@ const getEventColors = (event: Event) => {
 
   // Default colors by event type
   const EVENT_TYPE_COLORS: Record<EventType, { bg: string; border: string; text: string }> = {
-    birthday: { bg: 'rgba(236, 72, 153, 0.2)', border: '#ec4899', text: '#ec4899' },
-    corporate: { bg: 'rgba(59, 130, 246, 0.2)', border: '#3b82f6', text: '#3b82f6' },
+    birthday: { bg: 'rgba(41, 25, 192, 0.2)', border: '#2f45c0ff', text: '#05035eff' },
+    corporate: { bg: 'rgba(139, 11, 224, 0.2)', border: '#a00da5ff', text: '#3b82f6' },
     graduation: { bg: 'rgba(16, 185, 129, 0.2)', border: '#10b981', text: '#10b981' },
     holiday: { bg: 'rgba(241, 220, 24, 0.8)', border: '#e9853eff', text: '#f97316' },
     other: { bg: 'rgba(139, 92, 246, 0.2)', border: '#8b5cf6', text: '#8b5cf6' },

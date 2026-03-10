@@ -19,6 +19,8 @@ interface EventBasicInfoProps {
   onDepartmentChange: (deptId: string) => void;
   onTableChange: (tableId: string) => void;
   onTableCreate: (tableName: string) => Promise<void>;
+  packages?: any[];
+  loadingPackages?: boolean;
 }
 
 export function EventBasicInfo({
@@ -31,6 +33,8 @@ export function EventBasicInfo({
   onDepartmentChange,
   onTableChange,
   onTableCreate,
+  packages = [],
+  loadingPackages = false,
 }: EventBasicInfoProps) {
   const { departments, tables, loadingDepartments, loadingTables, fetchTables, createTable } = useDepartmentsAndTables();
 
@@ -86,6 +90,30 @@ export function EventBasicInfo({
           <option value="cancelled">Скасовано</option>
         </select>
         {errors.status && <span className={styles.error}>{errors.status}</span>}
+      </div>
+
+      {/* Пакет */}
+      <div className={styles.formGroupFull}>
+        <label>Пакет святкування</label>
+        <select
+          value={formData.packageId || ''}
+          onChange={(e) => {
+            const pkgId = e.target.value;
+            const pkg = packages.find(p => p.id === pkgId);
+            onUpdateField('packageId', pkgId);
+            onUpdateField('packageName', pkg?.name || '');
+            onUpdateField('basePrice', pkg?.basePrice || 0);
+          }}
+          className={styles.select}
+          disabled={loadingPackages}
+        >
+          <option value="">Без пакету (індивідуально)</option>
+          {packages.map(pkg => (
+            <option key={pkg.id} value={pkg.id}>
+              {pkg.name} ({pkg.basePrice} ₴)
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Назва */}

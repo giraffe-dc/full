@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ChatMessage } from "@/types/accounting";
+import styles from "./ChatWidget.module.css";
 
 export interface ChatWidgetProps {
   /** API endpoint for sending messages */
@@ -34,7 +35,7 @@ function generateSessionId(): string {
  */
 function getOrCreateDeviceId(): string {
   if (typeof window === "undefined") return "dev_unknown";
-  
+
   let deviceId = localStorage.getItem("chat_device_id");
   if (!deviceId) {
     deviceId = `dev_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
@@ -43,10 +44,6 @@ function getOrCreateDeviceId(): string {
   return deviceId;
 }
 
-/**
- * Chat Widget component for website visitors
- * Allows users to send messages and receive replies from admin
- */
 export function ChatWidget({
   apiUrl,
   sessionId: propSessionId,
@@ -64,7 +61,7 @@ export function ChatWidget({
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastTimestampRef = useRef<string | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,8 +88,7 @@ export function ChatWidget({
       }
 
       const result = await response.json();
-      
-      // Add message to local state optimistically
+
       setMessages(prev => [
         ...prev,
         {
@@ -101,7 +97,7 @@ export function ChatWidget({
           timestamp: result.timestamp || new Date().toISOString(),
         },
       ]);
-      
+
       setInputMessage("");
     } catch (err) {
       console.error("Error sending message:", err);
@@ -111,7 +107,7 @@ export function ChatWidget({
     }
   }, [baseUrl, sessionId, deviceId, mode]);
 
-  // Poll for new messages
+  // Poll messages
   const pollMessages = useCallback(async () => {
     try {
       const url = new URL(`${baseUrl}/api/chat/poll`);
@@ -121,28 +117,23 @@ export function ChatWidget({
       }
 
       const response = await fetch(url.toString());
-      
-      if (!response.ok) {
-        throw new Error("Failed to poll messages");
-      }
-
+      if (!response.ok) throw new Error("Failed to poll messages");
       const data = await response.json();
-      
+
       if (data.messages && data.messages.length > 0) {
         setMessages(prev => {
-          // Filter out duplicate messages
           const existingTimestamps = new Set(prev.map(m => m.timestamp));
           const newMessages = data.messages.filter(
             (m: ChatMessage) => !existingTimestamps.has(m.timestamp)
           );
-          
+
           if (newMessages.length > 0 && !isOpen) {
             setUnreadCount(prev => prev + newMessages.length);
           }
-          
+
           return [...prev, ...newMessages];
         });
-        
+
         if (data.lastTimestamp) {
           lastTimestampRef.current = data.lastTimestamp;
         }
@@ -152,22 +143,12 @@ export function ChatWidget({
     }
   }, [baseUrl, sessionId, isOpen]);
 
-  // Start polling on mount
   useEffect(() => {
-    // Initial poll
     pollMessages();
-    
-    // Set up polling interval
     pollingRef.current = setInterval(pollMessages, pollingInterval);
-    
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, [pollMessages, pollingInterval]);
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -175,7 +156,6 @@ export function ChatWidget({
     }
   }, [messages, isOpen]);
 
-  // Handle form submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMessage.trim() && !loading) {
@@ -183,81 +163,77 @@ export function ChatWidget({
     }
   };
 
-  // Toggle chat window
   const toggleOpen = () => {
     setIsOpen(!isOpen);
-    if (!isOpen) {
-      setUnreadCount(0);
-    }
+    if (!isOpen) setUnreadCount(0);
   };
 
   return (
-    <div className={`fixed bottom-4 right-4 z-50 ${className}`}>
-      {/* Chat toggle button */}
+    <div className={`${styles.chatWrapper} ${className}`}>
+      {/* Toggle button */}
       <button
         onClick={toggleOpen}
-        className="flex items-center justify-center w-14 h-14 rounded-full bg-green-600 text-white shadow-lg hover:bg-green-700 transition-colors relative"
+        className={styles.toggleBtn}
         aria-label="Toggle chat"
       >
         {isOpen ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         ) : (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
         )}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-            {unreadCount}
-          </span>
+          <span className={styles.unreadBadge}>{unreadCount}</span>
         )}
       </button>
 
       {/* Chat window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200">
+        <div className={styles.window}>
           {/* Header */}
-          <div className="bg-green-600 text-white px-4 py-3">
-            <h3 className="font-semibold">Чат з адміністратором</h3>
-            <p className="text-sm text-green-100">Онлайн</p>
+          <div className={styles.header}>
+            <div className={styles.headerIcon}>💬</div>
+            <div className={styles.headerInfo}>
+              <h3>Підтримка Giraffe</h3>
+              <div className={styles.statusText}>
+                <span className={styles.statusDot} /> Онлайн
+              </div>
+            </div>
           </div>
 
           {/* Messages */}
-          <div className="h-80 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          <div className={styles.messagesArea}>
             {messages.length === 0 ? (
-              <div className="text-center text-gray-500 text-sm py-8">
-                <p>Ласкаво просимо!</p>
-                <p>Напишіть ваше повідомлення, і ми відповімо найближчим часом.</p>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>✨</div>
+                <p><b>Привіт! 👋</b><br />Напишіть ваше питання, і наш адміністратор відповість вам найближчим часом.</p>
               </div>
             ) : (
               messages.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`${styles.messageRow} ${msg.role === "user" ? styles.userRow : styles.operatorRow}`}
                 >
                   <div
-                    className={`max-w-[80%] px-3 py-2 rounded-lg ${
-                      msg.role === "user"
-                        ? "bg-green-600 text-white"
-                        : "bg-white border border-gray-200"
-                    }`}
+                    className={`${styles.bubble} ${msg.role === "user" ? styles.userBubble : styles.operatorBubble
+                      }`}
                   >
                     {msg.role === "operator" && (
-                      <div className="text-xs text-green-600 font-medium mb-1">
+                      <div className={styles.operatorName}>
                         {adminLabel}
                       </div>
                     )}
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <div className={`text-xs mt-1 ${
-                      msg.role === "user" ? "text-green-100" : "text-gray-400"
-                    }`}>
+                    <div className={styles.content}>{msg.content}</div>
+                    <span className={styles.msgTime}>
                       {new Date(msg.timestamp).toLocaleTimeString("uk-UA", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                    </div>
+                    </span>
                   </div>
                 </div>
               ))
@@ -266,23 +242,24 @@ export function ChatWidget({
           </div>
 
           {/* Input form */}
-          <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-gray-200">
-            <div className="flex gap-2">
+          <form onSubmit={handleSubmit} className={styles.inputArea}>
+            <div className={styles.inputWrapper}>
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Введіть повідомлення..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                className={styles.inputField}
                 disabled={loading}
               />
               <button
                 type="submit"
                 disabled={loading || !inputMessage.trim()}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className={styles.sendBtn}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
               </button>
             </div>

@@ -34,6 +34,7 @@ export type AccountingSection =
   | "stockSuppliers"
   | "stockWarehouses"
   | "stockPacking"
+  | "stockForecast"
   | "menuProducts"
   | "menuRecipes"
   | "menuIngredients"
@@ -127,6 +128,7 @@ export function AccountingSidebar() {
         { id: 'stockMovement', label: 'Переміщення', hint: 'Рух' },
         { id: 'stockWriteOff', label: 'Списання', hint: 'Акти' },
         { id: 'stockInventory', label: 'Інвентаризація' },
+        { id: 'stockForecast', label: 'Прогноз залишків', hint: 'AI Аналітика' },
         { id: 'stockSuppliers', label: 'Постачальники' },
         { id: 'stockWarehouses', label: 'Склади' },
       ],

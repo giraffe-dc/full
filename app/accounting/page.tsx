@@ -26,6 +26,7 @@ import { StockSupply } from '../../components/accounting/stock/StockSupply';
 import { StockMovements } from '../../components/accounting/stock/StockMovements';
 import { StockWriteOff } from '../../components/accounting/stock/StockWriteOff';
 import { StockInventory } from '../../components/accounting/stock/StockInventory';
+import { StockForecastSection } from '../../components/accounting/StockForecastSection';
 
 import { ExpenseCategoriesSection } from '../../components/accounting/ExpenseCategoriesSection';
 import type { Transaction, Totals, CashShift, SalaryRow, MoneyAccount, ExpenseCategory } from "../../types/accounting";
@@ -756,6 +757,10 @@ function AccountingContent() {
 
         {activeSection === "stockInventory" && (
           <StockInventory />
+        )}
+
+        {activeSection === "stockForecast" && (
+          <StockForecastSection />
         )}
 
         {activeSection === "stockSuppliers" && (

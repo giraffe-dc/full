@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useChatAdmin } from "@/lib/use-chat-admin";
 import type { ChatLogResponse, ChatMessage } from "@/types/accounting";
+import styles from "./ChatAdminPanel.module.css";
 
 export interface ChatAdminPanelProps {
   /** Base URL for API (defaults to window.location.origin) */
@@ -63,146 +64,126 @@ export function ChatAdminPanel({
   };
 
   return (
-    <div className={`flex h-[600px] bg-white border border-gray-200 rounded-lg overflow-hidden ${className}`}>
-      {/* Chat list */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800">Чати</h2>
-            <span className="text-sm text-gray-500">{total} всього</span>
+    <div className={`${styles.adminPanel} ${className}`}>
+      {/* Sidebar */}
+      <div className={styles.sidebar}>
+        <div className={styles.sidebarHeader}>
+          <div className={styles.sidebarTitleRow}>
+            <h2>Active Chats</h2>
+            <span className={styles.totalBadge}>{total}</span>
           </div>
           <button
             onClick={refresh}
             disabled={loading}
-            className="mt-2 text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
+            className={styles.refreshBtn}
           >
-            {loading ? "Оновлення..." : "↻ Оновити"}
+            {loading ? "Refreshing..." : "↻ Refresh"}
           </button>
         </div>
 
-        {/* Error state */}
         {error && (
           <div className="p-4 bg-red-50 text-red-600 text-sm">
-            <p className="font-medium">Помилка</p>
-            <p>{error}</p>
+            <p className="font-semibold">Error</p>
+            <p className="text-xs opacity-80">{error}</p>
           </div>
         )}
 
-        {/* Chat list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className={styles.chatList}>
           {loading && chats.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">
-              Завантаження...
-            </div>
+            <div className="p-8 text-center text-gray-400 text-sm">Loading sessions...</div>
           ) : chats.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">
-              Немає активних чатів
-            </div>
+            <div className="p-8 text-center text-gray-400 text-sm">No active chats</div>
           ) : (
-            <ul>
-              {chats.map((chat) => {
-                const lastMessage = chat.messages[chat.messages.length - 1];
-                const isSelected = chat.sessionId === selectedSessionId;
-                const hasUnread = lastMessage?.role === "user";
+            chats.map((chat) => {
+              const lastMessage = chat.messages[chat.messages.length - 1];
+              const isSelected = chat.sessionId === selectedSessionId;
+              const hasUnread = lastMessage?.role === "user";
 
-                return (
-                  <li key={chat.sessionId}>
-                    <button
-                      onClick={() => setSelectedSessionId(chat.sessionId)}
-                      className={`w-full p-4 text-left border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        isSelected ? "bg-green-50" : ""
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm text-gray-800 truncate">
-                          {chat.deviceId.substring(0, 12)}...
-                        </span>
-                        {hasUnread && (
-                          <span className="w-2 h-2 bg-green-500 rounded-full" />
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 truncate">
-                        {lastMessage?.content || "Немає повідомлень"}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {lastMessage?.timestamp
-                          ? new Date(lastMessage.timestamp).toLocaleString("uk-UA")
-                          : ""}
-                      </p>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+              return (
+                <button
+                  key={chat.sessionId}
+                  onClick={() => setSelectedSessionId(chat.sessionId)}
+                  className={`${styles.chatItem} ${isSelected ? styles.activeItem : ""}`}
+                >
+                  <div className={styles.itemTop}>
+                    <span className={styles.deviceId}>
+                      {chat.deviceId.substring(0, 12)}...
+                    </span>
+                    {hasUnread && <span className={styles.unreadDot} />}
+                  </div>
+                  <p className={styles.lastMsgPreview}>
+                    {lastMessage?.content || "No messages"}
+                  </p>
+                  <span className={styles.itemTime}>
+                    {lastMessage?.timestamp
+                      ? new Date(lastMessage.timestamp).toLocaleTimeString("uk-UA", {
+                        hour: '2-digit', minute: '2-digit'
+                      })
+                      : ""}
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
       </div>
 
-      {/* Chat messages and reply */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Chat Area */}
+      <div className={styles.mainContent}>
         {selectedSessionId && selectedChat ? (
           <>
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+            <div className={styles.chatHeader}>
+              <div className={styles.sessionIdInfo}>Session ID: {selectedSessionId}</div>
+            </div>
+
+            <div className={styles.messagesContainer}>
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`${styles.messageRow} ${msg.role === "user" ? styles.userRow : styles.operatorRow}`}
                 >
                   <div
-                    className={`max-w-[70%] px-4 py-2 rounded-lg ${
-                      msg.role === "user"
-                        ? "bg-green-600 text-white"
-                        : "bg-white border border-gray-200"
-                    }`}
+                    className={`${styles.bubble} ${msg.role === "user" ? styles.userBubble : styles.operatorBubble
+                      }`}
                   >
-                    {msg.role === "operator" && msg.adminName && (
-                      <div className="text-xs text-green-600 font-medium mb-1">
-                        🎧 {msg.adminName}
+                    {msg.role === "operator" && (
+                      <div className={styles.operatorLabel}>
+                        🎧 {msg.adminName || "Administrator"}
                       </div>
                     )}
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <div className={`text-xs mt-1 ${
-                      msg.role === "user" ? "text-green-100" : "text-gray-400"
-                    }`}>
+                    <div className={styles.msgContent}>{msg.content}</div>
+                    <span className={styles.msgTime}>
                       {new Date(msg.timestamp).toLocaleString("uk-UA")}
-                    </div>
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Reply input */}
-            <div className="p-4 bg-white border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm text-gray-500">
-                  Сесія: {selectedSessionId}
-                </span>
-              </div>
-              <div className="flex gap-2">
+            <div className={styles.replyArea}>
+              <div className={styles.replyInputWrapper}>
                 <textarea
                   value={replyMessage}
                   onChange={(e) => setReplyMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Введіть відповідь..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm resize-none"
-                  rows={3}
+                  placeholder="Type your response..."
+                  className={styles.textarea}
                   disabled={sending}
                 />
                 <button
                   onClick={handleSendReply}
                   disabled={sending || !replyMessage.trim()}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end"
+                  className={styles.sendBtn}
                 >
-                  {sending ? "Відправка..." : "Відправити"}
+                  {sending ? "Sending..." : "Send Reply"}
                 </button>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
-            Оберіть чат зі списку
+          <div className={styles.nothingSelected}>
+            <div className={styles.emptyIcon}>💬</div>
+            <p>Select a conversation to start chatting</p>
           </div>
         )}
       </div>

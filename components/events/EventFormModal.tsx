@@ -6,6 +6,7 @@ import { useEventForm } from './useEventForm';
 import { useEventProducts } from './useEventProducts';
 import { useDepartmentsAndTables } from './useDepartmentsAndTables';
 import { useCheckSync } from './useCheckSync';
+import { useEventShortage } from './useEventShortage';
 import { Modal } from '../ui/Modal';
 import { useToast } from '@/components/ui/ToastContext';
 import { EventBasicInfo } from './sections/EventBasicInfo';
@@ -19,7 +20,9 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
   const [activeStaff, setActiveStaff] = useState<any[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const [showStaffModal, setShowStaffModal] = useState(false);
-  
+  const [packages, setPackages] = useState<any[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(false);
+
   // Initialize department and table from event when editing
   const [selectedDepartment, setSelectedDepartment] = useState(() => {
     if (event?.assignedRooms && event.assignedRooms.length > 0) {
@@ -73,10 +76,10 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
       try {
         const res = await fetch('/api/cash-register/shifts?activeStaff=true');
         const data = await res.json();
-        
+
         if (data.success && data.data && data.data.length > 0) {
           setActiveStaff(data.data);
-          
+
           // If only one staff member, auto-select
           if (data.data.length === 1) {
             setSelectedStaffId(data.data[0].id);
@@ -92,8 +95,27 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
         console.error('Error fetching active staff:', error);
       }
     };
-    
+
     fetchActiveStaff();
+  }, []);
+
+  // Fetch packages
+  useEffect(() => {
+    const fetchPackages = async () => {
+      setLoadingPackages(true);
+      try {
+        const res = await fetch('/api/events/packages?status=active');
+        const data = await res.json();
+        if (data.success) {
+          setPackages(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+      } finally {
+        setLoadingPackages(false);
+      }
+    };
+    fetchPackages();
   }, []);
 
   // Force sync when switching to products tab
@@ -143,6 +165,15 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
       }
     }
   };
+
+  // Shortage check integration
+  const { shortages, loading: shortageLoading } = useEventShortage(selectedProducts, formData.packageId || null);
+
+  useEffect(() => {
+    if (shortages.length > 0) {
+      console.log('🚩 [EventFormModal] SHORTAGES DETECTED:', shortages);
+    }
+  }, [shortages]);
 
   // Manual sync button handler
   const handleSyncFromCheck = async () => {
@@ -200,6 +231,23 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
       </div>
 
       <form onSubmit={handleSubmit}>
+        {shortages.length > 0 && (
+          <div className={styles.shortageWarning}>
+            <div className={styles.shortageHeader}>
+              <span>⚠️ Увага: Дефіцит інгредієнтів!</span>
+              {shortageLoading && <span style={{ fontSize: '10px', fontWeight: 500, opacity: 0.6 }}>(оновлення...)</span>}
+            </div>
+            <div className={styles.shortageList}>
+              {shortages.map((s, i) => (
+                <div key={i} className={styles.shortageItem}>
+                  {s.name || 'Невідомий інгредієнт'}
+                  <span className={styles.shortageDeficit}>-{s.deficit.toFixed(1)} {s.unit}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className={styles.tabs}>
           <button
@@ -239,13 +287,15 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
               selectedDepartment={selectedDepartment}
               selectedTable={selectedTable}
               onUpdateField={updateField}
-              onDepartmentChange={(deptId) => {
+              onDepartmentChange={(deptId: string) => {
                 setSelectedDepartment(deptId);
                 setSelectedTable('');
                 fetchTables(deptId);
               }}
               onTableChange={setSelectedTable}
               onTableCreate={handleCreateTable}
+              packages={packages}
+              loadingPackages={loadingPackages}
             />
           )}
 
