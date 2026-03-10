@@ -16,7 +16,7 @@ import styles from './EventFormModal.module.css';
 export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps) {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'main' | 'products' | 'payment'>('main');
-  
+
   // Initialize department and table from event when editing
   const [selectedDepartment, setSelectedDepartment] = useState(() => {
     if (event?.assignedRooms && event.assignedRooms.length > 0) {
@@ -24,7 +24,7 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
     }
     return '';
   });
-  
+
   const [selectedTable, setSelectedTable] = useState(() => {
     if (event?.assignedRooms && event.assignedRooms.length > 0) {
       return event.assignedRooms[0].resourceName || '';
@@ -126,16 +126,16 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
       size="xl"
     >
       {/* Header with sync button */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '16px 24px',
+        padding: '6px 14px',
         borderBottom: '1px solid #e2e8f0',
         background: '#f8fafc'
       }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>
+          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
             {event ? 'Редагувати подію' : 'Нова подія'}
           </h2>
           {checkSync.existingCheck && (
