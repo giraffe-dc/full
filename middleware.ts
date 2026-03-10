@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
       // Access Control Logic
       if (role === 'user') {
         // Allowed paths for 'user' role
-        const allowedPaths = ['/', '/cash-register', '/projects', '/docs', '/supply', '/staff', '/visits'];
+        const allowedPaths = ['/', '/cash-register', '/projects', '/docs', '/supply', '/staff', '/visits', '/events'];
 
         const isAllowed = allowedPaths.some(p =>
           pathname === p || pathname.startsWith(`${p}/`)
