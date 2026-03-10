@@ -2,6 +2,31 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
+// GET: Get single check by ID
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params;
+
+        const client = await clientPromise;
+        const db = client.db("giraffe");
+
+        const check = await db.collection("checks").findOne({ _id: new ObjectId(id) });
+
+        if (!check) {
+            return NextResponse.json({ error: "Check not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ 
+            success: true, 
+            data: { ...check, id: check._id.toString() } 
+        });
+
+    } catch (error) {
+        console.error("Error fetching check:", error);
+        return NextResponse.json({ error: "Failed to fetch check" }, { status: 500 });
+    }
+}
+
 // PUT: Update check items
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {

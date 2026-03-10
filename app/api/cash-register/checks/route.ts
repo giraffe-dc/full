@@ -2,19 +2,23 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// GET: Get checks by tableId or all open checks
+// GET: Get checks by tableId or all checks
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const tableId = searchParams.get('tableId');
-        const status = searchParams.get('status') || 'open';
+        const status = searchParams.get('status'); // Optional - if not provided, return all statuses
 
         const client = await clientPromise;
         const db = client.db("giraffe");
 
-        const filter: any = { status };
+        const filter: any = {};
         if (tableId) {
             filter.tableId = tableId;
+        }
+        // Only filter by status if explicitly provided
+        if (status) {
+            filter.status = status;
         }
 
         const checks = await db.collection("checks").find(filter).toArray();
@@ -32,7 +36,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { tableId, tableName, departmentId, shiftId, guestsCount, waiterId, waiterName } = body;
+        const { tableId, tableName, departmentId, shiftId, guestsCount, waiterId, waiterName, items, subtotal, tax, total, comment } = body;
 
         if (!tableId || !shiftId) {
             return NextResponse.json({ error: "Table ID and Shift ID are required" }, { status: 400 });
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
             });
         }
 
-        // 2. Create new check
+        // 2. Create new check with items if provided
         const newCheck = {
             tableId,
             tableName,
@@ -63,19 +67,20 @@ export async function POST(request: Request) {
             shiftId,
             waiterId,
             waiterName,
-            items: [],
+            items: items || [],
             guestsCount: guestsCount || 1,
             status: 'open',
-            subtotal: 0,
-            tax: 0,
-            total: 0,
+            subtotal: subtotal || 0,
+            tax: tax || 0,
+            total: total || 0,
+            comment: comment || '',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             history: [{
                 action: 'created',
                 changedBy: waiterName || 'Waiter',
                 date: new Date().toISOString(),
-                newValue: 'Check created'
+                newValue: items && items.length > 0 ? 'Check created with items' : 'Check created'
             }]
         };
 

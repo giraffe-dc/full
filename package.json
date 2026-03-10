@@ -9,7 +9,8 @@
     "lint": "biome check",
     "format": "biome format --write",
     "clean": "rm -rf .next",
-    "seed:admin": "node scripts/seed-admin.js"
+    "seed:admin": "node scripts/seed-admin.js",
+    "seed:events": "node scripts/seed-events.js"
   },
   "dependencies": {
     "@tiptap/extension-link": "^2.27.1",

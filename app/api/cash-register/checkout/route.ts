@@ -273,17 +273,37 @@ export async function POST(request: Request) {
                 }
 
 
-                // 4. Delete Open Check and Free Table
+                // 4. Update Check Status to 'paid' (DO NOT DELETE - needed for event sync)
                 if (body.checkId) {
-                    await db.collection("checks").deleteOne({ _id: new ObjectId(body.checkId) }, { session });
+                    await db.collection("checks").updateOne(
+                        { _id: new ObjectId(body.checkId) },
+                        {
+                            $set: {
+                                status: 'paid',
+                                paymentMethod,
+                                paymentDetails,
+                                paidAmount: total,
+                                paymentStatus: 'paid',
+                                updatedAt: new Date()
+                            },
+                            $push: {
+                                history: {
+                                    action: 'paid',
+                                    changedBy: waiterName || 'System',
+                                    date: new Date().toISOString(),
+                                    newValue: `Paid via ${paymentMethod}`,
+                                    paymentDetails
+                                }
+                            }
+                        },
+                        { session }
+                    );
 
-                    // Optional: Update table status to 'free' immediately?
-                    // Actually, if we delete the check, the table logic in 'checks/route.ts' (DELETE) handled it.
-                    // But here we are just deleting the document. We should also update the table manually.
+                    // Free the table
                     if (body.tableId) {
                         await db.collection("tables").updateOne(
                             { _id: new ObjectId(body.tableId) },
-                            { $set: { status: 'free', seats: 4 } }, // Resetting seats to default or 0? 4 is a safe default for now
+                            { $set: { status: 'free', seats: 4 } },
                             { session }
                         );
                     }

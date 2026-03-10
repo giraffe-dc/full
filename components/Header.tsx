@@ -284,14 +284,14 @@ export default function Header() {
     }
 
     const navItems = [
-        { href: '/', label: 'Головна', icon: '🏠' },
+        // { href: '/', label: 'Головна', icon: '🏠' },
         { href: '/cash-register', label: 'Каса', icon: '💰' },
         { href: '/supply', label: 'Постачання', icon: '📦' },
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
         { href: '/visits', label: 'Відвідування', icon: '🕒' },
-        { href: '/staff', label: 'Персонал', icon: '👥' },
+        { href: '/events', label: 'Бронювання', icon: '🎉' },
         // { href: '/projects', label: 'Проекти', icon: '📁' },
-    ];
+    ]
 
     const unreadCount = stats?.unread || notifications.filter(n => !n.isRead).length;
 
