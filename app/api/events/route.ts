@@ -114,15 +114,51 @@ export async function POST(request: NextRequest) {
 
     // Start transaction if we need to create a check
     let checkId: string | undefined;
+    let createdByName = body.createdByName || 'Giraffe'; // Default user
+
+    // If createdBy is provided, fetch staff name
+    if (body.createdBy) {
+      const staff = await db.collection('staff').findOne({ _id: new ObjectId(body.createdBy) });
+      if (staff) {
+        createdByName = staff.name || staff.fullName || body.createdByName || 'Giraffe';
+      }
+    }
 
     // Create check if table and department are provided
     if (body.assignedRooms && body.assignedRooms.length > 0) {
       const { resourceId: departmentId, resourceName: tableId } = body.assignedRooms[0];
 
       if (departmentId && tableId) {
+        const table = await db.collection('tables').findOne({ _id: new ObjectId(tableId) });
         // Get open shift
         const shift = await db.collection('shifts').findOne({ status: 'open' });
         const shiftId = shift ? shift._id.toString() : null;
+
+        // --- NEW: Customer Logic ---
+        let customerId: string | null = null;
+        let customerName: string = body.clientName;
+
+        if (body.clientPhone) {
+          const existingClient = await db.collection('clients').findOne({
+            phone: body.clientPhone,
+            status: { $ne: 'inactive' }
+          });
+
+          if (existingClient) {
+            customerId = existingClient._id.toString();
+            customerName = existingClient.name;
+          } else {
+            // Create new client
+            const newClientResult = await db.collection('clients').insertOne({
+              name: body.clientName,
+              phone: body.clientPhone,
+              email: body.clientEmail || "",
+              status: 'active',
+              createdAt: new Date()
+            });
+            customerId = newClientResult.insertedId.toString();
+          }
+        }
 
         // Map customServices to check items
         const items = (body.customServices || []).map((svc: any) => ({
@@ -135,14 +171,16 @@ export async function POST(request: NextRequest) {
           subtotal: svc.total,
         }));
 
-        // Create check
+        // Create check with waiter and customer info
         const newCheck = {
           tableId,
-          tableName: `Стіл ${tableId}`,
+          tableName: ` ${table?.name}`,
           departmentId,
           shiftId,
-          waiterId: null,
-          waiterName: body.clientName,
+          waiterId: body.createdBy || null,
+          waiterName: createdByName,
+          customerId,
+          customerName,
           items,
           guestsCount: body.totalGuests,
           status: 'open',
@@ -157,10 +195,16 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date().toISOString(),
           history: [{
             action: 'created',
-            changedBy: body.clientName || 'System',
+            changedBy: createdByName,
             date: new Date().toISOString(),
             newValue: items.length > 0 ? 'Check created with items' : 'Check created'
-          }]
+          },
+          ...(customerId ? [{
+            action: 'link_customer',
+            changedBy: createdByName,
+            date: new Date().toISOString(),
+            newValue: `Linked customer: ${customerName}`
+          }] : [])]
         };
 
         const checkResult = await db.collection('checks').insertOne(newCheck);
@@ -174,10 +218,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create event with checkId
+    // Create event with checkId and creator info
     const eventData = {
       ...body,
       checkId: checkId || body.checkId,
+      createdBy: body.createdBy || undefined,
+      createdByName,
     };
 
     const event = await createEvent(eventData);

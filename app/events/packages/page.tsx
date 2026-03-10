@@ -58,11 +58,11 @@ export default function EventPackagesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Ви впевнені, що хочете видалити цей пакет?')) return;
-    
+
     try {
       const res = await fetch(`/api/events/packages/${id}`, { method: 'DELETE' });
       const data = await res.json();
-      
+
       if (data.success) {
         toast.success('Пакет видалено');
         fetchPackages();
@@ -110,21 +110,21 @@ export default function EventPackagesPage() {
                 <div className={styles.cardHeader}>
                   <h3 className={styles.cardTitle}>{pkg.name}</h3>
                   <span className={`${styles.statusBadge} ${pkg.status === 'active' ? styles.active : styles.inactive}`}>
-                    {pkg.status === 'active' ? 'Активний' : 'Неактивний'}
+                    {pkg.status === 'active' ? '● Активний' : '○ Неактивний'}
                   </span>
                 </div>
                 <p className={styles.description}>{pkg.description}</p>
                 <div className={styles.cardMeta}>
                   <div className={styles.metaItem}>
-                    <span className={styles.metaLabel}>Ціна</span>
+                    <span className={styles.metaLabel}>💰 Ціна</span>
                     <span className={styles.metaValue}>{pkg.basePrice} ₴</span>
                   </div>
                   <div className={styles.metaItem}>
-                    <span className={styles.metaLabel}>Гостей</span>
+                    <span className={styles.metaLabel}>👥 Гостей</span>
                     <span className={styles.metaValue}>до {pkg.maxGuests}</span>
                   </div>
                   <div className={styles.metaItem}>
-                    <span className={styles.metaLabel}>Тривалість</span>
+                    <span className={styles.metaLabel}>⏱️ Час</span>
                     <span className={styles.metaValue}>{Math.floor(pkg.duration / 60)}г {pkg.duration % 60}хв</span>
                   </div>
                 </div>

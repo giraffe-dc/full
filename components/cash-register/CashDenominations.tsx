@@ -2,26 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DenominationCounts } from '../../types/cash-register';
+import { calculateDenominationTotal, BANKNOTES, COINS, getDenomKey } from '../../utils/cash-calculations';
 import styles from './CashDenominations.module.css';
-
-// ─── UAH Denominations ────────────────────────────────────────────────
-const BANKNOTES = [1000, 500, 200, 100, 50, 20, 10];
-const COINS = [10, 5, 2, 1, 0.5];
-
-function getKey(type: 'banknote' | 'coin', denom: number): string {
-    return `${type}_${denom}`;
-}
-
-function calcTotal(counts: DenominationCounts): number {
-    let sum = 0;
-    for (const d of BANKNOTES) {
-        sum += (counts[getKey('banknote', d)] || 0) * d;
-    }
-    for (const d of COINS) {
-        sum += (counts[getKey('coin', d)] || 0) * d;
-    }
-    return sum;
-}
 
 interface CashDenominationsProps {
     shiftId: string;
@@ -52,14 +34,14 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                 // Determine if it's a banknote or coin based on denomination value
                 const isBanknote = BANKNOTES.includes(denom);
                 const isCoin = COINS.includes(denom);
-                
+
                 if (isBanknote && !isCoin) {
-                    migrated[getKey('banknote', denom)] = value;
+                    migrated[getDenomKey('banknote', denom)] = value;
                 } else if (isCoin && !isBanknote) {
-                    migrated[getKey('coin', denom)] = value;
+                    migrated[getDenomKey('coin', denom)] = value;
                 } else if (isBanknote && isCoin) {
                     // Both exist (e.g., 10) - prefer banknote for backward compatibility
-                    migrated[getKey('banknote', denom)] = value;
+                    migrated[getDenomKey('banknote', denom)] = value;
                 }
             } else {
                 // Already in new format or unknown - keep as is
@@ -88,7 +70,7 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
     const setCount = (type: 'banknote' | 'coin', denom: number, val: string) => {
         if (readOnly) return;
         const n = Math.max(0, parseInt(val, 10) || 0);
-        const key = getKey(type, denom);
+        const key = getDenomKey(type, denom);
         const newCounts = { ...counts, [key]: n };
         setCounts(newCounts);
 
@@ -105,7 +87,7 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
         saveToDB(empty);
     };
 
-    const counted = calcTotal(counts);
+    const counted = calculateDenominationTotal(counts);
     const diff = counted - expectedBalance;
     const isZero = Object.values(counts).every(v => !v);
 
@@ -154,7 +136,7 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                                     <td colSpan={3}>Банкноти</td>
                                 </tr>
                                 {BANKNOTES.map(d => {
-                                    const qty = counts[getKey('banknote', d)] || 0;
+                                    const qty = counts[getDenomKey('banknote', d)] || 0;
                                     const rowTotal = qty * d;
                                     return (
                                         <tr key={`banknote_${d}`}>
@@ -184,7 +166,7 @@ export function CashDenominations({ shiftId, expectedBalance, initialCounts, rea
                                     <td colSpan={3}>Монети</td>
                                 </tr>
                                 {COINS.map(d => {
-                                    const qty = counts[getKey('coin', d)] || 0;
+                                    const qty = counts[getDenomKey('coin', d)] || 0;
                                     const rowTotal = qty * d;
                                     const label = d >= 1 ? `${d} ₴` : `${Math.round(d * 100)} коп.`;
                                     return (

@@ -13,20 +13,25 @@ import { EventFilters } from '@/components/events/EventFilters';
 
 // Event type colors - modified by payment status
 const getEventColors = (event: Event) => {
+  // Cancelled events get red color
+  if (event.status === 'cancelled') {
+    return { bg: 'rgba(239, 68, 68, 0.43)', border: '#ef4444', text: '#dc2626' };
+  }
+
   // Paid events get green color
   if (event.paymentStatus === 'paid') {
     return { bg: 'rgba(34, 197, 94, 0.3)', border: '#22c55e', text: '#16a34a' };
   }
-  
+
   // Default colors by event type
   const EVENT_TYPE_COLORS: Record<EventType, { bg: string; border: string; text: string }> = {
     birthday: { bg: 'rgba(236, 72, 153, 0.2)', border: '#ec4899', text: '#ec4899' },
     corporate: { bg: 'rgba(59, 130, 246, 0.2)', border: '#3b82f6', text: '#3b82f6' },
     graduation: { bg: 'rgba(16, 185, 129, 0.2)', border: '#10b981', text: '#10b981' },
-    holiday: { bg: 'rgba(249, 115, 22, 0.2)', border: '#f97316', text: '#f97316' },
+    holiday: { bg: 'rgba(241, 220, 24, 0.8)', border: '#e9853eff', text: '#f97316' },
     other: { bg: 'rgba(139, 92, 246, 0.2)', border: '#8b5cf6', text: '#8b5cf6' },
   };
-  
+
   return EVENT_TYPE_COLORS[event.eventType];
 };
 
@@ -81,12 +86,12 @@ export default function EventsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      
+
       // Calculate date range based on view mode
       const currentDate = new Date(selectedDate);
       let startDate: string;
       let endDate: string;
-      
+
       switch (viewMode) {
         case 'day':
           startDate = selectedDate;
@@ -108,25 +113,25 @@ export default function EventsPage() {
           endDate = monthEnd.toISOString().split('T')[0];
           break;
       }
-      
+
       params.set('startDate', startDate);
       params.set('endDate', endDate);
-      
+
       if (filterEventTypes.length > 0) {
         params.set('eventTypes', filterEventTypes.join(','));
       }
-      
+
       if (filterStatuses.length > 0) {
         params.set('statuses', filterStatuses.join(','));
       }
-      
+
       if (searchQuery) {
         params.set('search', searchQuery);
       }
-      
+
       const res = await fetch(`/api/events?${params.toString()}`);
       const data = await res.json();
-      
+
       if (data.success) {
         setEvents(data.data);
       }
@@ -187,11 +192,14 @@ export default function EventsPage() {
     return filteredEvents.map(event => {
       const colors = getEventColors(event);
       const icon = EVENT_TYPE_ICONS[event.eventType];
-      
-      // Add paid indicator to title
-      const title = event.paymentStatus === 'paid' 
-        ? `✅ ${icon} ${event.title}` 
-        : `${icon} ${event.title}`;
+
+      // Add status indicator to title
+      let title = `${icon} ${event.title}`;
+      if (event.status === 'cancelled') {
+        title = `❌ ${title}`;
+      } else if (event.paymentStatus === 'paid') {
+        title = `✅ ${title}`;
+      }
 
       return {
         id: event.id,
@@ -218,28 +226,28 @@ export default function EventsPage() {
   // Group events by date for list view
   const eventsByDate = useMemo(() => {
     const grouped: Record<string, Event[]> = {};
-    
+
     filteredEvents.forEach(event => {
       if (!grouped[event.date]) {
         grouped[event.date] = [];
       }
       grouped[event.date].push(event);
     });
-    
+
     // Sort dates
     const sortedDates = Object.keys(grouped).sort();
     const result: Record<string, Event[]> = {};
     sortedDates.forEach(date => {
       result[date] = grouped[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
     });
-    
+
     return result;
   }, [filteredEvents]);
 
   // Navigation handlers
   const navigateDate = (direction: 'prev' | 'next') => {
     const currentDate = new Date(selectedDate);
-    
+
     switch (viewMode) {
       case 'day':
         currentDate.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
@@ -252,7 +260,7 @@ export default function EventsPage() {
         currentDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
         break;
     }
-    
+
     setSelectedDate(currentDate.toISOString().split('T')[0]);
   };
 
@@ -279,11 +287,11 @@ export default function EventsPage() {
 
   const handleDelete = async (eventId: string) => {
     if (!confirm('Ви впевнені, що хочете видалити цю подію?')) return;
-    
+
     try {
       const res = await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
       const data = await res.json();
-      
+
       if (data.success) {
         toast.success('Подію видалено');
         fetchEvents();
@@ -305,7 +313,7 @@ export default function EventsPage() {
   const getDateRangeLabel = () => {
     const currentDate = new Date(selectedDate);
     const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
-    
+
     switch (viewMode) {
       case 'day':
         return currentDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -354,13 +362,13 @@ export default function EventsPage() {
           onStatusChange={setFilterStatuses}
           onSearchChange={setSearchQuery}
         /> */}
-        
+
         <div className={styles.viewControls}>
           <button onClick={() => navigateDate('prev')} className={styles.navBtn}>←</button>
           <span className={styles.dateLabel}>{getDateRangeLabel()}</span>
           <button onClick={() => navigateDate('next')} className={styles.navBtn}>→</button>
           <button onClick={goToToday} className={styles.todayBtn}>Сьогодні</button>
-          
+
           <div className={styles.viewModeToggle}>
             <button
               className={`${styles.viewBtn} ${viewMode === 'month' ? styles.active : ''}`}
@@ -420,7 +428,7 @@ export default function EventsPage() {
                       {dateEvents.map(event => {
                         const colors = getEventColors(event);
                         const icon = EVENT_TYPE_ICONS[event.eventType];
-                        
+
                         // Add paid badge
                         const isPaid = event.paymentStatus === 'paid';
 
@@ -429,7 +437,7 @@ export default function EventsPage() {
                             key={event.id}
                             className={styles.eventCard}
                             onClick={() => handleOpenDetails(event)}
-                            style={{ 
+                            style={{
                               borderLeftColor: colors.border,
                               opacity: isPaid ? 0.7 : 1,
                             }}
@@ -486,21 +494,21 @@ export default function EventsPage() {
                     <div key={day} className={styles.weekdayCell}>{day}</div>
                   ))}
                 </div>
-                
+
                 {/* Calendar days */}
                 <div className={styles.calendarDays}>
                   {(() => {
                     const currentDate = new Date(selectedDate);
                     const year = currentDate.getFullYear();
                     const month = currentDate.getMonth();
-                    
+
                     const firstDay = new Date(year, month, 1);
                     const lastDay = new Date(year, month + 1, 0);
                     const startDay = firstDay.getDay() || 7; // Convert Sunday from 0 to 7
                     const totalDays = lastDay.getDate();
-                    
+
                     const days = [];
-                    
+
                     // Previous month days
                     const prevMonth = new Date(year, month, 0);
                     const prevMonthDays = prevMonth.getDate();
@@ -508,25 +516,25 @@ export default function EventsPage() {
                       const day = prevMonthDays - i + 1;
                       days.push({ day, month: month - 1, current: false });
                     }
-                    
+
                     // Current month days
                     for (let day = 1; day <= totalDays; day++) {
                       days.push({ day, month, current: true });
                     }
-                    
+
                     // Next month days
                     const remainingDays = 42 - days.length; // 6 rows * 7 days
                     for (let day = 1; day <= remainingDays; day++) {
                       days.push({ day, month: month + 1, current: false });
                     }
-                    
+
                     return days.map(({ day, month: m, current }, index) => {
                       const actualMonth = m < 0 ? 11 : m > 11 ? 0 : m;
                       const actualYear = m < 0 ? year - 1 : m > 11 ? year + 1 : year;
                       const dateStr = `${actualYear}-${String(actualMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                       const dayEvents = calendarEvents.filter(e => e.start.startsWith(dateStr));
                       const isToday = dateStr === new Date().toISOString().split('T')[0];
-                      
+
                       return (
                         <div
                           key={index}

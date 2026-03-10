@@ -65,7 +65,7 @@ export function EventBasicInfo({
           <option value="birthday">День народження</option>
           <option value="corporate">Корпоратив</option>
           <option value="graduation">Випускний</option>
-          <option value="holiday">Свято</option>
+          <option value="holiday">Виїздні</option>
           <option value="other">Інше</option>
         </select>
         {errors.eventType && <span className={styles.error}>{errors.eventType}</span>}

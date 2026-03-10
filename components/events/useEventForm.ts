@@ -14,6 +14,8 @@ interface UseEventFormProps {
   onSubmitSuccess: () => void;
   onClose: () => void;
   toast?: any;
+  createdBy?: string;
+  createdByName?: string;
 }
 
 export function useEventForm({
@@ -24,6 +26,8 @@ export function useEventForm({
   onSubmitSuccess,
   onClose,
   toast,
+  createdBy,
+  createdByName,
 }: UseEventFormProps): UseEventFormReturn {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -162,6 +166,9 @@ export function useEventForm({
         assignedEquipment: [],
         // Keep existing checkId when editing
         checkId: event?.checkId || undefined,
+        // Creator info
+        createdBy: createdBy || undefined,
+        createdByName: createdByName || 'Giraffe',
       };
 
       const url = event ? `/api/events/${event.id}` : '/api/events';

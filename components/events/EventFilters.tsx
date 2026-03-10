@@ -17,7 +17,7 @@ const EVENT_TYPE_LABELS: Record<EventType, string> = {
   birthday: 'День народження',
   corporate: 'Корпоратив',
   graduation: 'Випускний',
-  holiday: 'Свято',
+  holiday: 'Виїздні',
   other: 'Інше',
 };
 

@@ -2,28 +2,55 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// GET: Get single check by ID
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+// GET: Get single check by ID (searches in checks first, then receipts)
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
     try {
         const { id } = await params;
 
         const client = await clientPromise;
         const db = client.db("giraffe");
 
-        const check = await db.collection("checks").findOne({ _id: new ObjectId(id) });
+        // Attempt 1: Search in checks (if not deleted yet)
+        let check = await db.collection("checks").findOne({
+            _id: new ObjectId(id)
+        });
 
-        if (!check) {
-            return NextResponse.json({ error: "Check not found" }, { status: 404 });
+        if (check) {
+            return NextResponse.json({
+                success: true,
+                data: { ...check, id: check._id.toString(), source: 'checks' }
+            });
         }
 
-        return NextResponse.json({ 
-            success: true, 
-            data: { ...check, id: check._id.toString() } 
+        // Attempt 2: Search in receipts by checkId
+        check = await db.collection("receipts").findOne({
+            checkId: id  // Search by checkId link
         });
+
+        if (check) {
+            return NextResponse.json({
+                success: true,
+                data: {
+                    ...check,
+                    id: check._id.toString(),
+                    source: 'receipts',
+                    _id: check.checkId  // Return original ID for compatibility
+                }
+            });
+        }
+
+        return NextResponse.json({
+            error: "Check not found"
+        }, { status: 404 });
 
     } catch (error) {
         console.error("Error fetching check:", error);
-        return NextResponse.json({ error: "Failed to fetch check" }, { status: 500 });
+        return NextResponse.json({
+            error: "Failed to fetch check"
+        }, { status: 500 });
     }
 }
 
@@ -116,6 +143,18 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
         // Delete check
         await db.collection("checks").deleteOne({ _id: new ObjectId(id) });
+
+        // --- NEW: Cancel linked Event status ---
+        // Search for an event that is linked to this checkId (which is the parameter 'id')
+        await db.collection("events").updateMany(
+            { checkId: id },
+            {
+                $set: {
+                    status: 'cancelled',
+                    updatedAt: new Date().toISOString()
+                }
+            }
+        );
 
         // Free up the table and reset seats
         await db.collection("tables").updateOne(

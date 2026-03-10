@@ -1,21 +1,12 @@
 import React from 'react';
-import { ZReport } from '../../types/cash-register';
+import { DenominationCounts, ZReport } from '../../types/cash-register';
 import styles from './ReportViews.module.css';
 
 interface DenomAnalyticsViewProps {
     reports: ZReport[];
 }
 
-const BANKNOTES = [1000, 500, 200, 100, 50, 20, 10];
-const COINS = [10, 5, 2, 1, 0.5];
-
-function calcTotal(counts: any): number {
-    if (!counts || Object.keys(counts).length === 0) return 0;
-    return [...BANKNOTES, ...COINS].reduce(
-        (sum, d) => sum + (counts[String(d)] || 0) * d,
-        0
-    );
-}
+import { calculateDenominationTotal } from '../../utils/cash-calculations';
 
 export function DenomAnalyticsView({ reports }: DenomAnalyticsViewProps) {
     const sortedReports = [...reports].sort((a, b) =>
@@ -23,7 +14,7 @@ export function DenomAnalyticsView({ reports }: DenomAnalyticsViewProps) {
     );
 
     const totalDiff = sortedReports.reduce((sum, r) => {
-        const counted = calcTotal(r.denominationCounts);
+        const counted = calculateDenominationTotal(r.denominationCounts);
         const expected = r.endBalance || 0;
         return sum + (counted - expected);
     }, 0);
@@ -50,7 +41,7 @@ export function DenomAnalyticsView({ reports }: DenomAnalyticsViewProps) {
                     </thead>
                     <tbody>
                         {sortedReports.map((report) => {
-                            const counted = calcTotal(report.denominationCounts);
+                            const counted = calculateDenominationTotal(report.denominationCounts);
                             const expected = report.endBalance || 0;
                             const diff = counted - expected;
                             const hasCounts = report.denominationCounts && Object.keys(report.denominationCounts).length > 0;

@@ -10,9 +10,51 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
         const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 20;
+        const activeStaff = searchParams.get('activeStaff'); // New param to get active staff
 
         const client = await clientPromise;
         const db = client.db("giraffe");
+
+        // If requesting active staff for current shift
+        if (activeStaff === 'true') {
+            const openShift = await db.collection("cash_shifts").findOne({ status: "open" });
+            
+            if (!openShift) {
+                return NextResponse.json({ 
+                    success: true, 
+                    data: [],
+                    message: "No open shift"
+                });
+            }
+            
+            // Get active staff IDs from shift
+            const activeStaffIds = openShift.activeStaffIds || [];
+            
+            if (activeStaffIds.length === 0) {
+                return NextResponse.json({ 
+                    success: true, 
+                    data: [],
+                    message: "No active staff"
+                });
+            }
+            
+            // Fetch staff details from staff collection
+            const staffMembers = await db.collection("staff").find({
+                _id: { $in: activeStaffIds.map((id: string) => new ObjectId(id)) }
+            }).toArray();
+            
+            const staffData = staffMembers.map(s => ({
+                id: s._id.toString(),
+                name: s.name || s.fullName || "Unknown",
+                position: s.position || "Співробітник"
+            }));
+            
+            return NextResponse.json({ 
+                success: true, 
+                data: staffData,
+                shiftId: openShift._id.toString()
+            });
+        }
 
         const filter: any = {};
         if (status) {

@@ -16,7 +16,10 @@ import styles from './EventFormModal.module.css';
 export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps) {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'main' | 'products' | 'payment'>('main');
-
+  const [activeStaff, setActiveStaff] = useState<any[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>('');
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  
   // Initialize department and table from event when editing
   const [selectedDepartment, setSelectedDepartment] = useState(() => {
     if (event?.assignedRooms && event.assignedRooms.length > 0) {
@@ -49,6 +52,8 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
     onSubmitSuccess: onSubmit,
     onClose,
     toast,
+    createdBy: selectedStaffId,
+    createdByName: activeStaff.find(s => s.id === selectedStaffId)?.name || 'Giraffe',
   });
 
   // Use checkSync from form
@@ -61,6 +66,35 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
       checkSync.fetchCheck(selectedTable);
     }
   }, [selectedTable]);
+
+  // Fetch active staff on mount
+  useEffect(() => {
+    const fetchActiveStaff = async () => {
+      try {
+        const res = await fetch('/api/cash-register/shifts?activeStaff=true');
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+          setActiveStaff(data.data);
+          
+          // If only one staff member, auto-select
+          if (data.data.length === 1) {
+            setSelectedStaffId(data.data[0].id);
+          } else if (data.data.length === 0) {
+            // No staff - will use "Giraffe" as default
+            setSelectedStaffId('');
+          } else {
+            // Multiple staff - show modal to select
+            setShowStaffModal(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching active staff:', error);
+      }
+    };
+    
+    fetchActiveStaff();
+  }, []);
 
   // Force sync when switching to products tab
   useEffect(() => {
@@ -250,6 +284,55 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
           </button>
         </div>
       </form>
+
+      {/* Staff Selection Modal */}
+      {showStaffModal && (
+        <Modal
+          title="👤 Хто створює подію?"
+          isOpen={showStaffModal}
+          onClose={() => setShowStaffModal(false)}
+          size="md"
+        >
+          <div style={{ padding: '20px' }}>
+            <p style={{ marginBottom: '16px', color: '#64748b' }}>
+              На зміні працює кілька співробітників. Оберіть хто створює подію:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {activeStaff.map(staff => (
+                <button
+                  key={staff.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedStaffId(staff.id);
+                    setShowStaffModal(false);
+                  }}
+                  style={{
+                    padding: '14px 20px',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '10px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    fontSize: '14px',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#60a5fa';
+                    e.currentTarget.style.background = '#eff6ff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.background = 'white';
+                  }}
+                >
+                  <div style={{ fontWeight: 700, color: '#1e293b' }}>{staff.name}</div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>{staff.position}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Modal>
+      )}
     </Modal>
   );
 }

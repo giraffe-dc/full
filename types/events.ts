@@ -127,6 +127,10 @@ export interface Event {
   
   // Зв'язок з чеком
   checkId?: string; // ID чеку в cash-register
+  
+  // Співробітник який створив подію (для чеку)
+  createdBy?: string; // ID співробітника
+  createdByName?: string; // Ім'я співробітника
 
   // Фінанси
   basePrice: number;
@@ -138,13 +142,12 @@ export interface Event {
   total: number;
   paidAmount: number;
   paymentStatus: PaymentStatus;
-  
+
   // Коментарі
   internalNotes?: string; // для персоналу
   clientNotes?: string; // побажання клієнта
-  
+
   // Метадані
-  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }

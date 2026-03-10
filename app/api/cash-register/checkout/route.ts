@@ -273,39 +273,64 @@ export async function POST(request: Request) {
                 }
 
 
-                // 4. Update Check Status to 'paid' (DO NOT DELETE - needed for event sync)
+                // 4. Create Receipt with checkId link and Delete Check
                 if (body.checkId) {
-                    await db.collection("checks").updateOne(
-                        { _id: new ObjectId(body.checkId) },
-                        {
-                            $set: {
-                                status: 'paid',
-                                paymentMethod,
-                                paymentDetails,
-                                paidAmount: total,
-                                paymentStatus: 'paid',
-                                updatedAt: new Date()
-                            },
-                            $push: {
-                                history: {
-                                    action: 'paid',
-                                    changedBy: waiterName || 'System',
-                                    date: new Date().toISOString(),
-                                    newValue: `Paid via ${paymentMethod}`,
-                                    paymentDetails
-                                }
-                            }
-                        },
-                        { session }
-                    );
+                    // Get original check for additional data
+                    const originalCheck = await db.collection("checks").findOne({
+                        _id: new ObjectId(body.checkId)
+                    });
 
-                    // Free the table
-                    if (body.tableId) {
-                        await db.collection("tables").updateOne(
-                            { _id: new ObjectId(body.tableId) },
-                            { $set: { status: 'free', seats: 4 } },
+                    if (originalCheck) {
+                        // Update receipt with checkId and additional data from check
+                        await db.collection("receipts").updateOne(
+                            { _id: receiptId },
+                            {
+                                $set: {
+                                    checkId: body.checkId,  // Link to original check
+                                    tableId: originalCheck.tableId,
+                                    tableName: originalCheck.tableName,
+                                    departmentId: originalCheck.departmentId,
+                                    shiftId: originalCheck.shiftId,
+                                    guestsCount: originalCheck.guestsCount,
+                                    waiterId: originalCheck.waiterId,
+                                    waiterName: originalCheck.waiterName,
+                                    comment: originalCheck.comment,
+                                    notes: originalCheck.notes,
+                                    history: originalCheck.history || []
+                                }
+                            },
                             { session }
                         );
+
+                        // --- NEW: Update linked Event status ---
+                        // Search for an event that is linked to this checkId
+                        // checkId in events is stored as a string (the MongoDB _id of the check)
+                        await db.collection("events").updateMany(
+                            { checkId: body.checkId },
+                            {
+                                $set: {
+                                    status: 'completed',
+                                    paymentStatus: 'paid',
+                                    paidAmount: total,
+                                    updatedAt: new Date().toISOString()
+                                }
+                            },
+                            { session }
+                        );
+
+                        // Delete from checks (economy)
+                        await db.collection("checks").deleteOne({
+                            _id: new ObjectId(body.checkId)
+                        }, { session });
+
+                        // Free the table
+                        if (body.tableId) {
+                            await db.collection("tables").updateOne(
+                                { _id: new ObjectId(body.tableId) },
+                                { $set: { status: 'free', seats: 4 } },
+                                { session }
+                            );
+                        }
                     }
                 }
             });

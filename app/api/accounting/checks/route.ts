@@ -76,7 +76,10 @@ export async function GET(request: Request) {
 
         if ((!status || status === 'all' || status === 'open')) {
             const checks = await db.collection("checks")
-                .find(checksDateFilter)
+                .find({
+                    ...checksDateFilter,
+                    status: { $ne: 'paid' }  // Exclude paid (already in receipts)
+                })
                 .sort({ createdAt: -1 })
                 .toArray();
 
@@ -84,8 +87,8 @@ export async function GET(request: Request) {
                 ...c,
                 id: c._id.toString(),
                 receiptNumber: 0,
-                paymentMethod: 'unpaid',
-                status: 'open',
+                paymentMethod: c.status === 'paid' ? 'paid' : 'unpaid',
+                status: c.status,
                 type: 'check',
                 customerName: c.tableName,
                 date: c.createdAt // Normalize date field for sorting

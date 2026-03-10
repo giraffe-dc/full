@@ -117,13 +117,13 @@ export default function AccountingChecksPage() {
     }
 
     const totals = useMemo(() => {
-        const net = receipts.reduce((acc, r) => acc + ((r as any).status === 'open' ? 0 : r.total), 0);
-        const discount = receipts.reduce((acc, r) => acc + (r.items?.reduce((sum, item) => sum + (item.discount || 0), 0) || 0), 0);
+        const net = receipts.reduce((acc, r) => acc + ((r as any).status === 'open' ? 0 : (r.total || 0)), 0);
+        const discount = receipts.reduce((acc, r) => acc + (r.items?.reduce((sum, item) => sum + (item?.discount || 0), 0) || 0), 0);
         const gross = net + discount;
 
-        const card = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'card').reduce((acc, r) => acc + r.total, 0);
-        const cash = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'cash').reduce((acc, r) => acc + r.total, 0);
-        const mixed = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'mixed').reduce((acc, r) => acc + r.total, 0);
+        const card = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'card').reduce((acc, r) => acc + (r.total || 0), 0);
+        const cash = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'cash').reduce((acc, r) => acc + (r.total || 0), 0);
+        const mixed = receipts.filter(r => (r as any).status !== 'open' && r.paymentMethod === 'mixed').reduce((acc, r) => acc + (r.total || 0), 0);
 
         return { net, discount, gross, card, cash, mixed };
     }, [receipts]);
@@ -269,7 +269,7 @@ export default function AccountingChecksPage() {
                                             </span>
                                         )}
                                     </td>
-                                    <td>{(r.items.reduce((acc, i) => acc + (i.discount || 0), 0)).toFixed(2)} ₴</td>
+                                    <td>{(r.items ? r.items.reduce((acc, i) => acc + (i.discount || 0), 0) : 0).toFixed(2)} ₴</td>
                                     <td>{(r as any).status === 'open' ? '0.00' : r.total.toFixed(2)} ₴</td>
                                     <td>
                                         <div className={styles.actions}>
@@ -324,7 +324,7 @@ export default function AccountingChecksPage() {
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                {r.items.map((item, idx) => (
+                                                                {r.items && r.items.map((item, idx) => (
                                                                     <tr key={idx}>
                                                                         <td>{item.serviceName}</td>
                                                                         <td>{item.price.toFixed(2)} ₴</td>

@@ -23,6 +23,7 @@ interface CheckData {
   notes?: string;
   guestsCount?: number;
   updatedAt?: string;
+  source?: 'checks' | 'receipts';
 }
 
 const EVENT_TYPE_ICONS: Record<EventType, string> = {
@@ -37,7 +38,7 @@ const EVENT_TYPE_LABELS: Record<EventType, string> = {
   birthday: 'День народження',
   corporate: 'Корпоратив',
   graduation: 'Випускний',
-  holiday: 'Свято',
+  holiday: 'Виїздні',
   other: 'Інше',
 };
 
@@ -74,47 +75,46 @@ export function EventDetailsModal({ event, onClose, onEdit, onDelete }: EventDet
 
   // Fetch check data
   const fetchCheck = async () => {
-    if (!event.assignedRooms || event.assignedRooms.length === 0) {
-      console.log('🔍 No assigned rooms, skipping check fetch');
+    if (!event.checkId) {
+      console.log('🔍 No checkId found, skipping check fetch');
       return;
     }
-    
+
     setLoadingCheck(true);
     try {
-      // Priority 1: Try to fetch by checkId if available (direct link)
-      if (event.checkId) {
-        console.log('🔍 Fetching check by checkId:', event.checkId);
-        const res = await fetch(`/api/cash-register/checks/${event.checkId}?_t=${Date.now()}`);
-        const data = await res.json();
+      // Fetch check by ID (backend searches in checks first, then receipts)
+      console.log('🔍 Fetching check by checkId:', event.checkId);
+      const res = await fetch(`/api/cash-register/checks/${event.checkId}?_t=${Date.now()}`);
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        const check = data.data;
+        const source = data.source || 'checks';
         
-        if (data.success && data.data) {
-          const check = data.data;
-          console.log('✅ Found check by checkId:', {
-            id: check.id,
-            status: check.status,
-            paymentStatus: check.paymentStatus,
-            total: check.total,
-            paidAmount: check.paidAmount,
-            items: check.items?.length || 0
-          });
-          
-          setCheckData({
-            id: check.id,
-            tableId: check.tableId,
-            items: check.items || [],
-            total: check.total,
-            paidAmount: check.paidAmount,
-            paymentStatus: check.paymentStatus || check.status,
-            comment: check.comment,
-            notes: check.notes,
-            guestsCount: check.guestsCount,
-            updatedAt: check.updatedAt,
-          });
-        } else {
-          console.log('⚠️ Check not found by checkId. Check may have been deleted.');
-        }
+        console.log(`✅ Found check in ${source}:`, {
+          id: check.id,
+          status: check.status,
+          paymentStatus: check.paymentStatus,
+          total: check.total,
+          paidAmount: check.paidAmount,
+          items: check.items?.length || 0
+        });
+
+        setCheckData({
+          id: check._id || check.id,
+          tableId: check.tableId,
+          items: check.items || [],
+          total: check.total,
+          paidAmount: source === 'receipts' ? check.total : (check.paidAmount || check.total),
+          paymentStatus: source === 'receipts' ? 'paid' : (check.paymentStatus || check.status),
+          comment: check.comment,
+          notes: check.notes,
+          guestsCount: check.guestsCount,
+          updatedAt: check.updatedAt || check.createdAt,
+          source: source  // Source marker
+        });
       } else {
-        console.log('⚠️ No checkId found in event. Event was created without check linkage.');
+        console.log('⚠️ Check not found by checkId:', event.checkId);
       }
     } catch (error) {
       console.error('❌ Error fetching check:', error);

@@ -4,6 +4,7 @@ import "./globals.css";
 import styles from './site.module.css'
 import Header from '../components/Header'
 import { ToastProvider } from '../components/ui/ToastContext'
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="uk">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ToastProvider>
+          <Analytics />
           <Header />
           <main className={styles.siteContainer}>{children}</main>
 
