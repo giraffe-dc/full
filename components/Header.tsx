@@ -290,6 +290,7 @@ export default function Header() {
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
         { href: '/visits', label: 'Відвідування', icon: '🕒' },
         { href: '/events', label: 'Бронювання', icon: '🎉' },
+        { href: '/telegram', label: 'Telegram', icon: '📱' },
         // { href: '/projects', label: 'Проекти', icon: '📁' },
     ]
 

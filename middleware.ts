@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose';
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
 // Paths that require authentication
-const protectedPaths = ['/admin', '/accounting', '/docs', '/projects', '/staff', '/cash-register', '/supply', '/visits'];
+const protectedPaths = ['/admin', '/accounting', '/docs', '/projects', '/staff', '/cash-register', '/supply', '/visits', '/telegram'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -65,6 +65,7 @@ export const config = {
     '/projects/:path*',
     '/staff/:path*',
     '/cash-register/:path*',
-    '/supply/:path*'
+    '/supply/:path*',
+    '/telegram/:path*'
   ],
 };

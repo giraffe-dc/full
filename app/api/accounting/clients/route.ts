@@ -99,7 +99,10 @@ export async function GET(req: NextRequest) {
         profit,
         receipts: cReceipts.length,
         avgCheck: cReceipts.length > 0 ? total / cReceipts.length : 0,
-        status: c.status || 'active'
+        status: c.status || 'active',
+        birthday: c.birthday || "",
+        telegramChatId: c.telegramChatId || "",
+        telegramOptOut: !!c.telegramOptOut
       };
     });
 
@@ -122,7 +125,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, email, address, comment, id } = body;
+    const { name, phone, email, address, comment, birthday, telegramChatId, telegramOptOut, id } = body;
 
     const client = await clientPromise;
     const db = client.db("giraffe");
@@ -154,6 +157,9 @@ export async function POST(req: NextRequest) {
             email,
             address,
             comment,
+            birthday,
+            telegramChatId,
+            telegramOptOut: !!telegramOptOut,
             updatedAt: new Date()
           }
         }
@@ -168,6 +174,9 @@ export async function POST(req: NextRequest) {
       email,
       address,
       comment,
+      birthday,
+      telegramChatId,
+      telegramOptOut: !!telegramOptOut,
       status: 'active',
       createdAt: new Date()
     });

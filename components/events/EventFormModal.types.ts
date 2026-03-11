@@ -42,6 +42,7 @@ export interface EventFormData {
   paymentStatus: PaymentStatus;
   internalNotes?: string;
   clientNotes?: string;
+  childBirthday?: string;
 }
 
 // ============================================

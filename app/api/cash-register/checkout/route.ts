@@ -290,7 +290,7 @@ export async function POST(request: Request) {
                                     tableId: originalCheck.tableId,
                                     tableName: originalCheck.tableName,
                                     departmentId: originalCheck.departmentId,
-                                    shiftId: originalCheck.shiftId,
+                                    shiftId: originalCheck.shiftId ? new ObjectId(originalCheck.shiftId) : null,
                                     guestsCount: originalCheck.guestsCount,
                                     waiterId: originalCheck.waiterId,
                                     waiterName: originalCheck.waiterName,

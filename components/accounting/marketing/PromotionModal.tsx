@@ -143,6 +143,38 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
         setSearchQuery('');
     };
 
+    const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+    const handleBroadcast = async () => {
+        if (!promotion?.id) {
+            alert("Спочатку збережіть акцію");
+            return;
+        }
+
+        if (!confirm("Ви впевнені, що хочете надіслати цю акцію всім клієнтам у Telegram?")) {
+            return;
+        }
+
+        setIsBroadcasting(true);
+        try {
+            const res = await fetch('/api/marketing/promotions/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ promotionId: promotion.id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Успішно! Повідомлення надіслано ${data.count} клієнтам.`);
+            } else {
+                alert(`Помилка: ${data.error}`);
+            }
+        } catch (e) {
+            alert("Помилка при спробі розсилки");
+        } finally {
+            setIsBroadcasting(false);
+        }
+    };
+
     return (
         <div className={styles.overlay}>
             <div className={styles.modal}>
@@ -242,10 +274,6 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
                                                     )) : (
                                                         <div style={{ padding: '8px 12px', color: '#9ca3af', fontSize: '0.9rem' }}>Нічого не знайдено</div>
                                                     )}
-                                                    {/* Close dropdown overlay logic handled by blur, or explicit close? 
-                                                        Blur is tricky with click. Using onMouseDown on item helps. 
-                                                        Clicking outside is simpler with a global listener or backdrop, but strict focus is okay for now.
-                                                    */}
                                                 </div>
                                             )}
                                             {activeSearchIndex === idx && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9 }} onClick={() => setActiveSearchIndex(null)} />}
@@ -338,6 +366,15 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
                 </div>
 
                 <div className={styles.footer}>
+                    {promotion && (
+                        <button 
+                            className={styles.broadcastButton} 
+                            onClick={handleBroadcast}
+                            disabled={isBroadcasting}
+                        >
+                            {isBroadcasting ? 'Надсилається...' : '📢 Розіслати в Telegram'}
+                        </button>
+                    )}
                     <button className={styles.saveButton} onClick={handleSave}>Зберегти</button>
                 </div>
             </div>

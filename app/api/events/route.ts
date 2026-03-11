@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       if (departmentId && tableId) {
         const table = await db.collection('tables').findOne({ _id: new ObjectId(tableId) });
         // Get open shift
-        const shift = await db.collection('shifts').findOne({ status: 'open' });
+        const shift = await db.collection('cash_shifts').findOne({ status: 'open' });
         const shiftId = shift ? shift._id.toString() : null;
 
         // --- NEW: Customer Logic ---

@@ -180,6 +180,30 @@
     font-weight: 500;
     font-size: 1rem;
     cursor: pointer;
+    margin-left: 1rem;
+}
+
+.broadcastButton {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.broadcastButton:hover {
+    background: #2563eb;
+}
+
+.broadcastButton:disabled {
+    background: #93c5fd;
+    cursor: not-allowed;
 }
 
 .saveButton:hover {

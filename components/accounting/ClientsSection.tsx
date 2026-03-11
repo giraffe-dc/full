@@ -5,6 +5,7 @@ import { ClientFormModal } from "./ClientFormModal";
 import { useToast } from "../ui/ToastContext";
 
 export interface ClientRow {
+  telegramOptOut: any;
   id?: string;
   name: string;
   phone: string;
@@ -17,6 +18,8 @@ export interface ClientRow {
   profit: number;
   receipts: number;
   avgCheck: number;
+  birthday?: string;
+  telegramChatId?: string;
 }
 
 interface ClientsTotals {
@@ -239,10 +242,18 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
                     <span className={styles.detailLabel}>Email:</span>
                     <span className={styles.detailValue}>{selectedClient.email || "—"}</span>
                   </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Адреса:</span>
-                    <span className={styles.detailValue}>{selectedClient.address || "—"}</span>
-                  </div>
+                   <div className={styles.detailItem}>
+                     <span className={styles.detailLabel}>Адреса:</span>
+                     <span className={styles.detailValue}>{selectedClient.address || "—"}</span>
+                   </div>
+                   <div className={styles.detailItem}>
+                     <span className={styles.detailLabel}>День народження дитини:</span>
+                     <span className={styles.detailValue}>{selectedClient.birthday || "—"}</span>
+                   </div>
+                   <div className={styles.detailItem}>
+                     <span className={styles.detailLabel}>Telegram Chat ID:</span>
+                     <span className={styles.detailValue}>{selectedClient.telegramChatId || "—"}</span>
+                   </div>
                   {selectedClient.comment && (
                     <div className={styles.detailItem} style={{ gridColumn: '1 / -1' }}>
                       <span className={styles.detailLabel}>Коментар:</span>

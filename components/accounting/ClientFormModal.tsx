@@ -15,7 +15,10 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
         phone: "",
         email: "",
         address: "",
-        comment: ""
+        comment: "",
+        birthday: "",
+        telegramChatId: "",
+        telegramOptOut: false
     });
 
     useEffect(() => {
@@ -25,7 +28,10 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                 phone: client.phone || "",
                 email: client.email || "",
                 address: client.address || "",
-                comment: client.comment || ""
+                comment: client.comment || "",
+                birthday: client.birthday || "",
+                telegramChatId: client.telegramChatId || "",
+                telegramOptOut: !!client.telegramOptOut
             });
         }
     }, [client]);
@@ -100,6 +106,38 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                             placeholder="Додаткова інформація про клієнта..."
                             rows={3}
                         />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>День народження дитини</label>
+                        <input
+                            type="date"
+                            className={styles.input}
+                            value={formData.birthday}
+                            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                        />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Telegram Chat ID</label>
+                        <input
+                            className={styles.input}
+                            value={formData.telegramChatId}
+                            onChange={(e) => setFormData({ ...formData, telegramChatId: e.target.value })}
+                            placeholder="Отримується автоматично або введіть вручну"
+                        />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={formData.telegramOptOut}
+                                onChange={(e) => setFormData({ ...formData, telegramOptOut: e.target.checked })}
+                                style={{ width: '18px', height: '18px' }}
+                            />
+                            Відмовився(лася) від сповіщень у Telegram
+                        </label>
                     </div>
 
                     <div className={styles.footer}>

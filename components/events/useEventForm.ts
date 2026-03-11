@@ -58,6 +58,7 @@ export function useEventForm({
     paymentStatus: 'unpaid',
     internalNotes: '',
     clientNotes: '',
+    childBirthday: '',
   });
 
   // Check sync hook
@@ -117,6 +118,7 @@ export function useEventForm({
         paymentStatus: event.paymentStatus,
         internalNotes: event.internalNotes || '',
         clientNotes: event.clientNotes || '',
+        childBirthday: event.childBirthday || '',
       }));
       // Note: Check fetching is now handled in EventFormModal when selectedTable is set
     }
@@ -228,6 +230,7 @@ export function useEventForm({
       paymentStatus: 'unpaid',
       internalNotes: '',
       clientNotes: '',
+      childBirthday: '',
     });
     setErrors({});
   }, []);

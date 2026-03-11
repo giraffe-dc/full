@@ -485,8 +485,20 @@ export default function CashRegisterPage() {
   const handleVoidCheck = async (checkId: string) => {
     if (!confirm("Ви впевнені, що хочете анулювати цей чек?")) return;
     try {
+      const tableId = activeCheck?.tableId;
       await fetch(`/api/cash-register/checks/${checkId}/void`, { method: 'POST' });
       toast.success("Чек анульовано");
+      
+      // Remove check from local state
+      setOrders(prev => prev.filter(o => o.id !== checkId));
+      
+      // Free the table in local state
+      if (tableId) {
+        setTables(prev => prev.map(t => 
+          t.id === tableId ? { ...t, status: 'free', seats: 4 } : t
+        ));
+      }
+      
       handleBackToTables();
     } catch (e) {
       toast.error("Помилка анулювання");

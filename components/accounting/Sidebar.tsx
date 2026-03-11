@@ -68,7 +68,6 @@ export function AccountingSidebar() {
   const searchParams = useSearchParams();
   const currentSection = searchParams.get('section') as AccountingSection || 'dashboard';
 
-  // Logic to determine active section
   const isActive = (id: string) => {
     if (id === 'receipts' && pathname.includes('/accounting/checks')) return true;
     if (id !== 'receipts' && !pathname.includes('/accounting/checks') && currentSection === id) return true;

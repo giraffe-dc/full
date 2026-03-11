@@ -228,6 +228,16 @@ export function EventBasicInfo({
         </div>
       </div>
 
+      <div className={styles.formGroup}>
+        <label>День народження дитини</label>
+        <input
+          type="date"
+          value={formData.childBirthday || ''}
+          onChange={(e) => onUpdateField('childBirthday', e.target.value)}
+          className={styles.input}
+        />
+      </div>
+
       {/* Клієнт */}
       <div className={styles.formGroup}>
         <label>Ім'я клієнта *</label>

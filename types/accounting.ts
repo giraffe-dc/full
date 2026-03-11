@@ -35,6 +35,9 @@ export type ClientRow = {
   receipts: number;
   avgCheck: number;
   status: 'active' | 'inactive';
+  birthday?: string; // ISO date
+  telegramChatId?: string;
+  telegramOptOut?: boolean;
 };
 
 export type ClientsTotals = {
