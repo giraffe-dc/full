@@ -310,7 +310,7 @@ export default function Header() {
                     <nav className={styles.nav}>
                         {navItems.filter(item => {
                             if (user.role === 'user') {
-                                return ['/', '/cash-register', '/projects', '/supply', '/visits', '/staff', '/events'].includes(item.href);
+                                return ['/', '/cash-register', '/projects', '/supply', '/visits', '/staff', '/events', '/telegram'].includes(item.href);
                             }
                             return true;
                         }).map((item) => {
