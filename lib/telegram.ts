@@ -17,6 +17,7 @@ export async function sendTelegramMessage(chatId: string, text: string, replyMar
                 parse_mode: 'HTML',
                 reply_markup: replyMarkup
             })
+
         });
 
         const data = await response.json();
