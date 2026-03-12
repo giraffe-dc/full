@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
                 for (const child of childrenWithBirthday) {
                     let message = birthdaySetting.text || '';
                     const age = calculateAge(child.birthday);
-                    
+
                     message = message.replace(/\[ChildName\]/g, child.name || "дитина");
                     message = message.replace(/\[ChildAge\]/g, age.toString());
                     message = message.replace(/\[ClientName\]/g, client.name || "Клієнт");
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
                 for (const child of childrenWithBirthdayNextMonth) {
                     let message = birthdayReminder1mSetting.text || '';
                     const birthdayDate = formatDateUA(child.birthday);
-                    
+
                     message = message.replace(/\[ChildName\]/g, child.name || "дитина");
                     message = message.replace(/\[ClientName\]/g, client.name || "Клієнт");
                     message = message.replace(/\[BirthdayDate\]/g, birthdayDate);
