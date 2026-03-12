@@ -250,6 +250,7 @@ export default function TelegramPage() {
     };
 
     const birthdaySetting = settings.find(s => s.type === 'birthday') || { type: 'birthday', text: '', isActive: false };
+    const birthdayReminder1mSetting = settings.find(s => s.type === 'birthday_reminder_1m') || { type: 'birthday_reminder_1m', text: '', isActive: false };
     const reminderSetting = settings.find(s => s.type === 'reminder') || { type: 'reminder', text: '', isActive: false };
     const botStartGreetingSetting = settings.find(s => s.type === 'bot_start_greeting') || { type: 'bot_start_greeting', text: '', isActive: false };
     const botShareButtonSetting = settings.find(s => s.type === 'bot_share_button') || { type: 'bot_share_button', text: '', isActive: false };
@@ -316,7 +317,37 @@ export default function TelegramPage() {
                                 disabled={!birthdaySetting.isActive}
                             />
                             <span className={styles.helperText}>
-                                Доступні змінні: <span className={styles.badge}>[ChildName]</span> (Ім'я дитини), <span className={styles.badge}>[ClientName]</span> (Ім'я клієнта)
+                                Доступні змінні: <span className={styles.badge}>[ChildName]</span> (Ім'я дитини), <span className={styles.badge}>[ChildAge]</span> (Вік дитини), <span className={styles.badge}>[ClientName]</span> (Ім'я клієнта)
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Birthday Reminder 1 Month */}
+                    <div className={styles.card}>
+                        <h2 className={styles.cardTitle}>
+                            Нагадування про День Народження (за 1 місяць)
+                            <label className={styles.toggleLabel}>
+                                <input
+                                    type="checkbox"
+                                    checked={birthdayReminder1mSetting.isActive}
+                                    onChange={(e) => handleUpdateSetting('birthday_reminder_1m', 'isActive', e.target.checked)}
+                                    className={styles.toggleInput}
+                                />
+                                <span className={styles.toggleSlider}></span>
+                                {birthdayReminder1mSetting.isActive ? 'Увімкнено' : 'Вимкнено'}
+                            </label>
+                        </h2>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Текст нагадування</label>
+                            <textarea
+                                value={birthdayReminder1mSetting.text}
+                                onChange={(e) => handleUpdateSetting('birthday_reminder_1m', 'text', e.target.value)}
+                                className={styles.textarea}
+                                disabled={!birthdayReminder1mSetting.isActive}
+                            />
+                            <span className={styles.helperText}>
+                                Доступні змінні: <span className={styles.badge}>[ChildName]</span> (Ім'я дитини), <span className={styles.badge}>[ClientName]</span> (Ім'я клієнта), <span className={styles.badge}>[BirthdayDate]</span> (Дата ДН)
                             </span>
                         </div>
                     </div>

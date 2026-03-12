@@ -22,6 +22,11 @@ export type Totals = {
   balance: number;
 };
 
+export type Child = {
+  name: string;
+  birthday: string; // ISO date: YYYY-MM-DD
+};
+
 export type ClientRow = {
   id: string;
   name: string;
@@ -35,7 +40,8 @@ export type ClientRow = {
   receipts: number;
   avgCheck: number;
   status: 'active' | 'inactive';
-  birthday?: string; // ISO date
+  birthday?: string; // ISO date (deprecated, for backward compatibility)
+  children?: Child[]; // New: array of children (can accept string for single child)
   telegramChatId?: string;
   telegramOptOut?: boolean;
 };

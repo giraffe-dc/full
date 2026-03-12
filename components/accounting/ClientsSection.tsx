@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import styles from "./ClientsSection.module.css";
 import { ClientFormModal } from "./ClientFormModal";
 import { useToast } from "../ui/ToastContext";
+import { Child } from "@/types/accounting";
 
 export interface ClientRow {
   telegramOptOut: any;
@@ -19,6 +20,7 @@ export interface ClientRow {
   receipts: number;
   avgCheck: number;
   birthday?: string;
+  children?: Child[];
   telegramChatId?: string;
 }
 

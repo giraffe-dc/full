@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ClientFormModal.module.css";
 import { ClientRow } from "./ClientsSection";
+import { Child } from "@/types/accounting";
+import { ChildrenEditor } from "./ChildrenEditor";
 
 interface ClientFormModalProps {
     onClose: () => void;
@@ -17,6 +19,7 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
         address: "",
         comment: "",
         birthday: "",
+        children: [] as Child[],
         telegramChatId: "",
         telegramOptOut: false
     });
@@ -30,6 +33,7 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                 address: client.address || "",
                 comment: client.comment || "",
                 birthday: client.birthday || "",
+                children: client.children || [],
                 telegramChatId: client.telegramChatId || "",
                 telegramOptOut: !!client.telegramOptOut
             });
@@ -108,13 +112,11 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
                         />
                     </div>
 
+                    {/* Children Editor */}
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>День народження дитини</label>
-                        <input
-                            type="date"
-                            className={styles.input}
-                            value={formData.birthday}
-                            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                        <ChildrenEditor
+                            children={formData.children}
+                            onChange={(children) => setFormData({ ...formData, children })}
                         />
                     </div>
 

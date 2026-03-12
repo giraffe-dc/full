@@ -14,6 +14,11 @@ export async function GET() {
                 isActive: true
             },
             {
+                type: 'birthday_reminder_1m',
+                text: '📅 Нагадуємо, що через місяць день народження у [ChildName]! 🎂\n\n[ClientName], допоможіть нам підготувати свято заздалегідь.\nЗателефонуйте нам або забронюйте дату онлайн.\n\n🦒 Giraffe',
+                isActive: true
+            },
+            {
                 type: 'reminder',
                 text: '🦒 Привіт, [ClientName]! Нагадуємо, що завтра чекаємо вас на святкування. Не забудьте гарний настрій!',
                 isActive: true

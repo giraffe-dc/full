@@ -101,6 +101,7 @@ export async function GET(req: NextRequest) {
         avgCheck: cReceipts.length > 0 ? total / cReceipts.length : 0,
         status: c.status || 'active',
         birthday: c.birthday || "",
+        children: c.children || [], // New: include children array
         telegramChatId: c.telegramChatId || "",
         telegramOptOut: !!c.telegramOptOut
       };
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, email, address, comment, birthday, telegramChatId, telegramOptOut, id } = body;
+    const { name, phone, email, address, comment, birthday, children, telegramChatId, telegramOptOut, id } = body;
 
     const client = await clientPromise;
     const db = client.db("giraffe");
@@ -146,6 +147,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Normalize children: accept both array and single birthday string
+    let normalizedChildren: any[] = [];
+    
+    // If children array is provided, use it
+    if (children && Array.isArray(children)) {
+      normalizedChildren = children.map((child: any) => ({
+        name: child.name || "Дитина",
+        birthday: child.birthday || ""
+      }));
+    }
+    // If old birthday field is provided (string), convert to children array for backward compatibility
+    else if (birthday && typeof birthday === 'string' && birthday.trim() !== '') {
+      normalizedChildren = [{ name: "Дитина", birthday }];
+    }
+
     // Якщо є ID - це редагування
     if (id) {
       await db.collection("clients").updateOne(
@@ -157,7 +173,8 @@ export async function POST(req: NextRequest) {
             email,
             address,
             comment,
-            birthday,
+            birthday, // Keep for backward compatibility
+            children: normalizedChildren, // New field
             telegramChatId,
             telegramOptOut: !!telegramOptOut,
             updatedAt: new Date()
@@ -174,7 +191,8 @@ export async function POST(req: NextRequest) {
       email,
       address,
       comment,
-      birthday,
+      birthday, // Keep for backward compatibility
+      children: normalizedChildren, // New field
       telegramChatId,
       telegramOptOut: !!telegramOptOut,
       status: 'active',
