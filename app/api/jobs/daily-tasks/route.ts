@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
                 telegramChatId: { $exists: true, $ne: "" },
                 status: { $ne: "inactive" }
             }).toArray();
-
+            console.log(reminderClients);
             for (const client of reminderClients) {
                 // Find all children with birthday next month
                 const childrenWithBirthdayNextMonth = (client.children || []).filter((child: any) => {
