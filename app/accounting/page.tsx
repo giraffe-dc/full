@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, Suspense } from "react";
 import styles from "./page.module.css";
 import { AccountingSidebar, type AccountingSection } from "../../components/accounting/Sidebar";
-import { ClientsSection } from "../../components/accounting/ClientsSection";
+import { ClientsSection } from "../../components/clients/ClientsSection";
 import { DashboardSection } from "../../components/accounting/DashboardSection";
 import { ReceiptsSection } from "../../components/accounting/ReceiptsSection";
 import { TransactionsSection } from "../../components/accounting/TransactionsSection";

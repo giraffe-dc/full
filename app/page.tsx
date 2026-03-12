@@ -26,6 +26,7 @@ export default async function Home() {
 
     const modules = [
         { href: '/cash-register', icon: '💰', title: 'Каса', description: 'Продажі, чеки, звіти', roles: ['user', 'admin'] },
+        { href: '/clients', icon: '👥', title: 'Клієнти', description: 'База клієнтів, Telegram, розсилки', roles: ['user', 'admin'] },
         { href: '/supply', icon: '📦', title: 'Постачання', description: 'Прихід товарів та інгредієнтів', roles: ['user', 'admin'] },
         { href: '/accounting', icon: '📊', title: 'Бухгалтерія', description: 'Фінанси, транзакції, аналітика', roles: ['admin'] },
         { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати', roles: ['user', 'admin'] },

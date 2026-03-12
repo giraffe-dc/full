@@ -286,6 +286,7 @@ export default function Header() {
     const navItems = [
         // { href: '/', label: 'Головна', icon: '🏠' },
         { href: '/cash-register', label: 'Каса', icon: '💰' },
+        { href: '/clients', label: 'Клієнти', icon: '👥' },
         { href: '/supply', label: 'Постачання', icon: '📦' },
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
         { href: '/visits', label: 'Відвідування', icon: '🕒' },
@@ -310,7 +311,7 @@ export default function Header() {
                     <nav className={styles.nav}>
                         {navItems.filter(item => {
                             if (user.role === 'user') {
-                                return ['/', '/cash-register', '/projects', '/supply', '/visits', '/staff', '/events', '/telegram'].includes(item.href);
+                                return ['/', '/cash-register', '/projects', '/supply', '/visits', '/staff', '/events', '/telegram', '/clients'].includes(item.href);
                             }
                             return true;
                         }).map((item) => {
