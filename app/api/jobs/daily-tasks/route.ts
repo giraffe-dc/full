@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
         // Simple security check
         const authHeader = req.headers.get("Authorization");
         const jobSecret = process.env.JOB_SECRET;
-
+        console.log(authHeader, jobSecret);
+        console.log(authHeader === `Bearer ${jobSecret}`);
         if (jobSecret && authHeader !== `Bearer ${jobSecret}`) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
