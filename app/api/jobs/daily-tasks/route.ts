@@ -7,13 +7,13 @@ import { calculateAge, formatDateUA } from "@/lib/date-utils";
 export async function GET(req: NextRequest) {
     try {
         // Simple security check
-        const authHeader = req.headers.get("Authorization");
-        const jobSecret = process.env.JOB_SECRET;
-        console.log(authHeader, jobSecret);
-        console.log(authHeader === `Bearer ${jobSecret}`);
-        if (jobSecret && authHeader !== `Bearer ${jobSecret}`) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        // const authHeader = req.headers.get("Authorization");
+        // const jobSecret = process.env.JOB_SECRET;
+        // console.log(authHeader, jobSecret);
+        // console.log(`Bearer ${jobSecret}`);
+        // if (jobSecret && authHeader !== `Bearer ${jobSecret}`) {
+        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // }
 
         const client = await clientPromise;
         const db = client.db("giraffe");
