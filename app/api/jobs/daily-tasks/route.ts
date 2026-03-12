@@ -84,17 +84,17 @@ export async function GET(req: NextRequest) {
                 telegramChatId: { $exists: true, $ne: "" },
                 status: { $ne: "inactive" }
             }).toArray();
-            console.log(reminderClients);
+            // console.log(reminderClients);
             for (const client of reminderClients) {
                 // Find all children with birthday next month
                 const childrenWithBirthdayNextMonth = (client.children || []).filter((child: any) => {
                     return child.birthday && child.birthday.endsWith(nextMonthStr);
                 });
-
+                console.log(childrenWithBirthdayNextMonth);
                 for (const child of childrenWithBirthdayNextMonth) {
                     let message = birthdayReminder1mSetting.text || '';
                     const birthdayDate = formatDateUA(child.birthday);
-
+                    console.log(birthdayDate);
                     message = message.replace(/\[ChildName\]/g, child.name || "дитина");
                     message = message.replace(/\[ClientName\]/g, client.name || "Клієнт");
                     message = message.replace(/\[BirthdayDate\]/g, birthdayDate);
