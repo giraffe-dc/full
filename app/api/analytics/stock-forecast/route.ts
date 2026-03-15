@@ -232,19 +232,38 @@ export async function GET(request: NextRequest) {
         ]);
 
         // 6. Build final report
-        const forecast = Array.from(allIngredientNames).map((normName) => {
+        const forecastRaw = Array.from(allIngredientNames).map((normName) => {
             const demandData = ingredientDemand[normName];
             const currentBalance = stockMap.get(normName) || 0;
 
             // Resolve proper IDs and fallback original names
             const ingId = nameToRealId.get(normName) || normName; 
             const name = demandData?.name || stockNamesMap.get(normName) || 'Інгредієнт';
-            const unit = demandData?.unit || stockUnitsMap.get(normName) || 'од.';
             
-            const totalQty = demandData?.totalQty || 0;
-            const confirmedQty = demandData?.confirmedQty || 0;
-            const draftQty = demandData?.draftQty || 0;
+            const demandUnit = (demandData?.unit || '').toLowerCase();
+            const stockUnit = (stockUnitsMap.get(normName) || '').toLowerCase();
+            
+            let totalQty = demandData?.totalQty || 0;
+            let confirmedQty = demandData?.confirmedQty || 0;
+            let draftQty = demandData?.draftQty || 0;
             const events = demandData?.events || [];
+
+            // Standardize units if there is a mismatch (e.g., Recipe uses 'г' but Stock uses 'кг')
+            let finalUnit = stockUnit || demandUnit || 'од.';
+            
+            if (demandUnit === 'г' && stockUnit === 'кг') {
+                totalQty = totalQty / 1000;
+                confirmedQty = confirmedQty / 1000;
+                draftQty = draftQty / 1000;
+                events.forEach(e => { e.qty = e.qty / 1000; });
+            } else if (demandUnit === 'кг' && stockUnit === 'г') {
+                totalQty = totalQty * 1000;
+                confirmedQty = confirmedQty * 1000;
+                draftQty = draftQty * 1000;
+                events.forEach(e => { e.qty = e.qty * 1000; });
+            } else if (!stockUnit && demandUnit) {
+               finalUnit = demandUnit;
+            }
 
             const shortage = Math.max(0, totalQty - currentBalance);
             const confirmedShortage = Math.max(0, confirmedQty - currentBalance);
@@ -252,7 +271,7 @@ export async function GET(request: NextRequest) {
             return {
                 ingId,
                 name,
-                unit,
+                unit: finalUnit,
                 currentBalance,
                 demand: {
                     total: totalQty,
@@ -270,6 +289,9 @@ export async function GET(request: NextRequest) {
                 })
             };
         });
+
+        // Фільтруємо: залишаємо тільки ті, де є потреба > 0
+        const forecast = forecastRaw.filter(item => item.demand.total > 0);
 
         // Sort by largest confirmed shortage first, then total shortage
         forecast.sort((a, b) => (b.shortage.confirmed - a.shortage.confirmed) || (b.shortage.total - a.shortage.total));
