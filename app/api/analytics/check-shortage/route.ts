@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         const packageMap = new Map(packages.map(p => [p.id || p._id.toString(), p]));
 
         const neededIngredients: Record<string, { qty: number, name: string, unit: string }> = {};
+        const nameToRealId = new Map<string, string>();
 
         function addRecipe(recipeId: string, qty: number) {
             const recipe = recipeMap.get(recipeId);
@@ -41,12 +42,26 @@ export async function POST(request: NextRequest) {
             }
 
             recipe.ingredients.forEach((ing: any) => {
-                const id = ing.id;
+                const normName = (ing.name || 'Unknown').toLowerCase().trim();
                 const amount = (ing.quantity || ing.gross || 0) * qty;
-                if (!neededIngredients[id]) {
-                    neededIngredients[id] = { qty: 0, name: ing.name || 'Unknown', unit: ing.unit || '' };
+                
+                let ingId = '';
+                if (typeof ing.id === 'string') {
+                    ingId = ing.id;
+                } else if (ing.id && typeof ing.id === 'object') {
+                    ingId = String((ing.id as any)._id || ing.id);
                 }
-                neededIngredients[id].qty += amount;
+                
+                if (ingId && !nameToRealId.has(normName) && !ingId.startsWith('ing-')) {
+                    nameToRealId.set(normName, ingId);
+                } else if (ingId && !nameToRealId.has(normName)) {
+                    nameToRealId.set(normName, ingId);
+                }
+
+                if (!neededIngredients[normName]) {
+                    neededIngredients[normName] = { qty: 0, name: ing.name || 'Unknown', unit: ing.unit || '' };
+                }
+                neededIngredients[normName].qty += amount;
             });
         }
 
@@ -60,10 +75,19 @@ export async function POST(request: NextRequest) {
                 // If it's directly an ingredient, add it
                 else if (ingredientMap.has(p.id)) {
                     const ing = ingredientMap.get(p.id);
-                    if (!neededIngredients[p.id]) {
-                        neededIngredients[p.id] = { qty: 0, name: ing.name || 'Unknown', unit: ing.unit || '' };
+                    const normName = (ing.name || 'Unknown').toLowerCase().trim();
+                    const ingId = ing.id || (ing._id ? ing._id.toString() : '');
+                    
+                    if (ingId && !nameToRealId.has(normName) && !ingId.startsWith('ing-')) {
+                        nameToRealId.set(normName, ingId);
+                    } else if (ingId && !nameToRealId.has(normName)) {
+                        nameToRealId.set(normName, ingId);
                     }
-                    neededIngredients[p.id].qty += p.quantity;
+
+                    if (!neededIngredients[normName]) {
+                        neededIngredients[normName] = { qty: 0, name: ing.name || 'Unknown', unit: ing.unit || '' };
+                    }
+                    neededIngredients[normName].qty += p.quantity;
                 } else {
                     console.log(`ℹ️ [API:check-shortage] Product ${p.id} is neither a recipe nor an ingredient`);
                 }
@@ -102,7 +126,11 @@ export async function POST(request: NextRequest) {
             { $unwind: "$items" },
             {
                 $group: {
-                    _id: { $toString: "$items.itemId" },
+                    _id: { 
+                        itemId: { $toString: "$items.itemId" },
+                        itemName: "$items.itemName" 
+                    },
+                    unit: { $first: "$items.unit" },
                     movements: {
                         $push: {
                             type: "$type",
@@ -116,7 +144,19 @@ export async function POST(request: NextRequest) {
         ]).toArray();
 
         const balances: Record<string, number> = {};
+        const stockUnitsMap: Record<string, string> = {};
+
         stockItems.forEach(item => {
+            if (!item._id.itemName) return;
+            const normName = item._id.itemName.toLowerCase().trim();
+            const itemId = item._id.itemId;
+            
+            if (itemId && itemId !== "undefined") {
+                 nameToRealId.set(normName, itemId);
+            }
+            
+            stockUnitsMap[normName] = item.unit || '';
+
             const sorted = item.movements.sort((a: any, b: any) => {
                 const da = a.date ? new Date(a.date).getTime() : 0;
                 const db = b.date ? new Date(b.date).getTime() : 0;
@@ -132,22 +172,41 @@ export async function POST(request: NextRequest) {
                     balance -= m.qty;
                 }
             }
-            balances[item._id] = balance;
+            
+            // accumulate across warehouses just in case
+            balances[normName] = (balances[normName] || 0) + balance;
         });
 
         // 6. Calculate shortages
         const shortages = Object.entries(neededIngredients)
-            .map(([ingId, data]) => {
-                const current = balances[ingId] || 0;
-                const deficit = data.qty - current;
+            .map(([normName, data]) => {
+                const current = balances[normName] || 0;
+                let needed = data.qty;
+                const demandUnit = (data.unit || '').toLowerCase();
+                const stockUnit = (stockUnitsMap[normName] || '').toLowerCase();
+                
+                let finalUnit = stockUnit || demandUnit || 'од.';
+                let currentBalConverted = current;
+                let neededConverted = needed;
+
+                // Standardize units if mismatch
+                if (demandUnit === 'г' && stockUnit === 'кг') {
+                    neededConverted = needed / 1000;
+                } else if (demandUnit === 'кг' && stockUnit === 'г') {
+                    neededConverted = needed * 1000;
+                } else if (!stockUnit && demandUnit) {
+                    finalUnit = demandUnit;
+                }
+
+                const deficit = neededConverted - currentBalConverted;
 
                 if (deficit > 0) {
                     return {
-                        ingId,
+                        ingId: nameToRealId.get(normName) || normName,
                         name: data.name,
-                        unit: data.unit,
-                        needed: data.qty,
-                        current,
+                        unit: finalUnit,
+                        needed: neededConverted,
+                        current: currentBalConverted,
                         deficit
                     };
                 }
