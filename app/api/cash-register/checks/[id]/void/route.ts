@@ -17,7 +17,6 @@ export async function POST(
         if (!check) {
             return NextResponse.json({ error: "Check not found" }, { status: 404 });
         }
-
         // Add void history entry
         const voidHistory = {
             action: 'void',
@@ -27,7 +26,7 @@ export async function POST(
         };
 
         // Update check with void status before deletion (for audit trail in receipts if needed)
-        await db.collection("checks").updateOne(
+        const voidedCheck = await db.collection("checks").updateOne(
             { _id: new ObjectId(id) },
             {
                 $set: {
@@ -38,7 +37,6 @@ export async function POST(
                 $push: { history: voidHistory }
             }
         );
-
         // --- Update linked Event status ---
         await db.collection("events").updateMany(
             { checkId: id },
@@ -60,7 +58,7 @@ export async function POST(
         }
 
         // Delete the check
-        await db.collection("checks").deleteOne({ _id: new ObjectId(id) });
+        // await db.collection("checks").deleteOne({ _id: new ObjectId(id) });
 
         return NextResponse.json({ success: true, message: "Чек анульовано" });
 
