@@ -31,9 +31,9 @@ export async function GET(request: NextRequest) {
 
         // Map recipes by name (lowercase) for flexible lookup
         const recipeMap = new Map();
-        recipes.forEach(r => recipeMap.set(r.name.toLowerCase(), r));
+        recipes.forEach(r => recipeMap.set(r.name.toLowerCase().trim(), r));
 
-        // 3. Aggregate ingredient demand
+        // 3. Aggregate ingredient demand (Group by normalized name)
         const ingredientDemand: Record<string, {
             name: string,
             unit: string,
@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
             draftQty: number,
             events: { id: string, title: string, date: string, status: string, qty: number }[]
         }> = {};
+
+        // Track the best available ID for a given normalized name
+        const nameToRealId = new Map<string, string>();
 
         for (const event of events) {
             const eventServices = [...(event.customServices || [])];
@@ -57,23 +60,32 @@ export async function GET(request: NextRequest) {
 
             for (const service of eventServices) {
                 // Try to find recipe by name
-                const recipe = recipeMap.get(service.name.toLowerCase());
+                const serviceNameNorm = service.name.toLowerCase().trim();
+                const recipe = recipeMap.get(serviceNameNorm);
 
                 if (recipe && recipe.ingredients) {
                     for (const ing of recipe.ingredients) {
-                        // Normalize ingredient ID to string
+                        if (!ing.name) continue; // Skip if no valid name
+                        
+                        const normName = ing.name.toLowerCase().trim();
+
+                        // Normalize ingredient ID to string tracking (from recipe)
                         let ingId = '';
                         if (typeof ing.id === 'string') {
                             ingId = ing.id;
                         } else if (ing.id && typeof ing.id === 'object') {
-                            // Handle ObjectId or object with _id
-                            ingId = String(ing.id._id || ing.id);
+                            ingId = String((ing.id as any)._id || ing.id);
+                        }
+                        
+                        // Update best known ID (recipe IDs are often temporary 'ing-1725...', so keep them as fallback if we have nothing else)
+                        if (ingId && !nameToRealId.has(normName) && !ingId.startsWith('ing-')) {
+                            nameToRealId.set(normName, ingId);
+                        } else if (ingId && !nameToRealId.has(normName)) {
+                            nameToRealId.set(normName, ingId);
                         }
 
-                        if (!ingId) continue; // Skip if no valid ID
-
-                        if (!ingredientDemand[ingId]) {
-                            ingredientDemand[ingId] = {
+                        if (!ingredientDemand[normName]) {
+                            ingredientDemand[normName] = {
                                 name: ing.name,
                                 unit: ing.unit,
                                 totalQty: 0,
@@ -88,14 +100,14 @@ export async function GET(request: NextRequest) {
                         // Service quantity is how many portions were ordered
                         const requiredQty = (ing.quantity || ing.gross || 0) * (service.quantity || 1);
 
-                        ingredientDemand[ingId].totalQty += requiredQty;
+                        ingredientDemand[normName].totalQty += requiredQty;
                         if (event.status === 'confirmed' || event.status === 'in_progress') {
-                            ingredientDemand[ingId].confirmedQty += requiredQty;
+                            ingredientDemand[normName].confirmedQty += requiredQty;
                         } else {
-                            ingredientDemand[ingId].draftQty += requiredQty;
+                            ingredientDemand[normName].draftQty += requiredQty;
                         }
 
-                        ingredientDemand[ingId].events.push({
+                        ingredientDemand[normName].events.push({
                             id: event.id,
                             title: event.title,
                             date: event.date,
@@ -187,37 +199,48 @@ export async function GET(request: NextRequest) {
             }
         ]).toArray();
 
-        const stockMap = new Map();
-        const stockNamesMap = new Map();
-        const stockUnitsMap = new Map();
+        const stockMap = new Map<string, number>();
+        const stockNamesMap = new Map<string, string>();
+        const stockUnitsMap = new Map<string, string>();
 
         stockItems.forEach(item => {
-            // Sum quantities across all warehouses for each ingredient
-            // Convert itemId to string for consistent comparison
+            // Group and merge stock balances by normalized item name
+            if (!item.itemName) return;
+            
+            const normName = item.itemName.toLowerCase().trim();
             const itemId = String(item._id.itemId);
-            const currentQty = stockMap.get(itemId) || 0;
-            stockMap.set(itemId, currentQty + (item.quantity || 0));
-            // Store name and unit for ingredients without demand
-            if (!stockNamesMap.has(itemId)) {
-                stockNamesMap.set(itemId, item.itemName);
-                stockUnitsMap.set(itemId, item.unit);
+            
+            // Overwrite anything stored previously with this actual DB ID from stock
+            if (itemId && itemId !== "undefined") {
+                 nameToRealId.set(normName, itemId);
+            }
+
+            const currentQty = stockMap.get(normName) || 0;
+            stockMap.set(normName, currentQty + (item.quantity || 0));
+            
+            // Store original name and unit for ingredients without demand
+            if (!stockNamesMap.has(normName)) {
+                stockNamesMap.set(normName, item.itemName);
+                stockUnitsMap.set(normName, item.unit);
             }
         });
 
-        // 5. Merge stock items with demand data (include ALL ingredients with any balance or demand)
-        const allIngredientIds = new Set([
+        // 5. Merge stock items with demand data (include ALL ingredients with any balance or demand by normalized name)
+        const allIngredientNames = new Set([
             ...Object.keys(ingredientDemand),
             ...Array.from(stockMap.keys())
         ]);
 
         // 6. Build final report
-        const forecast = Array.from(allIngredientIds).map((ingId) => {
-            const demandData = ingredientDemand[ingId];
-            const currentBalance = stockMap.get(ingId) || 0;
+        const forecast = Array.from(allIngredientNames).map((normName) => {
+            const demandData = ingredientDemand[normName];
+            const currentBalance = stockMap.get(normName) || 0;
 
-            // If no demand, use stock data for name/unit
-            const name = demandData?.name || stockNamesMap.get(ingId) || 'Інгредієнт';
-            const unit = demandData?.unit || stockUnitsMap.get(ingId) || 'од.';
+            // Resolve proper IDs and fallback original names
+            const ingId = nameToRealId.get(normName) || normName; 
+            const name = demandData?.name || stockNamesMap.get(normName) || 'Інгредієнт';
+            const unit = demandData?.unit || stockUnitsMap.get(normName) || 'од.';
+            
             const totalQty = demandData?.totalQty || 0;
             const confirmedQty = demandData?.confirmedQty || 0;
             const draftQty = demandData?.draftQty || 0;
