@@ -8,6 +8,10 @@ export async function GET(req: NextRequest) {
     const externalUrl = process.env.NEXT_PUBLIC_CHAT_EXTERNAL_URL;
     const apiKey = process.env.NOTIFICATIONS_API_KEY;
 
+    console.log('=== CHAT PROXY DEBUG ===');
+    console.log(`externalUrl: ${externalUrl}`);
+    console.log(`apiKey: ${apiKey?.substring(0, 8)}...`);
+
     if (!externalUrl || !apiKey) {
         return NextResponse.json(
             { error: "Server configuration missing (URL or API Key)" },
@@ -35,8 +39,11 @@ export async function GET(req: NextRequest) {
             },
         });
 
+        console.log(`External API response status: ${response.status}`);
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            console.log(`External API error:`, errorData);
             return NextResponse.json(
                 { error: errorData.error || `External API error: ${response.status}` },
                 { status: response.status }
