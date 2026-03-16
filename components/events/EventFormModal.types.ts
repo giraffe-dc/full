@@ -52,6 +52,7 @@ export interface EventFormData {
 export interface SelectedProduct {
   productId: string;
   name: string;
+  categoryId?: string;
   quantity: number;
   price: number;
 }

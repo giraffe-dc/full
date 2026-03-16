@@ -63,9 +63,12 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
             if (condition.type === 'total_amount') {
                 isMatch = true;
             } else if (condition.type === 'product') {
-                console.log(item);
-                console.log(targetIds);
-                if (item.productId && targetIds.includes(item.productId)) isMatch = true;
+                if (
+                    (item.productId && targetIds.includes(item.productId)) ||
+                    (condition.targetNames && condition.targetNames.includes(item.serviceName))
+                ) {
+                    isMatch = true;
+                }
             } else if (condition.type === 'category') {
                 // Tricky: if cart item stores category name but we have category ID in targetIds.
                 // We might need to match via Names if possible, or expect Ids.
@@ -75,7 +78,10 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
                 // CartItem interface: `category: string`. Usually name.
 
                 // Fallback: match by name if targetNames exists
-                if (condition.targetNames && condition.targetNames.includes(item.category)) {
+                if (
+                    (condition.targetNames && condition.targetNames.includes(item.category)) ||
+                    (condition.targetIds && condition.targetIds.includes(item.category))
+                ) {
                     isMatch = true;
                 }
                 // If item.category is actually an ID (unlikely in current code?), check targetIds
@@ -123,8 +129,8 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
                     let isMatch = false;
                     // Simplistic matching logic
                     if (cond.type === 'total_amount') isMatch = true;
-                    if (cond.type === 'product' && item.productId && cond.targetIds?.includes(item.productId)) isMatch = true;
-                    if (cond.type === 'category' && cond.targetNames?.includes(item.category)) isMatch = true;
+                    if (cond.type === 'product' && ( (item.productId && cond.targetIds?.includes(item.productId)) || (cond.targetNames?.includes(item.serviceName)) )) isMatch = true;
+                    if (cond.type === 'category' && (cond.targetNames?.includes(item.category) || cond.targetIds?.includes(item.category))) isMatch = true;
                     // Note: Category matching by name fallback
 
                     if (isMatch) matchingItemIndices.add(idx);

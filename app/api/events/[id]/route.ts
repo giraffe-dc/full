@@ -70,7 +70,7 @@ export async function PUT(
           serviceId: `evt_${svc.id}`,
           productId: svc.id,
           serviceName: svc.name,
-          category: 'events',
+          category: svc.category || 'events',
           price: svc.unitPrice,
           quantity: svc.quantity,
           subtotal: svc.total,

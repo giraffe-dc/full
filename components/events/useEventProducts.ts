@@ -38,15 +38,27 @@ export function useEventProducts(event?: any | null): UseEventProductsReturn {
   // Load products from event when editing
   useEffect(() => {
     if (event?.customServices && event.customServices.length > 0) {
-      const loadedProducts = event.customServices.map((service: any) => ({
-        productId: service.id,
-        name: service.name,
-        quantity: service.quantity,
-        price: service.unitPrice,
-      }));
+      const loadedProducts = event.customServices.map((service: any) => {
+        // Find correct category if it's currently "events" or "food"
+        let categoryId = service.category;
+        if (!categoryId || categoryId === 'events' || categoryId === 'food') {
+          const product = products.find(p => p.id === service.id);
+          const recipe = recipes.find(r => r.id === service.id);
+          if (product) categoryId = product.category;
+          else if (recipe) categoryId = recipe.category;
+        }
+
+        return {
+          productId: service.id,
+          name: service.name,
+          categoryId: categoryId,
+          quantity: service.quantity,
+          price: service.unitPrice,
+        };
+      });
       setSelectedProducts(loadedProducts);
     }
-  }, [event]);
+  }, [event, products, recipes]);
 
   // Also load products from check if event has assignedRooms (table)
   useEffect(() => {
@@ -64,21 +76,32 @@ export function useEventProducts(event?: any | null): UseEventProductsReturn {
               )[0];
               
               if (check.items && check.items.length > 0) {
-                const checkProducts = check.items.map((item: any) => ({
-                  productId: item.productId || item.serviceId,
-                  name: item.serviceName,
-                  quantity: item.quantity,
-                  price: item.price,
-                }));
+                const checkProducts = check.items.map((item: any) => {
+                  let categoryId = item.category;
+                  if (!categoryId || categoryId === 'events' || categoryId === 'food') {
+                    const product = products.find(p => p.id === (item.productId || item.serviceId));
+                    const recipe = recipes.find(r => r.id === (item.productId || item.serviceId));
+                    if (product) categoryId = product.category;
+                    else if (recipe) categoryId = recipe.category;
+                  }
+
+                  return {
+                    productId: item.productId || item.serviceId,
+                    name: item.serviceName,
+                    categoryId: categoryId,
+                    quantity: item.quantity,
+                    price: item.price,
+                  };
+                });
                 setSelectedProducts(checkProducts);
-                console.log('📦 Loaded products from check:', checkProducts);
+                console.log('📦 Loaded products from check (with re-hydration):', checkProducts);
               }
             }
           })
           .catch(error => console.error('Error loading check products:', error));
       }
     }
-  }, [event]);
+  }, [event, products, recipes]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -106,6 +129,7 @@ export function useEventProducts(event?: any | null): UseEventProductsReturn {
       setSelectedProducts(prev => [...prev, {
         productId: product.id,
         name: product.name,
+        categoryId: product.category,
         quantity: 1,
         price: product.sellingPrice,
       }]);

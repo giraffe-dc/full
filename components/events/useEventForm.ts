@@ -153,7 +153,7 @@ export function useEventForm({
         customServices: selectedProducts.map(item => ({
           id: item.productId,
           name: item.name,
-          category: 'food',
+          category: item.categoryId || 'events',
           quantity: item.quantity,
           unitPrice: item.price,
           total: item.price * item.quantity,

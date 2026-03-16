@@ -130,7 +130,8 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
 
     // Filter items based on query
     const filteredItems = searchItems.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleSelectItem = (index: number, item: SearchItem) => {
