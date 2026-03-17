@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
+import { normalizePhone } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -132,9 +133,10 @@ export async function POST(req: NextRequest) {
     const db = client.db("giraffe");
 
     // Перевірка унікальності телефону
-    if (phone) {
+    const normalizedPhone = normalizePhone(phone);
+    if (normalizedPhone) {
       const existingClient = await db.collection("clients").findOne({
-        phone,
+        phone: normalizedPhone,
         status: { $ne: "inactive" },
         ...(id ? { _id: { $ne: new ObjectId(id) } } : {}) // Виключити поточного клієнта при редагуванні
       });
@@ -142,7 +144,7 @@ export async function POST(req: NextRequest) {
       if (existingClient) {
         return NextResponse.json({
           error: "duplicate_phone",
-          message: `Клієнт з номером ${phone} вже існує: ${existingClient.name}`
+          message: `Клієнт з номером ${normalizedPhone} вже існує: ${existingClient.name}`
         }, { status: 400 });
       }
     }
@@ -169,7 +171,7 @@ export async function POST(req: NextRequest) {
         {
           $set: {
             name,
-            phone,
+            phone: normalizedPhone,
             email,
             address,
             comment,
@@ -187,11 +189,11 @@ export async function POST(req: NextRequest) {
     // Інакше - створення нового
     const result = await db.collection("clients").insertOne({
       name,
-      phone,
+      phone: normalizedPhone,
       email,
       address,
       comment,
-      birthday, // Keep for backward compatibility
+      birthday: birthday || "", // Keep for backward compatibility
       children: normalizedChildren, // New field
       telegramChatId,
       telegramOptOut: !!telegramOptOut,

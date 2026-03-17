@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Customer } from '../../types/cash-register';
 import styles from './CustomerSelector.module.css';
+import { normalizePhone } from '@/lib/utils';
 
 interface CustomerSelectorProps {
   customers: Customer[];
@@ -31,7 +32,7 @@ export function CustomerSelector({
     const newCustomer: Customer = {
       id: `customer-${Date.now()}`,
       name: formData.name,
-      phone: formData.phone,
+      phone: normalizePhone(formData.phone),
       email: formData.email,
       createdAt: new Date().toISOString(),
       visits: 0,

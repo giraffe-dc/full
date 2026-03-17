@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ClientFormModal.module.css"; // Reuse existing styles
 import { StaffRow } from "./StaffSection";
+import { normalizePhone } from "@/lib/utils";
 
 interface StaffFormModalProps {
     onClose: () => void;
@@ -32,7 +33,11 @@ export function StaffFormModal({ onClose, onSave, staff }: StaffFormModalProps) 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await onSave(formData);
+        const normalizedData = {
+            ...formData,
+            phone: normalizePhone(formData.phone)
+        };
+        await onSave(normalizedData);
         onClose();
     };
 

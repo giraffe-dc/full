@@ -3,6 +3,7 @@ import styles from "./ClientFormModal.module.css";
 import { ClientRow } from "./ClientsSection";
 import { Child } from "@/types/accounting";
 import { ChildrenEditor } from "./ChildrenEditor";
+import { normalizePhone } from "@/lib/utils";
 
 interface ClientFormModalProps {
     onClose: () => void;
@@ -41,7 +42,11 @@ export function ClientFormModal({ onClose, onSave, client }: ClientFormModalProp
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const success = await onSave(formData);
+        const normalizedData = {
+            ...formData,
+            phone: normalizePhone(formData.phone)
+        };
+        const success = await onSave(normalizedData);
         // Закриваємо модалку тільки якщо збереження успішне
         if (success) {
             onClose();

@@ -55,8 +55,8 @@ export function mapCheckToFormData(check: any): Partial<EventFormData> {
     result.childGuests = check.guestsCount;
   }
   
-  if (check.waiterName) {
-    result.clientName = check.waiterName;
+  if (check.customerName) {
+    result.clientName = check.customerName;
   }
   
   return result;

@@ -5,6 +5,7 @@ import { EventFormData, UseEventFormReturn, CheckData, SelectedProduct } from '.
 import { calculateDuration, formatDuration, calculateTotals, mapProductsToCheckItems } from './EventFormModal.utils';
 import { validateEventForm } from './EventFormModal.validators';
 import { useCheckSync } from './useCheckSync';
+import { normalizePhone } from '@/lib/utils';
 
 interface UseEventFormProps {
   event?: any | null;
@@ -138,7 +139,8 @@ export function useEventForm({
     const selectedProducts = getSelectedProducts();
 
     // Validate
-    const validationErrors = validateEventForm(formData, selectedDepartment, selectedTable);
+    const normalizedPhone = normalizePhone(formData.clientPhone);
+    const validationErrors = validateEventForm({ ...formData, clientPhone: normalizedPhone }, selectedDepartment, selectedTable);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       setLoading(false);
@@ -149,6 +151,7 @@ export function useEventForm({
       // Prepare event data (single payload)
       const eventData = {
         ...formData,
+        clientPhone: normalizedPhone,
         totalGuests: formData.childGuests + formData.adultGuests,
         customServices: selectedProducts.map(item => ({
           id: item.productId,

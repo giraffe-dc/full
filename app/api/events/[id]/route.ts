@@ -8,6 +8,7 @@ import {
 import { PaymentStatus } from '@/types/events';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { normalizePhone } from '@/lib/utils';
 
 // GET /api/events/[id] - Get single event
 export async function GET(
@@ -47,6 +48,10 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
+    
+    if (body.clientPhone) {
+      body.clientPhone = normalizePhone(body.clientPhone);
+    }
 
     // Check if event exists
     const existingEvent = await findEventById(id);

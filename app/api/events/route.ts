@@ -10,6 +10,7 @@ import {
 import { EventStatus, EventType, PaymentStatus } from '@/types/events';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { normalizePhone } from '@/lib/utils';
 
 // GET /api/events - List events with filters
 export async function GET(request: NextRequest) {
@@ -137,10 +138,11 @@ export async function POST(request: NextRequest) {
         // --- NEW: Customer Logic ---
         let customerId: string | null = null;
         let customerName: string = body.clientName;
+        const normalizedPhone = normalizePhone(body.clientPhone);
 
-        if (body.clientPhone) {
+        if (normalizedPhone) {
           const existingClient = await db.collection('clients').findOne({
-            phone: body.clientPhone,
+            phone: normalizedPhone,
             status: { $ne: 'inactive' }
           });
 
@@ -151,7 +153,7 @@ export async function POST(request: NextRequest) {
             // Create new client
             const newClientResult = await db.collection('clients').insertOne({
               name: body.clientName,
-              phone: body.clientPhone,
+              phone: normalizedPhone,
               email: body.clientEmail || "",
               status: 'active',
               createdAt: new Date()
