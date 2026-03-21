@@ -40,6 +40,15 @@ export async function POST(request: Request) {
         let receiptId: ObjectId | undefined;
         let createdReceipt: any;
 
+        // Ensure we have a shiftId (find open shift if not provided)
+        let activeShiftId = shiftId;
+        if (!activeShiftId) {
+            const openShift = await db.collection("cash_shifts").findOne({ status: "open" });
+            if (openShift) {
+                activeShiftId = openShift._id.toString();
+            }
+        }
+
         try {
             await session.withTransaction(async () => {
                 // Prepare history
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
                 // 1. Create Receipt
                 const receipt = {
                     receiptNumber: Date.now(), // Simple number generation for now
-                    shiftId: shiftId ? new ObjectId(shiftId) : null, // Convert to ObjectId
+                    shiftId: activeShiftId ? new ObjectId(activeShiftId) : null, // Convert to ObjectId
                     customerId: customerId ? new ObjectId(customerId) : null,
                     waiter: waiterName,
                     waiterId: waiterId ? new ObjectId(waiterId) : null,
@@ -290,7 +299,6 @@ export async function POST(request: Request) {
                                     tableId: originalCheck.tableId,
                                     tableName: originalCheck.tableName,
                                     departmentId: originalCheck.departmentId,
-                                    shiftId: originalCheck.shiftId ? new ObjectId(originalCheck.shiftId) : null,
                                     guestsCount: originalCheck.guestsCount,
                                     waiterId: originalCheck.waiterId,
                                     waiterName: originalCheck.waiterName,

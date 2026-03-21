@@ -82,13 +82,12 @@ export async function GET(request: Request) {
             const end = shift.endTime ? new Date(shift.endTime) : new Date();
 
             // 1. Fetch Receipts
-            let shiftReceipts = await db.collection("receipts").find({ shiftId: shift._id }).toArray();
-            if (shiftReceipts.length === 0) {
-                // Fallback to date
-                shiftReceipts = await db.collection("receipts").find({
-                    createdAt: { $gte: start, $lte: end }
-                }).toArray();
-            }
+            const shiftReceipts = await db.collection("receipts").find({
+                $or: [
+                    { shiftId: shift._id },
+                    { createdAt: { $gte: start, $lte: end } }
+                ]
+            }).toArray();
 
             const totalSalesCash = shiftReceipts
                 .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
@@ -344,17 +343,18 @@ export async function PUT(request: Request) {
         const client = await clientPromise;
         const db = client.db("giraffe");
 
+        // Fetch current shift to get startBalance and startTime
+        const shift = await db.collection("cash_shifts").findOne({ _id: new ObjectId(id) });
+        if (!shift) return NextResponse.json({ error: "Shift not found" }, { status: 404 });
+
         // Handle Active Staff Update (Clock In/Out)
         if (activeStaffIds) {
-            // 1. Fetch current active staff to determine added/removed
-            const currentShift = await db.collection("cash_shifts").findOne({ _id: new ObjectId(id) });
-            const currentIds: string[] = currentShift?.activeStaffIds || [];
-
-            // 2. Identify changes
+            // 1. Identify changes
+            const currentIds: string[] = shift.activeStaffIds || [];
             const toAdd = activeStaffIds.filter((sid: string) => !currentIds.includes(sid));
             const toRemove = currentIds.filter((sid: string) => !activeStaffIds.includes(sid));
 
-            // 3. Clock In (Add Log)
+            // 2. Clock In (Add Log)
             if (toAdd.length > 0) {
                 const newLogs = toAdd.map((sid: string) => ({
                     staffId: sid,
@@ -366,7 +366,7 @@ export async function PUT(request: Request) {
                 await db.collection("staff_logs").insertMany(newLogs);
             }
 
-            // 4. Clock Out (Close Log)
+            // 3. Clock Out (Close Log)
             if (toRemove.length > 0) {
                 await db.collection("staff_logs").updateMany(
                     {
@@ -386,11 +386,21 @@ export async function PUT(request: Request) {
         }
 
         // Calculate totals from receipts linked to this shift
-        // Alternatively, we could rely on the frontend passing totals, but backend calculation is safer.
-        // Let's aggregate receipts.
-
-        const receipts = await db.collection("receipts").find({ shiftId: new ObjectId(id) }).toArray();
         const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+
+        const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalIncasation = transactions.filter(t => t.type === 'incasation').reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        const startTime = new Date(shift.startTime);
+        const endTime = new Date();
+
+        const receipts = await db.collection("receipts").find({
+            $or: [
+                { shiftId: new ObjectId(id) },
+                { createdAt: { $gte: startTime, $lte: endTime } }
+            ]
+        }).toArray();
 
         const totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
         const totalSalesCash = receipts
@@ -399,14 +409,6 @@ export async function PUT(request: Request) {
         const totalSalesCard = receipts
             .filter(r => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
             .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
-
-        const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
-        const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
-        const totalIncasation = transactions.filter(t => t.type === 'incasation').reduce((sum, t) => sum + (t.amount || 0), 0);
-
-        // Fetch current shift to get startBalance
-        const shift = await db.collection("cash_shifts").findOne({ _id: new ObjectId(id) });
-        if (!shift) return NextResponse.json({ error: "Shift not found" }, { status: 404 });
 
         // Expected Cash = Start + Cash Sales + Income - Expenses - Incasation
         const expectedCash = (shift.startBalance || 0) + totalSalesCash + totalIncome - totalExpenses - totalIncasation;
