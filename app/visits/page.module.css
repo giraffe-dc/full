@@ -143,146 +143,210 @@
     background: #2563eb;
 }
 
-/* Modal Styles */
+/* Modal Styles - Glassmorphism & Structured Layout */
 .modalOverlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
+    background: var(--bg-overlay);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .modal {
-    background: white;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
+    width: 95%;
+    max-width: 750px; /* Increased for better spacing */
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-light);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    overflow: hidden;
+}
+
+.modal form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* Important for flex-child scroll */
+    overflow: hidden;
 }
 
 .modalHeader {
-    padding: 20px 24px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--gray-100);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: var(--gradient-surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .modalHeader h2 {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--gray-900);
     margin: 0;
 }
 
 .btnClose {
-    background: none;
+    background: var(--gray-100);
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     cursor: pointer;
-    color: #9ca3af;
+    color: var(--gray-500);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    transition: background 0.2s;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
 }
 
 .btnClose:hover {
-    background: #f3f4f6;
-    color: #4b5563;
+    background: var(--error-bg);
+    color: var(--error-text);
+    transform: rotate(90deg);
 }
 
 .modalBody {
-    padding: 24px;
+    padding: 12px 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .formGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.formSection {
+    display: flex;
+    flex-wrap: wrap; /* Flexbox approach is more stable */
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-100);
+}
+
+.sectionTitle {
+    width: 100%; /* Full width in flex box */
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary-600);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sectionTitle::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: var(--gradient-primary);
+    border-radius: 2px;
 }
 
 .formGroup {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    width: calc(50% - 6px); /* Perfect 2 columns with 12px gap */
 }
 
 .formGroupFull {
-    grid-column: span 2;
+    width: 100% !important;
 }
 
 .formGroup label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--gray-500);
+    margin-bottom: 2px;
 }
 
 .input,
 .select {
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    outline: none;
+    padding: 8px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    background: var(--bg-surface);
+    color: var(--gray-900);
+    transition: all var(--transition-fast);
 }
 
 .input:focus,
 .select:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-50);
+    background: white;
+}
+
+.select:disabled {
+    background: var(--gray-100);
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .modalFooter {
-    padding: 16px 24px;
-    background: #f9fafb;
-    border-top: 1px solid #e5e7eb;
+    padding: 24px 32px;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-100);
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    border-radius: 0 0 16px 16px;
+    gap: 16px;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 .btnCancel {
     background: white;
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 10px 20px;
-    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-700);
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
     font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
 }
 
 .btnCancel:hover {
-    background: #f3f4f6;
+    background: var(--gray-100);
+    border-color: var(--gray-300);
 }
 
 .btnSubmit {
-    background: #3b82f6;
+    background: var(--gradient-primary);
     color: white;
     border: none;
-    padding: 10px 24px;
-    border-radius: 8px;
+    padding: 12px 32px;
+    border-radius: var(--radius-md);
     font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+    transition: all var(--transition-normal);
 }
 
 .btnSubmit:hover {
-    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+    opacity: 0.9;
 }
 
 .loadingOverlay {

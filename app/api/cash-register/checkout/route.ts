@@ -326,6 +326,18 @@ export async function POST(request: Request) {
                             { session }
                         );
 
+                        // --- NEW: Update linked Visit status ---
+                        await db.collection("visits").updateMany(
+                            { checkId: body.checkId },
+                            {
+                                $set: {
+                                    paymentStatus: 'paid',
+                                    updatedAt: new Date().toISOString()
+                                }
+                            },
+                            { session }
+                        );
+
                         // Delete from checks (economy)
                         await db.collection("checks").deleteOne({
                             _id: new ObjectId(body.checkId)

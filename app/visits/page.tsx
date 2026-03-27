@@ -16,13 +16,26 @@ export default function VisitingTimePage() {
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [user, setUser] = useState<any>(null);
+    const [mounted, setMounted] = useState(false);
 
     // Form / Modal state
     const [showModal, setShowModal] = useState(false);
     const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
+    
+    // Data for selects
+    const [products, setProducts] = useState<any[]>([]);
+    const [halls, setHalls] = useState<any[]>([]);
+    const [tables, setTables] = useState<any[]>([]);
+    const [activeStaff, setActiveStaff] = useState<any[]>([]);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
         serviceName: "",
+        productId: "",
         childName: "",
         parentName: "",
         childAge: "",
@@ -31,7 +44,10 @@ export default function VisitingTimePage() {
         startTime: "",
         endTime: "",
         paymentStatus: "unpaid" as 'paid' | 'unpaid',
-        amount: ""
+        amount: "",
+        hallId: "",
+        tableId: "",
+        staffId: ""
     });
 
     useEffect(() => {
@@ -67,6 +83,81 @@ export default function VisitingTimePage() {
         }
     };
 
+    const fetchInitialData = async () => {
+        try {
+            // 1. Fetch products
+            const prodRes = await fetch("/api/accounting/products");
+            const prodData = await prodRes.json();
+            if (prodData.success) {
+                // Filter by category "Розважальні послуги" (case insensitive)
+                setProducts(prodData.data.filter((p: any) => 
+                    p.category?.toLowerCase().includes("розважальні послуги") || 
+                    p.category?.toLowerCase().includes("послуги")
+                ));
+            }
+
+            // 2. Fetch halls (departments)
+            const hallRes = await fetch("/api/cash-register/departments");
+            const hallData = await hallRes.json();
+            if (hallData.success) {
+                setHalls(hallData.data);
+            }
+
+            // 3. Fetch active staff
+            const staffRes = await fetch("/api/cash-register/shifts?activeStaff=true");
+            const staffData = await staffRes.json();
+            if (staffData.success) {
+                setActiveStaff(staffData.data);
+                if (staffData.data.length === 1) {
+                    setFormData(prev => ({ ...prev, staffId: staffData.data[0].id }));
+                }
+            }
+        } catch (e) {
+            console.error("Error fetching initial data", e);
+        }
+    };
+
+    useEffect(() => {
+        if (showModal && !editingVisit) {
+            fetchInitialData();
+        }
+    }, [showModal, editingVisit]);
+
+    const fetchTables = async (hallId: string) => {
+        if (!hallId) return;
+        try {
+            const res = await fetch(`/api/cash-register/tables?departmentId=${hallId}`);
+            const data = await res.json();
+            if (data.success) {
+                // Show all tables but mark busy ones? 
+                // User said "free table", so filter by free.
+                setTables(data.data.filter((t: any) => t.status === 'free'));
+            }
+        } catch (e) {
+            console.error("Error fetching tables", e);
+        }
+    };
+
+    useEffect(() => {
+        if (formData.hallId) {
+            fetchTables(formData.hallId);
+        } else {
+            setTables([]);
+        }
+    }, [formData.hallId]);
+
+    const handleProductChange = (productId: string) => {
+        const product = products.find(p => p.id === productId || p._id === productId);
+        if (product) {
+            setFormData(prev => ({
+                ...prev,
+                productId,
+                serviceName: product.name,
+                amount: String(product.sellingPrice || product.price || 0)
+            }));
+        }
+    };
+
     useEffect(() => {
         if (user) {
             fetchVisits();
@@ -78,6 +169,7 @@ export default function VisitingTimePage() {
         setFormData({
             date: new Date().toISOString().split('T')[0],
             serviceName: "",
+            productId: "",
             childName: "",
             parentName: "",
             childAge: "",
@@ -86,7 +178,10 @@ export default function VisitingTimePage() {
             startTime: "",
             endTime: "",
             paymentStatus: "unpaid",
-            amount: ""
+            amount: "",
+            hallId: "",
+            tableId: "",
+            staffId: activeStaff.length === 1 ? activeStaff[0].id : ""
         });
         setShowModal(true);
     };
@@ -96,6 +191,7 @@ export default function VisitingTimePage() {
         setFormData({
             date: visit.date,
             serviceName: visit.serviceName,
+            productId: (visit as any).productId || "",
             childName: visit.childName,
             parentName: visit.parentName,
             childAge: String(visit.childAge),
@@ -104,7 +200,10 @@ export default function VisitingTimePage() {
             startTime: visit.startTime,
             endTime: visit.endTime,
             paymentStatus: visit.paymentStatus,
-            amount: String(visit.amount)
+            amount: String(visit.amount),
+            hallId: (visit as any).hallId || "",
+            tableId: (visit as any).tableId || "",
+            staffId: (visit as any).staffId || ""
         });
         setShowModal(true);
     };
@@ -271,7 +370,7 @@ export default function VisitingTimePage() {
                 </table>
             </div>
 
-            {showModal && (
+            {mounted && showModal && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.modal}>
                         <div className={styles.modalHeader}>
@@ -281,129 +380,191 @@ export default function VisitingTimePage() {
                         <form onSubmit={handleSubmit}>
                             <div className={styles.modalBody}>
                                 <div className={styles.formGrid}>
-                                    <div className={styles.formGroup}>
-                                        <label>Дата</label>
-                                        <input
-                                            type="date"
-                                            className={styles.input}
-                                            value={formData.date}
-                                            onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                            required
-                                        />
+                                    {/* Section 1: Location & Service */}
+                                    <div className={styles.formSection}>
+                                        <h3 className={styles.sectionTitle}>📍 Локація та Послуга</h3>
+                                        <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+                                            <label>Послуга (Товар)</label>
+                                            <select
+                                                className={styles.select}
+                                                value={formData.productId}
+                                                onChange={e => handleProductChange(e.target.value)}
+                                                required
+                                            >
+                                                <option value="">Оберіть послугу</option>
+                                                {products.map(p => (
+                                                    <option key={p.id} value={p.id}>{p.name} ({p.sellingPrice || p.price} ₴)</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Зал</label>
+                                            <select
+                                                className={styles.select}
+                                                value={formData.hallId}
+                                                onChange={e => setFormData({ ...formData, hallId: e.target.value, tableId: "" })}
+                                                required
+                                            >
+                                                <option value="">Оберіть залу</option>
+                                                {halls.map(h => (
+                                                    <option key={h.id} value={h.id}>{h.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Стіл</label>
+                                            <select
+                                                className={styles.select}
+                                                value={formData.tableId}
+                                                onChange={e => setFormData({ ...formData, tableId: e.target.value })}
+                                                required
+                                                disabled={!formData.hallId}
+                                            >
+                                                <option value="">Оберіть стіл</option>
+                                                {tables.map(t => (
+                                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {activeStaff.length > 1 ? (
+                                            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+                                                <label>Співробітник (Хто створює)</label>
+                                                <select
+                                                    className={styles.select}
+                                                    value={formData.staffId}
+                                                    onChange={e => setFormData({ ...formData, staffId: e.target.value })}
+                                                        required
+                                                    >
+                                                        <option value="">Оберіть співробітника</option>
+                                                        {activeStaff.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            ) : (
+                                                <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+                                                    <label>Дата відвідування</label>
+                                                    <input
+                                                        type="date"
+                                                        className={styles.input}
+                                                    value={formData.date}
+                                                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Назва послуги</label>
-                                        <input
-                                            type="text"
-                                            className={styles.input}
-                                            placeholder="Наприклад: Лабіринт"
-                                            value={formData.serviceName}
-                                            onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Ім'я дитини</label>
-                                        <input
-                                            type="text"
-                                            className={styles.input}
-                                            value={formData.childName}
-                                            onChange={e => setFormData({ ...formData, childName: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Ім'я батьків</label>
-                                        <input
-                                            type="text"
-                                            className={styles.input}
-                                            value={formData.parentName}
-                                            onChange={e => setFormData({ ...formData, parentName: e.target.value })}
 
-                                        />
+                                    {/* Section 2: Patient Info */}
+                                    <div className={styles.formSection}>
+                                        <h3 className={styles.sectionTitle}>👤 Дані клієнта</h3>
+                                        <div className={styles.formGroup}>
+                                            <label>Ім'я дитини</label>
+                                            <input
+                                                type="text"
+                                                className={styles.input}
+                                                placeholder="Введіть ім'я..."
+                                                value={formData.childName}
+                                                onChange={e => setFormData({ ...formData, childName: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Вік</label>
+                                            <input
+                                                type="number"
+                                                className={styles.input}
+                                                placeholder="р."
+                                                value={formData.childAge}
+                                                onChange={e => setFormData({ ...formData, childAge: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Ім'я батьків</label>
+                                            <input
+                                                type="text"
+                                                className={styles.input}
+                                                placeholder="ФІО"
+                                                value={formData.parentName}
+                                                onChange={e => setFormData({ ...formData, parentName: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Телефон</label>
+                                            <input
+                                                type="tel"
+                                                className={styles.input}
+                                                placeholder="+380..."
+                                                value={formData.phone}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Вік дитини</label>
-                                        <input
-                                            type="number"
-                                            className={styles.input}
-                                            value={formData.childAge}
-                                            onChange={e => setFormData({ ...formData, childAge: e.target.value })}
 
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Номер телефону</label>
-                                        <input
-                                            type="tel"
-                                            className={styles.input}
-                                            value={formData.phone}
-                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Початок відвідування</label>
-                                        <input
-                                            type="time"
-                                            className={styles.input}
-                                            value={formData.startTime}
-                                            onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Час перебування</label>
-                                        <select
-                                            className={styles.select}
-                                            value={formData.duration}
-                                            onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                                            required
-                                        >
-                                            <option value="">Оберіть час</option>
-                                            {Array.from({ length: 14 }).map((_, i) => {
-                                                const totalMinutes = (i + 1) * 30;
-                                                const h = Math.floor(totalMinutes / 60);
-                                                const m = totalMinutes % 60;
-                                                const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                                                return (
-                                                    <option key={value} value={value}>
-                                                        {h > 0 ? `${h} год ` : ''}{m > 0 ? `${m} хв` : ''}
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Кінець відвідування</label>
-                                        <input
-                                            type="time"
-                                            className={styles.input}
-                                            value={formData.endTime}
-                                            onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Сума до сплати</label>
-                                        <input
-                                            type="number"
-                                            className={styles.input}
-                                            value={formData.amount}
-                                            onChange={e => setFormData({ ...formData, amount: e.target.value })}
-
-                                        />
-                                    </div>
-                                    <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-                                        <label>Статус оплати</label>
-                                        <select
-                                            className={styles.select}
-                                            value={formData.paymentStatus}
-                                            onChange={e => setFormData({ ...formData, paymentStatus: e.target.value as any })}
-                                        >
-                                            <option value="unpaid">Не оплачено</option>
-                                            <option value="paid">Оплачено</option>
-                                        </select>
+                                    {/* Section 3: Time & Payment */}
+                                    <div className={styles.formSection}>
+                                        <h3 className={styles.sectionTitle}>⏱️ Час та Оплата</h3>
+                                        <div className={styles.formGroup}>
+                                            <label>Початок</label>
+                                            <input
+                                                type="time"
+                                                className={styles.input}
+                                                value={formData.startTime}
+                                                onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Тривалість</label>
+                                            <select
+                                                className={styles.select}
+                                                value={formData.duration}
+                                                onChange={e => setFormData({ ...formData, duration: e.target.value })}
+                                                required
+                                            >
+                                                <option value="">Час</option>
+                                                {Array.from({ length: 14 }).map((_, i) => {
+                                                    const totalMinutes = (i + 1) * 30;
+                                                    const h = Math.floor(totalMinutes / 60);
+                                                    const m = totalMinutes % 60;
+                                                    const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                                                    return (
+                                                        <option key={value} value={value}>
+                                                            {h > 0 ? `${h}г ` : ''}{m > 0 ? `${m}х` : ''}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Кінець</label>
+                                            <input
+                                                type="time"
+                                                className={styles.input}
+                                                value={formData.endTime}
+                                                readOnly
+                                            />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Сума (₴)</label>
+                                            <input
+                                                type="number"
+                                                className={styles.input}
+                                                value={formData.amount}
+                                                onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+                                            <label>Статус оплати</label>
+                                            <select
+                                                className={styles.select}
+                                                value={formData.paymentStatus}
+                                                onChange={e => setFormData({ ...formData, paymentStatus: e.target.value as any })}
+                                            >
+                                                <option value="unpaid">🔴 Очікується</option>
+                                                <option value="paid">🟢 Оплачено</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
