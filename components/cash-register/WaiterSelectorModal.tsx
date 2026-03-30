@@ -1,57 +1,62 @@
+"use client";
+
 import React from 'react';
+import { Modal, Button, Avatar } from '@/components/ui';
 import styles from './WaiterSelectorModal.module.css';
-import modalStyles from './StaffSchedulerModal.module.css'; // Reuse modal styles
 
 interface Staff {
     id: string;
     name: string;
+    role?: string;
 }
 
 interface WaiterSelectorModalProps {
-    activeStaff?: Staff[]; // Passed from parent (filtered list of who is on shift)
+    activeStaff?: Staff[];
     onSelect: (waiter: Staff) => void;
     onClose: () => void;
 }
 
 export function WaiterSelectorModal({ activeStaff = [], onSelect, onClose }: WaiterSelectorModalProps) {
-
     return (
-        <div className={modalStyles.modalOverlay} onClick={onClose}>
-            <div className={modalStyles.modalContent} onClick={e => e.stopPropagation()}>
-                <h2 className={modalStyles.title}>Хто відкриває чек?</h2>
-
+        <Modal
+            isOpen={true}
+            title="👤 Хто відкриває чек?"
+            onClose={onClose}
+            size="md"
+        >
+            <div className={styles.modalContent}>
                 {activeStaff.length === 0 ? (
-                    <div style={{ padding: 20, textAlign: 'center', color: 'red' }}>
-                        Нікого немає на зміні!<br />Спочатку додайте співробітників.
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>⚠️</div>
+                        <p className={styles.emptyText}>Нікого немає на зміні!</p>
+                        <p className={styles.emptySubtext}>Спочатку додайте співробітників</p>
                     </div>
                 ) : (
-                    <div className={styles.grid}>
+                    <div className={styles.staffGrid}>
                         {activeStaff.map(staff => (
                             <div
                                 key={staff.id}
-                                className={styles.card}
+                                className={styles.staffCard}
                                 onClick={() => onSelect(staff)}
                             >
-                                <div className={styles.avatar}>
-                                    {staff.name[0]}
+                                <div className={styles.staffAvatar}>
+                                    {staff.name[0].toUpperCase()}
                                 </div>
-                                <div className={styles.name}>{staff.name}</div>
+                                <div className={styles.staffName}>{staff.name}</div>
+                                {staff.role && (
+                                    <div className={styles.staffRole}>{staff.role}</div>
+                                )}
                             </div>
                         ))}
                     </div>
                 )}
 
-                <div className={modalStyles.footer}>
-                    <button className={`${modalStyles.button} ${modalStyles.cancelButton}`} onClick={onClose}>
-                        Скасувати
-                    </button>
-                    {activeStaff.length === 0 && (
-                        <button className={`${modalStyles.button} ${modalStyles.saveButton}`} onClick={onClose}>
-                            Зрозуміло
-                        </button>
-                    )}
+                <div className={styles.actionButtons}>
+                    <Button variant="outline" onClick={onClose}>
+                        {activeStaff.length === 0 ? 'Зрозуміло' : 'Скасувати'}
+                    </Button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }

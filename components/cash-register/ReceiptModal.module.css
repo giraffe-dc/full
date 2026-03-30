@@ -1,60 +1,78 @@
-/* Receipt Content */
+/* ============================================
+   RECEIPT MODAL - GIRAFFE JOY DESIGN
+   ============================================ */
+
 .receiptContent {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
 }
 
-/* Receipt Header */
+/* ============================================
+   RECEIPT HEADER
+   ============================================ */
+
 .receiptHeader {
   text-align: center;
   padding: var(--space-6);
-  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+  background: linear-gradient(135deg, var(--yellow-50), var(--yellow-100));
   border-radius: var(--radius-lg);
-  animation: fadeIn var(--transition-base) ease-out;
 }
 
 .receiptTitle {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--primary-700);
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--yellow-700);
   margin-bottom: var(--space-2);
 }
 
 .receiptNumber {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--gray-900);
   margin-bottom: var(--space-1);
 }
 
 .receiptDate {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: 14px;
+  color: var(--gray-500);
+  font-family: var(--font-body);
 }
 
-/* Customer Section */
+/* ============================================
+   CUSTOMER SECTION
+   ============================================ */
+
 .customerSection {
   display: flex;
   justify-content: space-between;
   padding: var(--space-4);
-  background: var(--bg-secondary);
+  background: var(--gray-50);
   border-radius: var(--radius-md);
 }
 
-.label {
-  font-weight: var(--font-semibold);
-  color: var(--text-secondary);
+.customerLabel {
+  font-weight: 600;
+  color: var(--gray-600);
+  font-family: var(--font-heading);
+  font-size: 14px;
 }
 
-.value {
-  font-weight: var(--font-medium);
-  color: var(--text-primary);
+.customerValue {
+  font-weight: 600;
+  color: var(--gray-900);
+  font-family: var(--font-heading);
+  font-size: 14px;
 }
 
-/* Items Section */
+/* ============================================
+   ITEMS SECTION
+   ============================================ */
+
 .itemsSection {
-  border: 1px solid var(--border-light);
+  border: 2px solid var(--gray-200);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -64,11 +82,12 @@
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: var(--bg-secondary);
-  font-weight: var(--font-semibold);
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  border-bottom: 2px solid var(--border-medium);
+  background: var(--gray-50);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gray-600);
+  font-family: var(--font-heading);
+  border-bottom: 2px solid var(--gray-300);
 }
 
 .item {
@@ -76,8 +95,7 @@
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-light);
-  transition: background var(--transition-fast);
+  border-bottom: 1px solid var(--gray-100);
 }
 
 .item:last-child {
@@ -85,106 +103,173 @@
 }
 
 .item:hover {
-  background: var(--bg-secondary);
+  background: var(--yellow-50);
 }
 
 .itemCol {
-  color: var(--text-primary);
-  font-size: var(--text-sm);
+  color: var(--gray-900);
+  font-size: 14px;
+  font-family: var(--font-body);
+  font-weight: 500;
 }
 
 .itemColCenter {
-  color: var(--text-primary);
-  font-size: var(--text-sm);
+  color: var(--gray-900);
+  font-size: 14px;
   text-align: center;
+  font-family: var(--font-body);
+  font-weight: 600;
 }
 
 .itemColRight {
-  color: var(--text-primary);
-  font-size: var(--text-sm);
+  color: var(--gray-900);
+  font-size: 14px;
   text-align: right;
-  font-weight: var(--font-medium);
+  font-family: var(--font-body);
+  font-weight: 600;
 }
 
-/* Totals Section */
+/* ============================================
+   TOTALS SECTION
+   ============================================ */
+
 .totalsSection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-4);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
 }
 
 .totalRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: var(--text-base);
-  color: var(--text-primary);
+  padding: var(--space-2) 0;
+  font-size: 14px;
+  font-family: var(--font-body);
 }
 
-.totalAmount {
+.totalRow .label {
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.totalRow .value {
+  color: var(--gray-900);
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+.totalRow.total {
+  border-top: 2px solid var(--gray-300);
   padding-top: var(--space-3);
-  border-top: 2px solid var(--border-medium);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--success-600);
+  margin-top: var(--space-2);
+  font-size: 20px;
 }
 
-/* Payment Section */
+.totalRow.total .label {
+  color: var(--gray-900);
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.totalRow.total .value {
+  color: var(--yellow-600);
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+/* ============================================
+   PAYMENT SECTION
+   ============================================ */
+
 .paymentSection {
-  display: flex;
-  justify-content: center;
+  text-align: center;
   padding: var(--space-4);
 }
 
 .paymentBadge {
-  padding: var(--space-3) var(--space-6);
-  background: linear-gradient(135deg, var(--info-50), var(--info-100));
-  color: var(--info-700);
+  display: inline-block;
+  padding: 8px 20px;
   border-radius: var(--radius-full);
-  font-weight: var(--font-semibold);
-  font-size: var(--text-base);
-  box-shadow: var(--shadow-sm);
+  background: var(--gray-100);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--font-heading);
 }
 
-/* Footer */
+/* ============================================
+   FOOTER
+   ============================================ */
+
 .footer {
   text-align: center;
   padding: var(--space-6);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
 }
 
 .footerMessage {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--gray-900);
   margin-bottom: var(--space-2);
 }
 
 .footerSmall {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: 13px;
+  color: var(--gray-500);
+  font-family: var(--font-body);
 }
 
-/* Actions */
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
 .actions {
   display: flex;
   gap: var(--space-3);
-  justify-content: flex-end;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-light);
 }
 
-/* Print Styles */
-@media print {
-  .actions {
-    display: none;
+.actions button {
+  flex: 1;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .receiptContent {
+    gap: var(--space-4);
   }
 
-  .receiptContent {
-    background: white;
+  .receiptHeader {
+    padding: var(--space-4);
+  }
+
+  .receiptTitle {
+    font-size: 24px;
+  }
+
+  .itemsHeader,
+  .item {
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: var(--space-2);
+    font-size: 12px;
+  }
+
+  .totalRow.total {
+    font-size: 18px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions button {
+    width: 100%;
   }
 }

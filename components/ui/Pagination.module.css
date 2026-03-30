@@ -1,0 +1,169 @@
+/* ============================================
+   PAGINATION - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.pagination-sm {
+    gap: var(--space-1);
+}
+
+.pagination-md {
+    gap: var(--space-2);
+}
+
+.pagination-lg {
+    gap: var(--space-3);
+}
+
+/* ============================================
+   BUTTONS BASE
+   ============================================ */
+
+.navButton,
+.pageButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.navButton:hover:not(:disabled),
+.pageButton:hover:not(:disabled) {
+    border-color: var(--yellow-400);
+    background: var(--yellow-50);
+    color: var(--yellow-700);
+    transform: translateY(-2px);
+}
+
+.navButton:disabled,
+.pageButton:disabled,
+.navButton.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--gray-100);
+}
+
+/* ============================================
+   NAV BUTTONS
+   ============================================ */
+
+.navButton {
+    min-width: 40px;
+    height: 40px;
+    font-size: 18px;
+}
+
+/* ============================================
+   PAGE BUTTONS
+   ============================================ */
+
+.pageButton {
+    min-width: 40px;
+    height: 40px;
+    font-size: 15px;
+}
+
+.pageButton.active {
+    background: var(--gradient-sunshine);
+    border-color: var(--yellow-500);
+    color: white;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+.pageButton.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+}
+
+/* ============================================
+   ELLIPSIS
+   ============================================ */
+
+.ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-400);
+    font-weight: 600;
+    padding: 0 var(--space-2);
+}
+
+/* ============================================
+   SIZES - SMALL
+   ============================================ */
+
+.pagination-sm .navButton {
+    min-width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+.pagination-sm .pageButton {
+    min-width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+/* ============================================
+   SIZES - LARGE
+   ============================================ */
+
+.pagination-lg .navButton {
+    min-width: 48px;
+    height: 48px;
+    font-size: 20px;
+}
+
+.pagination-lg .pageButton {
+    min-width: 48px;
+    height: 48px;
+    font-size: 16px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .pagination {
+        gap: var(--space-1);
+    }
+
+    .pagination-md .navButton,
+    .pagination-md .pageButton {
+        min-width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .pagination-lg .navButton,
+    .pagination-lg .pageButton {
+        min-width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    /* Hide first/last on mobile if needed */
+    .pagination-sm .navButton:first-child,
+    .pagination-sm .navButton:last-child {
+        display: none;
+    }
+}

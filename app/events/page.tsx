@@ -488,92 +488,94 @@ export default function EventsPage() {
             /* Calendar View */
             <div className={styles.calendarView}>
               <div className={styles.calendarGrid}>
-                {/* Weekday headers */}
-                <div className={styles.weekdayHeader}>
-                  {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'].map(day => (
-                    <div key={day} className={styles.weekdayCell}>{day}</div>
-                  ))}
-                </div>
+                {/* Weekday headers - integrated directly into grid */}
+                {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'].map(day => (
+                  <div key={day} className={styles.weekdayCell}>{day}</div>
+                ))}
 
                 {/* Calendar days */}
-                <div className={styles.calendarDays}>
-                  {(() => {
-                    const currentDate = new Date(selectedDate);
-                    const year = currentDate.getFullYear();
-                    const month = currentDate.getMonth();
+                {(() => {
+                  const currentDate = new Date(selectedDate);
+                  const year = currentDate.getFullYear();
+                  const month = currentDate.getMonth();
 
-                    const firstDay = new Date(year, month, 1);
-                    const lastDay = new Date(year, month + 1, 0);
-                    const startDay = firstDay.getDay() || 7; // Convert Sunday from 0 to 7
-                    const totalDays = lastDay.getDate();
+                  const firstDay = new Date(year, month, 1);
+                  const lastDay = new Date(year, month + 1, 0);
 
-                    const days = [];
+                  // Fix: Ukrainian calendar starts on Monday
+                  // getDay(): Sun=0, Mon=1, ..., Sat=6
+                  // Convert to: Mon=0, Tue=1, ..., Sun=6
+                  let startDay = firstDay.getDay();
+                  const startDayIndex = startDay === 0 ? 6 : startDay - 1;
 
-                    // Previous month days
-                    const prevMonth = new Date(year, month, 0);
-                    const prevMonthDays = prevMonth.getDate();
-                    for (let i = startDay - 1; i > 0; i--) {
-                      const day = prevMonthDays - i + 1;
-                      days.push({ day, month: month - 1, current: false });
-                    }
+                  const totalDays = lastDay.getDate();
 
-                    // Current month days
-                    for (let day = 1; day <= totalDays; day++) {
-                      days.push({ day, month, current: true });
-                    }
+                  const days = [];
 
-                    // Next month days
-                    const remainingDays = 42 - days.length; // 6 rows * 7 days
-                    for (let day = 1; day <= remainingDays; day++) {
-                      days.push({ day, month: month + 1, current: false });
-                    }
+                  // Previous month days
+                  const prevMonth = new Date(year, month, 0);
+                  const prevMonthDays = prevMonth.getDate();
+                  for (let i = startDayIndex; i > 0; i--) {
+                    const day = prevMonthDays - i + 1;
+                    days.push({ day, month: month - 1, current: false });
+                  }
 
-                    return days.map(({ day, month: m, current }, index) => {
-                      const actualMonth = m < 0 ? 11 : m > 11 ? 0 : m;
-                      const actualYear = m < 0 ? year - 1 : m > 11 ? year + 1 : year;
-                      const dateStr = `${actualYear}-${String(actualMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                      const dayEvents = calendarEvents.filter(e => e.start.startsWith(dateStr));
-                      const isToday = dateStr === new Date().toISOString().split('T')[0];
+                  // Current month days
+                  for (let day = 1; day <= totalDays; day++) {
+                    days.push({ day, month, current: true });
+                  }
 
-                      return (
-                        <div
-                          key={index}
-                          className={`${styles.calendarDay} ${!current ? styles.otherMonth : ''} ${isToday ? styles.today : ''}`}
-                          onClick={() => setSelectedDate(dateStr)}
-                        >
-                          <div className={styles.dayNumber}>
-                            {day}
-                            {isToday && <span className={styles.todayIndicator}>●</span>}
-                          </div>
-                          <div className={styles.dayEvents}>
-                            {dayEvents.slice(0, 3).map(event => (
-                              <div
-                                key={event.id}
-                                className={styles.calendarEvent}
-                                style={{
-                                  backgroundColor: event.backgroundColor,
-                                  borderColor: event.borderColor,
-                                  color: event.textColor,
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenDetails((event.extendedProps as any).event);
-                                }}
-                              >
-                                {event.title}
-                              </div>
-                            ))}
-                            {dayEvents.length > 3 && (
-                              <div className={styles.moreEvents}>
-                                +{dayEvents.length - 3} ще
-                              </div>
-                            )}
-                          </div>
+                  // Next month days
+                  const remainingDays = 42 - days.length; // 6 rows * 7 days
+                  for (let day = 1; day <= remainingDays; day++) {
+                    days.push({ day, month: month + 1, current: false });
+                  }
+
+                  return days.map(({ day, month: m, current }, index) => {
+                    const actualMonth = m < 0 ? 11 : m > 11 ? 0 : m;
+                    const actualYear = m < 0 ? year - 1 : m > 11 ? year + 1 : year;
+                    const dateStr = `${actualYear}-${String(actualMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayEvents = calendarEvents.filter(e => e.start.startsWith(dateStr));
+                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+                    return (
+                      <div
+                        key={index}
+                        className={`${styles.calendarDay} ${!current ? styles.otherMonth : ''} ${isToday ? styles.today : ''}`}
+                        onClick={() => setSelectedDate(dateStr)}
+                      >
+                        <div className={styles.dayNumber}>
+                          {day}
+                          {isToday && <span className={styles.todayIndicator}>●</span>}
                         </div>
-                      );
-                    });
-                  })()}
-                </div>
+                        <div className={styles.dayEvents}>
+                          {dayEvents.slice(0, 3).map(event => (
+                            <div
+                              key={event.id}
+                              className={styles.calendarEvent}
+                              style={{
+                                backgroundColor: event.backgroundColor,
+                                borderColor: event.borderColor,
+                                color: event.textColor,
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDetails((event.extendedProps as any).event);
+                              }}
+                            >
+                              {event.title}
+                            </div>
+                          ))}
+                          {dayEvents.length > 3 && (
+                            <div className={styles.moreEvents}>
+                              +{dayEvents.length - 3} ще
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}

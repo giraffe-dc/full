@@ -1,0 +1,145 @@
+/* ============================================
+   AVATAR - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.avatar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-weight: 600;
+    font-family: var(--font-heading);
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.avatar-xs {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+}
+
+.avatar-md {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+
+.avatar-lg {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+}
+
+.avatar-xl {
+    width: 64px;
+    height: 64px;
+    font-size: 20px;
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Solid */
+.avatar-solid {
+    background: var(--gray-200);
+    color: var(--gray-600);
+}
+
+/* Outline */
+.avatar-outline {
+    background: white;
+    border: 2px solid var(--gray-300);
+    color: var(--gray-600);
+}
+
+/* Gradient */
+.avatar-gradient {
+    background: var(--gradient-rainbow);
+    color: white;
+}
+
+/* ============================================
+   IMAGE
+   ============================================ */
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ============================================
+   INITIALS
+   ============================================ */
+
+.initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* ============================================
+   STATUS INDICATOR
+   ============================================ */
+
+.statusIndicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 25%;
+    height: 25%;
+    min-width: 8px;
+    min-height: 8px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.status-online {
+    background: var(--success-main);
+}
+
+.status-offline {
+    background: var(--gray-400);
+}
+
+.status-away {
+    background: var(--warning-main);
+}
+
+.status-busy {
+    background: var(--error-main);
+}
+
+/* Adjust status position based on size */
+.avatar-xs .statusIndicator {
+    min-width: 6px;
+    min-height: 6px;
+    border-width: 1px;
+}
+
+.avatar-sm .statusIndicator {
+    min-width: 8px;
+    min-height: 8px;
+}
+
+.avatar-lg .statusIndicator,
+.avatar-xl .statusIndicator {
+    min-width: 12px;
+    min-height: 12px;
+    border-width: 3px;
+}

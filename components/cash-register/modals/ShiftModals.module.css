@@ -1,0 +1,225 @@
+/* ============================================
+   SHIFT MODALS - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.modalContent {
+  padding: var(--space-6);
+}
+
+/* ============================================
+   FORM GROUPS
+   ============================================ */
+
+.formGroup {
+  margin-bottom: var(--space-6);
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--gray-700);
+  font-size: 14px;
+}
+
+.formLabelRequired::after {
+  content: ' *';
+  color: var(--error-text);
+}
+
+/* ============================================
+   BALANCE INPUT
+   ============================================ */
+
+.balanceInput {
+  width: 100%;
+  padding: var(--space-4);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.balanceInput:focus {
+  outline: none;
+  border-color: var(--yellow-500);
+  box-shadow: 0 0 0 4px var(--yellow-100);
+}
+
+/* ============================================
+   STAFF GRID
+   ============================================ */
+
+.staffGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.staffMember {
+  padding: var(--space-3);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: white;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: 14px;
+}
+
+.staffMember:hover {
+  border-color: var(--yellow-400);
+  background: var(--yellow-50);
+  transform: translateY(-2px);
+}
+
+.staffMember.active {
+  border-color: var(--yellow-500);
+  background: var(--yellow-100);
+  color: var(--yellow-700);
+}
+
+/* ============================================
+   SUMMARY CARD
+   ============================================ */
+
+.summaryCard {
+  background: var(--gray-50);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-6);
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  font-size: 14px;
+}
+
+.summaryRow .label {
+  color: var(--gray-600);
+  font-family: var(--font-body);
+}
+
+.summaryRow .value {
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--gray-900);
+}
+
+.summaryRow.total {
+  border-top: 2px solid var(--gray-200);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  font-size: 18px;
+}
+
+.summaryRow.total .label {
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.summaryRow.total .value {
+  font-size: 20px;
+}
+
+/* Color variants */
+.summaryRow.green .value {
+  color: var(--success-text);
+}
+
+.summaryRow.blue .value {
+  color: var(--info-text);
+}
+
+.summaryRow.red .value {
+  color: var(--error-text);
+}
+
+.summaryRow.purple .value {
+  color: var(--purple-700);
+}
+
+.summaryRow.yellow .value {
+  color: var(--warning-text);
+}
+
+/* ============================================
+   DIFFERENCE DISPLAY
+   ============================================ */
+
+.differenceDisplay {
+  margin-top: var(--space-2);
+  font-size: 14px;
+  text-align: right;
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.differenceDisplay.positive {
+  color: var(--success-text);
+}
+
+.differenceDisplay.negative {
+  color: var(--error-text);
+}
+
+.differenceDisplay.warning {
+  color: var(--warning-text);
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.actionButtons {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  margin-top: var(--space-6);
+}
+
+.actionButtons button {
+  flex: 1;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .modalContent {
+    padding: var(--space-4);
+  }
+
+  .staffGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .balanceInput {
+    font-size: 1.2rem;
+    padding: var(--space-3);
+  }
+
+  .summaryRow {
+    font-size: 13px;
+  }
+
+  .summaryRow.total {
+    font-size: 16px;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .actionButtons button {
+    width: 100%;
+  }
+}

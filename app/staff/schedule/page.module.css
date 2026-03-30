@@ -1,0 +1,721 @@
+/* ============================================
+   STAFF SCHEDULE - GIRAFFE JOY DESIGN
+   🧡 Помаранчева тема
+   ============================================ */
+
+.page {
+  min-height: 100vh;
+  background: var(--bg-app);
+  padding: var(--space-8);
+}
+
+.container {
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-8);
+  padding: var(--space-6);
+  background: white;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--orange-100);
+}
+
+.btnBack {
+  padding: 8px 16px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+}
+
+.btnBack:hover {
+  background: var(--gray-200);
+  border-color: var(--gray-300);
+  transform: translateX(-4px);
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.pageTitleIcon {
+  font-size: 42px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-top: var(--space-1);
+  font-family: var(--font-body);
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.btnSecondary {
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 15px;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnSecondary:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  transform: translateY(-2px);
+}
+
+.btnAdd {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-600));
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-heading);
+}
+
+.btnAdd:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-orange);
+}
+
+/* ============================================
+   STAFF SELECTOR
+   ============================================ */
+
+.staffSelector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--orange-100);
+}
+
+.selectorLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-700);
+  font-family: var(--font-heading);
+}
+
+.staffSelect {
+  flex: 1;
+  max-width: 300px;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-family: var(--font-heading);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.staffSelect:focus {
+  outline: none;
+  border-color: var(--orange-500);
+  box-shadow: 0 0 0 4px var(--orange-100);
+}
+
+.staffInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--gray-200);
+}
+
+.staffDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.staffName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+  font-family: var(--font-heading);
+}
+
+/* Shift Stats */
+.shiftStats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(135deg, var(--orange-50), var(--orange-100));
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--orange-200);
+  margin-left: auto;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statIcon {
+  font-size: 18px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--orange-700);
+  font-family: var(--font-display);
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--orange-600);
+  font-weight: 600;
+  font-family: var(--font-heading);
+}
+
+.statDivider {
+  width: 2px;
+  height: 32px;
+  background: var(--orange-300);
+  border-radius: var(--radius-full);
+}
+
+/* ============================================
+   CONTROLS
+   ============================================ */
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--orange-100);
+}
+
+.navControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.navBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--gray-200);
+  background: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+}
+
+.navBtn:hover {
+  border-color: var(--orange-400);
+  background: var(--orange-50);
+  color: var(--orange-600);
+}
+
+.dateLabel {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--gray-700);
+  min-width: 250px;
+  text-align: center;
+}
+
+.todayBtn {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+}
+
+.todayBtn:hover {
+  border-color: var(--orange-400);
+  background: var(--orange-50);
+}
+
+/* View Mode Toggle */
+.viewModeToggle {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--gray-100);
+  padding: 6px;
+  border-radius: var(--radius-full);
+}
+
+.viewBtn {
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--font-heading);
+  border: none;
+  background: transparent;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.viewBtn:hover {
+  color: var(--gray-900);
+}
+
+.viewBtn.active {
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-600));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================
+   CALENDAR GRID
+   ============================================ */
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--gray-200);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+/* Day Headers */
+.dayHeader {
+  background: var(--gray-50);
+  padding: var(--space-4);
+  text-align: center;
+  border-bottom: 2px solid var(--gray-200);
+  border-right: 1px solid var(--gray-200);
+}
+
+.dayHeader:last-child {
+  border-right: none;
+}
+
+.dayNameHeader {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  font-family: var(--font-heading);
+}
+
+/* Calendar Days */
+.calendarDay {
+  background: white;
+  min-height: 120px;
+  padding: var(--space-2);
+  border-right: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--gray-200);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendarDay:last-child {
+  border-right: none;
+}
+
+.calendarDay:hover {
+  background: var(--orange-50);
+}
+
+.calendarDay.otherMonth {
+  background: var(--gray-50);
+  opacity: 0.6;
+}
+
+.calendarDay.today {
+  background: var(--orange-50);
+  border-color: var(--orange-300);
+}
+
+.calendarDay.weekend {
+  background: var(--gray-50);
+}
+
+.calendarDay.hasShifts {
+  background: var(--orange-50);
+}
+
+/* Day Number */
+.dayNumber {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-700);
+  font-family: var(--font-heading);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.todayIndicator {
+  color: var(--orange-600);
+  font-size: 8px;
+  position: absolute;
+  top: -8px;
+  right: 0;
+}
+
+/* Day Shifts */
+.dayShifts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.emptyDay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--gray-300);
+  font-size: 20px;
+  font-weight: 300;
+}
+
+/* Shift Card */
+.shiftCard {
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-600));
+  color: white;
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.shiftCard:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.shiftTime {
+  white-space: nowrap;
+}
+
+.shiftDelete {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.shiftDelete:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+/* ============================================
+   FORM (Modal)
+   ============================================ */
+
+.form {
+  padding: var(--space-6);
+}
+
+.formGroup {
+  margin-bottom: var(--space-5);
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+  font-family: var(--font-heading);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-family: var(--font-body);
+  transition: all var(--transition-fast);
+  background: white;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--orange-500);
+  box-shadow: 0 0 0 4px var(--orange-100);
+}
+
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--gray-100);
+}
+
+.btnCancel,
+.btnSubmit {
+  padding: 12px 32px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 15px;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.btnCancel {
+  background: white;
+  color: var(--gray-600);
+  border: 2px solid var(--gray-200);
+}
+
+.btnCancel:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.btnSubmit {
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-600));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btnSubmit:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-orange);
+}
+
+.btnSubmit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Large Tablet: 1024px */
+@media (max-width: 1024px) {
+  .calendarDay {
+    min-height: 100px;
+  }
+
+  .staffSelector {
+    flex-wrap: wrap;
+  }
+
+  .staffSelect {
+    max-width: none;
+    flex: 1;
+  }
+
+  .staffInfo {
+    padding-left: 0;
+    border-left: none;
+    border-top: 2px solid var(--gray-200);
+    padding-top: var(--space-4);
+    width: 100%;
+  }
+
+  .shiftStats {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: var(--space-3);
+  }
+}
+
+/* Tablet: 768px */
+@media (max-width: 768px) {
+  .page {
+    padding: var(--space-4);
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .btnBack {
+    justify-content: center;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .navControls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dateLabel {
+    min-width: auto;
+  }
+
+  .viewModeToggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .calendarGrid {
+    overflow-x: auto;
+  }
+
+  .calendarDay {
+    min-height: 80px;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile: 640px */
+@media (max-width: 640px) {
+  .pageHeader {
+    padding: var(--space-4);
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .calendarDay {
+    min-height: 60px;
+    padding: 2px;
+  }
+
+  .shiftCard {
+    font-size: 9px;
+    padding: 4px 6px;
+  }
+
+  .shiftDelete {
+    width: 14px;
+    height: 14px;
+    font-size: 10px;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}

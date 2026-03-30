@@ -6,10 +6,11 @@ import styles from "./AdminChatOverlay.module.css";
 import type { ChatLogResponse, ChatMessage } from "@/types/accounting";
 
 export interface AdminChatOverlayProps {
+    isOpen: boolean;
     onClose: () => void;
 }
 
-export function AdminChatOverlay({ onClose }: AdminChatOverlayProps) {
+export function AdminChatOverlay({ isOpen, onClose }: AdminChatOverlayProps) {
     const {
         chats,
         loading,
@@ -19,9 +20,8 @@ export function AdminChatOverlay({ onClose }: AdminChatOverlayProps) {
         getMessagesForSession,
         total,
     } = useChatAdmin({
-        pollingInterval: 15000, // Faster polling for admin
-        adminModeOnly: true,
-        autoStart: true,
+        pollingInterval: 15000,
+        autoStart: isOpen,
     });
 
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -34,10 +34,24 @@ export function AdminChatOverlay({ onClose }: AdminChatOverlayProps) {
 
     // Scroll to bottom when messages update
     useEffect(() => {
-        if (messagesEndRef.current) {
+        if (messagesEndRef.current && isOpen) {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages]);
+    }, [messages, isOpen]);
+
+    // Close on Escape
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [isOpen, onClose]);
 
     const handleSendReply = useCallback(async () => {
         if (!selectedSessionId || !replyMessage.trim() || sending) return;
@@ -60,6 +74,9 @@ export function AdminChatOverlay({ onClose }: AdminChatOverlayProps) {
             handleSendReply();
         }
     };
+
+    // Don't render if not open
+    if (!isOpen) return null;
 
     return (
         <div className={styles.overlay}>

@@ -1,6 +1,8 @@
 import React from 'react';
 import styles from './StatCard.module.css';
 
+export type StatCardColor = 'yellow' | 'blue' | 'green' | 'purple' | 'pink' | 'orange';
+
 export interface StatCardProps {
     title: string;
     value: string | number;
@@ -9,8 +11,9 @@ export interface StatCardProps {
         value: number;
         isPositive: boolean;
     };
-    color?: 'primary' | 'success' | 'warning' | 'error' | 'info';
+    color?: StatCardColor;
     onClick?: () => void;
+    className?: string;
 }
 
 export function StatCard({
@@ -18,13 +21,22 @@ export function StatCard({
     value,
     icon,
     trend,
-    color = 'primary',
+    color = 'yellow',
     onClick,
+    className = '',
 }: StatCardProps) {
     return (
         <div
-            className={`${styles.card} ${styles[color]} ${onClick ? styles.clickable : ''}`}
+            className={`${styles.card} ${styles[`card-${color}`]} ${onClick ? styles.clickable : ''} ${className}`}
             onClick={onClick}
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            onKeyDown={onClick ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick();
+                }
+            } : undefined}
         >
             <div className={styles.header}>
                 <div className={styles.title}>{title}</div>

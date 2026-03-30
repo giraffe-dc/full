@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import styles from "./page_v2.module.css";
+import styles from "./page.module.css";
 import { CashRegisterState, Service, CartItem, Receipt, Department, Table, Check } from "../../types/cash-register";
 import { Modal } from "../../components/ui";
 import { DepartmentSelector } from "../../components/cash-register/DepartmentSelector";
@@ -488,17 +488,17 @@ export default function CashRegisterPage() {
       const tableId = activeCheck?.tableId;
       await fetch(`/api/cash-register/checks/${checkId}/void`, { method: 'POST' });
       toast.success("Чек анульовано");
-      
+
       // Remove check from local state
       setOrders(prev => prev.filter(o => o.id !== checkId));
-      
+
       // Free the table in local state
       if (tableId) {
-        setTables(prev => prev.map(t => 
+        setTables(prev => prev.map(t =>
           t.id === tableId ? { ...t, status: 'free', seats: 4 } : t
         ));
       }
-      
+
       handleBackToTables();
     } catch (e) {
       toast.error("Помилка анулювання");

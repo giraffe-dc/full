@@ -1,32 +1,84 @@
-import React, { forwardRef } from 'react';
+"use client";
+
+import React from 'react';
 import styles from './Input.module.css';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export type InputVariant = 'default' | 'success' | 'error' | 'warning';
+export type InputSize = 'sm' | 'md' | 'lg';
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
+    variant?: InputVariant;
+    size?: InputSize;
+    leftIcon?: React.ReactNode;
+    rightIcon?: React.ReactNode;
     helperText?: string;
-    fullWidth?: boolean;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, helperText, fullWidth, className = '', ...props }, ref) => {
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+    (
+        {
+            label,
+            error,
+            variant = 'default',
+            size = 'md',
+            leftIcon,
+            rightIcon,
+            helperText,
+            className = '',
+            id,
+            disabled,
+            ...props
+        },
+        ref
+    ) => {
+        const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+
+        const classes = [
+            styles.container,
+            styles[`container-${variant}`],
+            className,
+        ]
+            .filter(Boolean)
+            .join(' ');
+
         return (
-            <div className={`${styles.wrapper} ${fullWidth ? styles.fullWidth : ''}`}>
+            <div className={classes}>
                 {label && (
-                    <label className={styles.label} htmlFor={props.id}>
+                    <label htmlFor={inputId} className={styles.label}>
                         {label}
-                        {props.required && <span className={styles.required}>*</span>}
                     </label>
                 )}
 
-                <input
-                    ref={ref}
-                    className={`${styles.input} ${error ? styles.inputError : ''} ${className}`}
-                    {...props}
-                />
+                <div className={`${styles.inputWrapper} ${styles[`inputWrapper-${variant}`]}`}>
+                    {leftIcon && (
+                        <span className={`${styles.icon} ${styles.leftIcon}`}>
+                            {leftIcon}
+                        </span>
+                    )}
 
-                {error && <div className={styles.error}>{error}</div>}
-                {helperText && !error && <div className={styles.helperText}>{helperText}</div>}
+                    <input
+                        ref={ref}
+                        id={inputId}
+                        className={`${styles.input} ${styles[`input-${size}`]} ${disabled ? styles.inputDisabled : ''}`}
+                        disabled={disabled}
+                        aria-invalid={variant === 'error' ? 'true' : 'false'}
+                        {...props}
+                    />
+
+                    {rightIcon && (
+                        <span className={`${styles.icon} ${styles.rightIcon}`}>
+                            {rightIcon}
+                        </span>
+                    )}
+                </div>
+
+                {(error || helperText) && (
+                    <p className={`${styles.helperText} ${error ? styles.helperTextError : ''}`}>
+                        {error || helperText}
+                    </p>
+                )}
             </div>
         );
     }
@@ -34,38 +86,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = 'Input';
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-    label?: string;
-    error?: string;
-    helperText?: string;
-    fullWidth?: boolean;
-    children: React.ReactNode;
-}
-
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-    ({ label, error, helperText, fullWidth, className = '', children, ...props }, ref) => {
-        return (
-            <div className={`${styles.wrapper} ${fullWidth ? styles.fullWidth : ''}`}>
-                {label && (
-                    <label className={styles.label} htmlFor={props.id}>
-                        {label}
-                        {props.required && <span className={styles.required}>*</span>}
-                    </label>
-                )}
-
-                <select
-                    ref={ref}
-                    className={`${styles.select} ${error ? styles.inputError : ''} ${className}`}
-                    {...props}
-                >
-                    {children}
-                </select>
-
-                {error && <div className={styles.error}>{error}</div>}
-                {helperText && !error && <div className={styles.helperText}>{helperText}</div>}
-            </div>
-        );
-    }
-);
-
-Select.displayName = 'Select';
+export default Input;

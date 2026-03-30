@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./responsive.css";
 import styles from './site.module.css'
 import Header from '../components/Header'
 import { ToastProvider } from '../components/ui/ToastContext'
@@ -33,7 +34,6 @@ export default function RootLayout({
           <Analytics />
           <Header />
           <main className={styles.siteContainer}>{children}</main>
-
         </ToastProvider>
       </body>
     </html>

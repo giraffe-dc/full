@@ -1,12 +1,16 @@
+/* ============================================
+   STATCARD - GIRAFFE JOY DESIGN
+   ============================================ */
+
 .card {
-    background: var(--bg-primary);
-    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
     padding: var(--space-6);
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-base);
-    animation: fadeIn var(--transition-base) ease-out;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
+    border: 2px solid var(--gray-100);
 }
 
 .card::before {
@@ -16,8 +20,41 @@
     left: 0;
     right: 0;
     height: 4px;
-    transition: transform var(--transition-base);
+    transition: transform var(--transition-normal);
+    transform: scaleX(0);
 }
+
+/* ============================================
+   COLOR VARIANTS
+   ============================================ */
+
+.card-yellow::before {
+    background: linear-gradient(90deg, var(--yellow-400), var(--yellow-600));
+}
+
+.card-blue::before {
+    background: linear-gradient(90deg, var(--blue-400), var(--blue-600));
+}
+
+.card-green::before {
+    background: linear-gradient(90deg, var(--green-400), var(--green-600));
+}
+
+.card-purple::before {
+    background: linear-gradient(90deg, var(--purple-400), var(--purple-600));
+}
+
+.card-pink::before {
+    background: linear-gradient(90deg, var(--pink-400), var(--pink-600));
+}
+
+.card-orange::before {
+    background: linear-gradient(90deg, var(--orange-400), var(--orange-600));
+}
+
+/* ============================================
+   CLICKABLE
+   ============================================ */
 
 .clickable {
     cursor: pointer;
@@ -25,35 +62,17 @@
 
 .clickable:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-xl);
 }
 
-/* Color variants */
-.primary::before {
-    background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
-}
-
-.success::before {
-    background: linear-gradient(90deg, var(--success-500), var(--success-600));
-}
-
-.warning::before {
-    background: linear-gradient(90deg, var(--warning-500), var(--warning-600));
-}
-
-.error::before {
-    background: linear-gradient(90deg, var(--error-500), var(--error-600));
-}
-
-.info::before {
-    background: linear-gradient(90deg, var(--info-500), var(--info-600));
-}
-
-.card:hover::before {
+.clickable:hover::before {
     transform: scaleX(1);
 }
 
-/* Header */
+/* ============================================
+   HEADER
+   ============================================ */
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -62,42 +81,51 @@
 }
 
 .title {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-500);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-family: var(--font-heading);
 }
 
 .icon {
-    font-size: 24px;
-    opacity: 0.8;
+    font-size: 28px;
+    opacity: 0.9;
 }
 
-/* Value */
+/* ============================================
+   VALUE
+   ============================================ */
+
 .value {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-bold);
-    color: var(--text-primary);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--gray-900);
+    font-family: var(--font-display);
     margin-bottom: var(--space-3);
-    animation: countUp var(--transition-base) ease-out;
+    line-height: 1.2;
 }
 
-/* Trend */
+/* ============================================
+   TREND
+   ============================================ */
+
 .trend {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-heading);
 }
 
 .trendPositive {
-    color: var(--success-600);
+    color: var(--success-text);
 }
 
 .trendNegative {
-    color: var(--error-600);
+    color: var(--error-text);
 }
 
 .trendIcon {
@@ -105,12 +133,23 @@
 }
 
 .trendValue {
-    font-size: var(--text-sm);
+    font-size: 14px;
 }
 
-/* Responsive */
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
 @media (max-width: 768px) {
+    .card {
+        padding: var(--space-5);
+    }
+
     .value {
-        font-size: var(--text-3xl);
+        font-size: 28px;
+    }
+
+    .icon {
+        font-size: 24px;
     }
 }

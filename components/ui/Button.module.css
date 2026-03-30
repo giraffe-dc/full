@@ -1,149 +1,24 @@
+/* ============================================
+   BUTTON - GIRAFFE JOY DESIGN
+   ============================================ */
+
 .button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2);
+    gap: 8px;
     font-family: var(--font-heading);
-    font-weight: 500;
+    font-weight: 700;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     overflow: hidden;
-    user-select: none;
 }
 
-.button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    filter: grayscale(0.5);
-}
-
-.button:not(:disabled):active {
+.button:active:not(:disabled) {
     transform: scale(0.96);
-}
-
-/* Ripple effect placeholder - can be done with JS, or CSS pseudo-element for hover shine */
-.button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 200%;
-    height: 100%;
-    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: 0.5s;
-    transform: skewX(-20deg);
-}
-
-.button:not(:disabled):hover::after {
-    left: 100%;
-    transition: 0.5s;
-}
-
-/* Sizes */
-.sm {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    min-height: 32px;
-}
-
-.md {
-    padding: 0.6rem 1.2rem;
-    font-size: 0.95rem;
-    min-height: 40px;
-}
-
-.lg {
-    padding: 0.8rem 1.6rem;
-    font-size: 1.1rem;
-    min-height: 48px;
-}
-
-/* Variants */
-.primary {
-    background: var(--gradient-primary);
-    color: white;
-    box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
-    border: 1px solid transparent;
-}
-
-.primary:not(:disabled):hover {
-    box-shadow: 0 6px 12px rgba(99, 102, 241, 0.4);
-    transform: translateY(-1px);
-}
-
-.secondary {
-    background: white;
-    color: var(--primary-700);
-    border: 1px solid var(--primary-200);
-    box-shadow: var(--shadow-sm);
-}
-
-.secondary:not(:disabled):hover {
-    background: var(--primary-50);
-    border-color: var(--primary-300);
-    transform: translateY(-1px);
-}
-
-.ghost {
-    background: transparent;
-    color: var(--gray-600);
-}
-
-.ghost:not(:disabled):hover {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--primary-600);
-}
-
-.danger {
-    background: linear-gradient(135deg, var(--error-main), #be123c);
-    color: white;
-    box-shadow: 0 4px 6px rgba(244, 63, 94, 0.25);
-}
-
-.danger:not(:disabled):hover {
-    box-shadow: 0 6px 12px rgba(244, 63, 94, 0.4);
-    transform: translateY(-1px);
-}
-
-/* Loading spinner */
-.spinner {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.spinnerIcon {
-    width: 16px;
-    height: 16px;
-    animation: spin 1s linear infinite;
-}
-
-.spinnerCircle {
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-dasharray: 60;
-    stroke-dashoffset: 15;
-}
-
-/* Icon */
-.icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.icon svg {
-    width: 18px;
-    height: 18px;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .button:disabled {
@@ -151,124 +26,252 @@
     cursor: not-allowed;
 }
 
-.button:not(:disabled):active {
-    transform: scale(0.98);
+/* ============================================
+   SIZES
+   ============================================ */
+
+.button-sm {
+    padding: 8px 16px;
+    font-size: 14px;
 }
 
-/* Ripple effect */
-.button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+.button-md {
+    padding: 12px 24px;
+    font-size: 16px;
 }
 
-.button:not(:disabled):active::before {
-    width: 300px;
-    height: 300px;
+.button-lg {
+    padding: 16px 32px;
+    font-size: 18px;
 }
 
-/* Sizes */
-.sm {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-sm);
-    min-height: 32px;
-}
+/* ============================================
+   VARIANTS
+   ============================================ */
 
-.md {
-    padding: var(--space-3) var(--space-4);
-    font-size: var(--text-base);
-    min-height: 40px;
-}
-
-.lg {
-    padding: var(--space-4) var(--space-6);
-    font-size: var(--text-lg);
-    min-height: 48px;
-}
-
-/* Variants */
-.primary {
-    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+/* Primary - Yellow Sunshine */
+.button-primary {
+    background: var(--gradient-sunshine);
     color: white;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
 }
 
-.primary:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+.button-primary:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
 }
 
-.secondary {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-medium);
-    box-shadow: var(--shadow-xs);
+/* Secondary - Blue Ocean */
+.button-secondary {
+    background: var(--gradient-ocean);
+    color: white;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
 }
 
-.secondary:not(:disabled):hover {
-    background: var(--bg-secondary);
-    border-color: var(--border-dark);
-    box-shadow: var(--shadow-sm);
+.button-secondary:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
 }
 
-.ghost {
+/* Success - Green */
+.button-success {
+    background: linear-gradient(135deg, var(--green-400), var(--green-600));
+    color: white;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.button-success:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+/* Danger - Red */
+.button-danger {
+    background: linear-gradient(135deg, var(--red-400), var(--red-600));
+    color: white;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.button-danger:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+/* Warning - Orange */
+.button-warning {
+    background: linear-gradient(135deg, var(--orange-400), var(--orange-600));
+    color: white;
+    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+}
+
+.button-warning:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
+}
+
+/* Purple - Magic */
+.button-purple {
+    background: var(--gradient-magic);
+    color: white;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+}
+
+.button-purple:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+}
+
+/* Pink - Sunset */
+.button-pink {
+    background: var(--gradient-sunset);
+    color: white;
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);
+}
+
+.button-pink:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.5);
+}
+
+/* Rainbow */
+.button-rainbow {
+    background: var(--gradient-rainbow);
+    background-size: 200% 200%;
+    animation: rainbow 3s ease infinite;
+    color: white;
+    box-shadow: 0 4px 14px rgba(251, 191, 36, 0.4);
+}
+
+@keyframes rainbow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.button-rainbow:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+}
+
+/* Outline */
+.button-outline {
+    background: white;
+    border: 2px solid var(--gray-300);
+    color: var(--gray-700);
+}
+
+.button-outline:hover:not(:disabled) {
+    border-color: var(--yellow-500);
+    color: var(--yellow-600);
+    background: var(--yellow-50);
+    transform: translateY(-2px);
+}
+
+/* Ghost */
+.button-ghost {
     background: transparent;
-    color: var(--text-secondary);
+    border: 2px solid transparent;
+    color: var(--gray-700);
+    box-shadow: none;
 }
 
-.ghost:not(:disabled):hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+.button-ghost:hover:not(:disabled) {
+    background: var(--gray-100);
+    color: var(--gray-900);
+    transform: none;
+    box-shadow: none;
 }
 
-.danger {
-    background: linear-gradient(135deg, var(--error-500), var(--error-600));
-    color: white;
-    box-shadow: var(--shadow-sm);
+/* ============================================
+   ICONS
+   ============================================ */
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
 }
 
-.danger:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--error-600), var(--error-700));
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.button-loading {
+    pointer-events: none;
 }
 
-/* Loading spinner */
 .spinner {
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
-.spinnerIcon {
-    width: 16px;
-    height: 16px;
+.spinner-icon {
+    width: 20px;
+    height: 20px;
     animation: spin 1s linear infinite;
 }
 
-.spinnerCircle {
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner-circle {
     stroke: currentColor;
     stroke-linecap: round;
-    stroke-dasharray: 60;
-    stroke-dashoffset: 15;
+    animation: dash 1.5s ease-in-out infinite;
 }
 
-/* Icon */
-.icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+@keyframes dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+    }
+
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+    }
 }
 
-.icon svg {
-    width: 18px;
-    height: 18px;
+/* ============================================
+   FULL WIDTH
+   ============================================ */
+
+.button-full-width {
+    width: 100%;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+
+    .button-sm,
+    .button-md,
+    .button-lg {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
 }

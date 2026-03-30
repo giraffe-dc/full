@@ -1,0 +1,174 @@
+/* ============================================
+   TRANSACTION MODAL - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.modalContent {
+  padding: var(--space-6);
+}
+
+/* ============================================
+   FORM GROUPS
+   ============================================ */
+
+.formGroup {
+  margin-bottom: var(--space-6);
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--gray-700);
+  font-size: 14px;
+}
+
+.formLabelRequired::after {
+  content: ' *';
+  color: var(--error-text);
+}
+
+/* ============================================
+   AMOUNT INPUT
+   ============================================ */
+
+.amountInput {
+  width: 100%;
+  padding: var(--space-4);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.amountInput:focus {
+  outline: none;
+  border-color: var(--yellow-500);
+  box-shadow: 0 0 0 4px var(--yellow-100);
+}
+
+.amountInput::placeholder {
+  color: var(--gray-400);
+}
+
+/* ============================================
+   CATEGORY SELECT
+   ============================================ */
+
+.categorySelect {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-family: var(--font-body);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.categorySelect:focus {
+  outline: none;
+  border-color: var(--yellow-500);
+  box-shadow: 0 0 0 4px var(--yellow-100);
+}
+
+.categorySelect:disabled {
+  background: var(--gray-100);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ============================================
+   COMMENT TEXTAREA
+   ============================================ */
+
+.commentTextarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-family: var(--font-body);
+  min-height: 100px;
+  resize: vertical;
+  transition: all var(--transition-fast);
+}
+
+.commentTextarea:focus {
+  outline: none;
+  border-color: var(--yellow-500);
+  box-shadow: 0 0 0 4px var(--yellow-100);
+}
+
+.commentTextarea::placeholder {
+  color: var(--gray-400);
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.actionButtons {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  padding-top: var(--space-5);
+  border-top: 2px solid var(--gray-100);
+}
+
+.actionButtons button {
+  flex: 1;
+}
+
+/* ============================================
+   TYPE VARIANTS
+   ============================================ */
+
+/* Income - Green */
+.typeIncome .amountInput:focus {
+  border-color: var(--success-main);
+  box-shadow: 0 0 0 4px var(--success-bg);
+}
+
+/* Expense - Red */
+.typeExpense .amountInput:focus {
+  border-color: var(--error-main);
+  box-shadow: 0 0 0 4px var(--error-bg);
+}
+
+/* Incasation - Purple */
+.typeIncasation .amountInput:focus {
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 4px var(--purple-50);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .modalContent {
+    padding: var(--space-4);
+  }
+
+  .amountInput {
+    font-size: 1.2rem;
+    padding: var(--space-3);
+  }
+
+  .categorySelect,
+  .commentTextarea {
+    font-size: 14px;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .actionButtons button {
+    width: 100%;
+  }
+}

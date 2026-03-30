@@ -1,0 +1,223 @@
+/* ============================================
+   RADIO - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    cursor: pointer;
+}
+
+/* ============================================
+   RADIO BASE
+   ============================================ */
+
+.radio {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gray-300);
+    border-radius: 50%;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.radio::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: white;
+    transition: transform var(--transition-fast);
+}
+
+.radio:checked {
+    background: var(--yellow-500);
+    border-color: var(--yellow-500);
+}
+
+.radio:checked::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.radio:focus {
+    outline: none;
+    border-color: var(--yellow-500);
+    box-shadow: 0 0 0 3px var(--yellow-100);
+}
+
+.radio:disabled {
+    background: var(--gray-100);
+    border-color: var(--gray-200);
+    cursor: not-allowed;
+}
+
+.radio:disabled:checked {
+    background: var(--gray-300);
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.radio-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.radio-sm::after {
+    width: 8px;
+    height: 8px;
+}
+
+.radio-md {
+    width: 20px;
+    height: 20px;
+}
+
+.radio-md::after {
+    width: 10px;
+    height: 10px;
+}
+
+.radio-lg {
+    width: 24px;
+    height: 24px;
+}
+
+.radio-lg::after {
+    width: 12px;
+    height: 12px;
+}
+
+/* ============================================
+   LABEL
+   ============================================ */
+
+.label {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gray-300);
+    border-radius: 50%;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.label-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.label-md {
+    width: 20px;
+    height: 20px;
+}
+
+.label-lg {
+    width: 24px;
+    height: 24px;
+}
+
+/* ============================================
+   TEXT
+   ============================================ */
+
+.text {
+    flex: 1;
+    color: var(--gray-700);
+    font-family: var(--font-body);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.text-sm {
+    font-size: 14px;
+}
+
+.text-md {
+    font-size: 16px;
+}
+
+.text-lg {
+    font-size: 18px;
+}
+
+.text:hover {
+    color: var(--gray-900);
+}
+
+.text-error {
+    color: var(--error-text);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.labelError {
+    border-color: var(--red-500);
+}
+
+/* ============================================
+   HELPER TEXT
+   ============================================ */
+
+.helperText {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin: 0;
+    font-weight: 500;
+    padding-left: 28px;
+}
+
+.helperTextError {
+    color: var(--error-text);
+}
+
+/* ============================================
+   DISABLED STATE
+   ============================================ */
+
+.disabled .text {
+    color: var(--gray-400);
+    cursor: not-allowed;
+}
+
+.disabled .label {
+    cursor: not-allowed;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .wrapper {
+        gap: var(--space-2);
+    }
+
+    .text-md {
+        font-size: 15px;
+    }
+}

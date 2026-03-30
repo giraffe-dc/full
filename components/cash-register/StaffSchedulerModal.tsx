@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
+import { Modal, Button, Preloader, Badge } from '@/components/ui';
 import styles from './StaffSchedulerModal.module.css';
-import { Preloader } from '../ui/Preloader';
 
 interface Staff {
     id: string;
@@ -16,7 +18,13 @@ interface StaffSchedulerModalProps {
     activeStaffIds: string[];
 }
 
-export function StaffSchedulerModal({ currentActiveIds, onSave, onClose, shiftId, activeStaffIds }: StaffSchedulerModalProps) {
+export function StaffSchedulerModal({
+    currentActiveIds,
+    onSave,
+    onClose,
+    shiftId,
+    activeStaffIds
+}: StaffSchedulerModalProps) {
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(currentActiveIds));
     const [loading, setLoading] = useState(true);
@@ -59,42 +67,53 @@ export function StaffSchedulerModal({ currentActiveIds, onSave, onClose, shiftId
     };
 
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                <h2 className={styles.title}>Хто на зміні?</h2>
-
+        <Modal
+            isOpen={true}
+            title="👥 Хто на зміні?"
+            onClose={onClose}
+            size="lg"
+        >
+            <div className={styles.modalContent}>
                 {loading ? (
-                    <Preloader fullScreen={false} variant="dark" message="Завантаження персоналу..." />
+                    <div className={styles.loadingContainer}>
+                        <Preloader fullScreen={false} variant="yellow" showText={false} />
+                        <p className={styles.loadingText}>Завантаження персоналу...</p>
+                    </div>
                 ) : (
                     <div className={styles.staffList}>
-                        {staffList.map(staff => (
-                            <div
-                                key={staff.id}
-                                className={styles.staffItem}
-                                onClick={() => toggleStaff(staff.id)}
-                            >
-                                <input
-                                    type="checkbox"
-                                    className={styles.checkbox}
-                                    checked={selectedIds.has(staff.id)}
-                                    readOnly
-                                />
-                                <span className={styles.staffName}>{staff.name}</span>
-                                <span className={styles.staffPosition}>{staff.position}</span>
-                            </div>
-                        ))}
+                        {staffList.map(staff => {
+                            const isSelected = selectedIds.has(staff.id);
+                            const isOnDuty = activeStaffIds.includes(staff.id);
+
+                            return (
+                                <div
+                                    key={staff.id}
+                                    className={`${styles.staffItem} ${isSelected ? styles.selected : ''}`}
+                                    onClick={() => toggleStaff(staff.id)}
+                                >
+                                    <div className={styles.checkboxWrapper} />
+                                    <div className={styles.staffInfo}>
+                                        <div className={styles.staffName}>{staff.name}</div>
+                                        <div className={styles.staffPosition}>{staff.position}</div>
+                                    </div>
+                                    {isOnDuty && !isSelected && (
+                                        <Badge variant="success" size="sm">На зміні</Badge>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
-                <div className={styles.footer}>
-                    <button className={`${styles.button} ${styles.cancelButton}`} onClick={onClose}>
+                <div className={styles.actionButtons}>
+                    <Button variant="outline" onClick={onClose}>
                         Скасувати
-                    </button>
-                    <button className={`${styles.button} ${styles.saveButton}`} onClick={handleSave}>
-                        Зберегти
-                    </button>
+                    </Button>
+                    <Button variant="primary" onClick={handleSave}>
+                        Зберегти ({selectedIds.size})
+                    </Button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }

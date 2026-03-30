@@ -1,75 +1,112 @@
-import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { SalaryRow } from '@/types/accounting';
+import { NextResponse, NextRequest } from "next/server";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
-export async function GET(request: NextRequest) {
+// GET /api/accounting/salary - Get salary data with hours from schedules
+export async function GET(req: NextRequest) {
   try {
-    const client = await clientPromise;
-    const db = client.db('giraffe');
-    const collection = db.collection<SalaryRow>('salary');
+    const { searchParams } = new URL(req.url);
+    const month = searchParams.get("month"); // Format: YYYY-MM
 
-    const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get('status');
-
-    const filter: any = {};
-    if (status) {
-      filter.status = status;
+    if (!month) {
+      return NextResponse.json({ error: "Month parameter is required" }, { status: 400 });
     }
 
-    const salaries = await collection.find(filter).toArray();
+    const client = await clientPromise;
+    const db = client.db();
+
+    // Parse month
+    const [year, monthNum] = month.split("-").map(Number);
+    const daysInMonth = new Date(year, monthNum, 0).getDate();
+    const startDate = new Date(year, monthNum - 1, 1);
+    const endDate = new Date(year, monthNum - 1, daysInMonth);
+
+    // Fetch all active staff
+    const staff = await db.collection("staff").find({ status: { $ne: "inactive" } }).toArray();
+
+    // Fetch all schedules for the month
+    const schedules = await db.collection("staff_schedule").find({
+      date: {
+        $gte: startDate,
+        $lte: endDate,
+      },
+    }).toArray();
+
+    // Fetch salary settings (rates by position)
+    const salarySettings = await db.collection("salary_settings").find().toArray();
+    const rateMap = new Map(salarySettings.map((s: any) => [s.position, s.ratePerHour || 0]));
+
+    // Build salary rows
+    const salaryRows = staff.map((member: any) => {
+      let totalHours = 0;
+      let totalShifts = 0;
+
+      // Calculate hours from schedules
+      schedules.forEach((shift: any) => {
+        if (shift.staffId.toString() === member._id.toString()) {
+          const [startHour, startMin] = shift.startTime.split(":").map(Number);
+          const [endHour, endMin] = shift.endTime.split(":").map(Number);
+          const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
+          totalHours += hours;
+          totalShifts++;
+        }
+      });
+
+      // Get rate from settings or use default from staff
+      const position = member.position || "other";
+      const ratePerHour = rateMap.get(position) || member.salaryRate || 50; // Default 50 UAH/hour
+
+      const baseSalary = totalHours * ratePerHour;
+      const bonus = member.bonus || 0;
+      const fine = member.fine || 0;
+      const toPay = baseSalary + bonus - fine;
+
+      return {
+        id: member._id.toString(),
+        employee: member.name,
+        position: position,
+        totalHours: Math.round(totalHours),
+        totalShifts,
+        ratePerHour,
+        baseSalary: Math.round(baseSalary),
+        bonus,
+        fine,
+        toPay: Math.round(toPay),
+        status: toPay > 0 ? "pending" : "paid",
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      data: salaries,
-      count: salaries.length,
+      data: salaryRows,
     });
   } catch (error) {
-    console.error('Error fetching salary:', error);
-    return NextResponse.json(
-      { success: false, error: 'Помилка при отриманні зарплати' },
-      { status: 500 }
-    );
+    console.error("Error fetching salary data:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+// POST /api/accounting/salary - Update salary (bonus/fine)
+export async function POST(req: NextRequest) {
   try {
-    const client = await clientPromise;
-    const db = client.db('giraffe');
-    const collection = db.collection<SalaryRow>('salary');
+    const body = await req.json();
+    const { staffId, bonus, fine } = body;
 
-    const body = await request.json();
-    const { employee, position, salary, bonus, fine, toPay, status } = body;
-
-    if (!employee || !position) {
-      return NextResponse.json(
-        { success: false, error: 'Працівник та посада обов\'язкові' },
-        { status: 400 }
-      );
+    if (!staffId) {
+      return NextResponse.json({ error: "staffId is required" }, { status: 400 });
     }
 
-    const newSalary: SalaryRow = {
-      id: `salary-${Date.now()}`,
-      employee,
-      position,
-      salary: salary || 0,
-      bonus: bonus || 0,
-      fine: fine || 0,
-      toPay: toPay || salary || 0,
-      status: status || 'pending',
-    };
+    const client = await clientPromise;
+    const db = client.db();
 
-    await collection.insertOne(newSalary as any);
-
-    return NextResponse.json(
-      { success: true, data: newSalary, message: 'Запис зарплати успішно створений' },
-      { status: 201 }
+    await db.collection("staff").updateOne(
+      { _id: new ObjectId(staffId) },
+      { $set: { bonus: bonus || 0, fine: fine || 0 } }
     );
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error creating salary:', error);
-    return NextResponse.json(
-      { success: false, error: 'Помилка при створенні запису зарплати' },
-      { status: 500 }
-    );
+    console.error("Error updating salary:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

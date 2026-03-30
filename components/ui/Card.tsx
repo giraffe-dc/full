@@ -1,41 +1,67 @@
+"use client";
+
 import React from 'react';
 import styles from './Card.module.css';
 
-export interface CardProps {
-    children: React.ReactNode;
-    className?: string;
-    hover?: boolean;
-    onClick?: () => void;
-    padding?: 'none' | 'sm' | 'md' | 'lg';
+export type CardVariant =
+    | 'default'
+    | 'rainbow'
+    | 'glass'
+    | 'hover'
+    | 'outline'
+    | 'interactive';
+
+export type CardColor =
+    | 'yellow'
+    | 'blue'
+    | 'green'
+    | 'purple'
+    | 'pink'
+    | 'orange'
+    | 'gray';
+
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+    variant?: CardVariant;
+    color?: CardColor;
+    padding?: 'sm' | 'md' | 'lg';
+    noPadding?: boolean;
 }
 
-export function Card({
-    children,
-    className = '',
-    hover = false,
-    onClick,
-    padding = 'md',
-}: CardProps) {
-    return (
-        <div
-            className={`${styles.card} ${hover ? styles.hover : ''} ${styles[`padding-${padding}`]} ${className}`}
-            onClick={onClick}
-            role={onClick ? 'button' : undefined}
-            tabIndex={onClick ? 0 : undefined}
-        >
-            {children}
-        </div>
-    );
-}
+export const Card = React.forwardRef<HTMLDivElement, CardProps>(
+    (
+        {
+            children,
+            variant = 'default',
+            color,
+            padding = 'md',
+            noPadding = false,
+            className = '',
+            ...props
+        },
+        ref
+    ) => {
+        const classes = [
+            styles.card,
+            styles[`card-${variant}`],
+            color ? styles[`card-${color}`] : '',
+            noPadding ? styles.cardNoPadding : styles[`card-padding-${padding}`],
+            className,
+        ]
+            .filter(Boolean)
+            .join(' ');
 
-export function CardHeader({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-    return <div className={`${styles.header} ${className}`}>{children}</div>;
-}
+        return (
+            <div
+                ref={ref}
+                className={classes}
+                {...props}
+            >
+                {children}
+            </div>
+        );
+    }
+);
 
-export function CardBody({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-    return <div className={`${styles.body} ${className}`}>{children}</div>;
-}
+Card.displayName = 'Card';
 
-export function CardFooter({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-    return <div className={`${styles.footer} ${className}`}>{children}</div>;
-}
+export default Card;

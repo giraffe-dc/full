@@ -1,0 +1,386 @@
+/* ============================================
+   STAFF SCHEDULE SUMMARY - GIRAFFE JOY DESIGN
+   🧡 Помаранчева тема
+   ============================================ */
+
+.page {
+  min-height: 100vh;
+  background: var(--bg-app);
+  padding: var(--space-8);
+}
+
+.container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-8);
+  padding: var(--space-6);
+  background: white;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--orange-100);
+}
+
+.btnBack {
+  padding: 8px 16px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+}
+
+.btnBack:hover {
+  background: var(--gray-200);
+  border-color: var(--gray-300);
+  transform: translateX(-4px);
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.pageTitleIcon {
+  font-size: 42px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-top: var(--space-1);
+  font-family: var(--font-body);
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.btnExport {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--green-500), var(--green-600));
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-heading);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnExport:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-green);
+}
+
+/* Month Selector */
+.monthSelector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--gray-100);
+  padding: 6px;
+  border-radius: var(--radius-full);
+}
+
+.navBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--gray-200);
+  background: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+}
+
+.navBtn:hover {
+  border-color: var(--orange-400);
+  background: var(--orange-50);
+  color: var(--orange-600);
+}
+
+.monthLabel {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--gray-700);
+  min-width: 200px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+/* ============================================
+   SUMMARY TABLE
+   ============================================ */
+
+.tableWrapper {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--orange-100);
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.summaryTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+/* Header Rows */
+.headerRow {
+  background: var(--gray-50);
+}
+
+.headerCell {
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--gray-200);
+  font-weight: 700;
+  color: var(--gray-700);
+  font-family: var(--font-heading);
+  text-align: center;
+  background: var(--gray-100);
+}
+
+.daysHeader {
+  padding: var(--space-3);
+  border: 2px solid var(--gray-200);
+  font-weight: 700;
+  color: var(--gray-700);
+  font-family: var(--font-heading);
+  text-align: center;
+  background: linear-gradient(135deg, var(--orange-100), var(--orange-50));
+}
+
+.dayCell {
+  padding: 4px;
+  border: 1px solid var(--gray-200);
+  min-width: 32px;
+  max-width: 32px;
+}
+
+.dayCell.weekend {
+  background: var(--orange-50);
+}
+
+.dayLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.dayName {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  font-family: var(--font-heading);
+}
+
+.dayNum {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--gray-900);
+  font-family: var(--font-display);
+}
+
+.dayCell.weekend .dayNum {
+  color: var(--orange-600);
+}
+
+/* Staff Rows */
+.staffRow {
+  background: white;
+}
+
+.staffRow:hover {
+  background: var(--orange-50);
+}
+
+.nameCell {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-200);
+  font-weight: 700;
+  color: var(--gray-900);
+  font-family: var(--font-heading);
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 10;
+}
+
+.staffRow:hover .nameCell {
+  background: var(--orange-50);
+}
+
+.positionCell {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-600);
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+
+.salaryCell {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-200);
+  font-weight: 700;
+  color: var(--gray-900);
+  font-family: var(--font-heading);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Shift Cells */
+.shiftCell {
+  padding: 4px;
+  border: 1px solid var(--gray-200);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  font-family: var(--font-heading);
+  min-width: 32px;
+  max-width: 32px;
+}
+
+.shiftCell.weekend {
+  background: var(--orange-50);
+}
+
+/* Stats Cells */
+.statsCell {
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--gray-200);
+  font-weight: 700;
+  text-align: center;
+  font-family: var(--font-heading);
+  background: var(--gray-50);
+}
+
+.totalHours {
+  background: linear-gradient(135deg, var(--orange-100), var(--orange-50));
+  color: var(--orange-800);
+  font-size: 15px;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Large Tablet: 1024px */
+@media (max-width: 1024px) {
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  .summaryTable {
+    min-width: 1200px;
+  }
+}
+
+/* Tablet: 768px */
+@media (max-width: 768px) {
+  .page {
+    padding: var(--space-4);
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .btnBack {
+    justify-content: center;
+  }
+
+  .monthSelector {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .monthLabel {
+    min-width: auto;
+  }
+}
+
+/* Mobile: 640px */
+@media (max-width: 640px) {
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .summaryTable {
+    font-size: 11px;
+  }
+
+  .dayCell {
+    min-width: 28px;
+    max-width: 28px;
+  }
+
+  .dayName {
+    font-size: 8px;
+  }
+
+  .dayNum {
+    font-size: 10px;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}

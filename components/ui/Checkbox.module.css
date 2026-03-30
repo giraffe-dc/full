@@ -1,0 +1,229 @@
+/* ============================================
+   CHECKBOX - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    cursor: pointer;
+}
+
+/* ============================================
+   CHECKBOX BASE
+   ============================================ */
+
+.checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.checkbox::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform var(--transition-fast);
+}
+
+.checkbox:checked {
+    background: var(--yellow-500);
+    border-color: var(--yellow-500);
+}
+
+.checkbox:checked::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.checkbox:focus {
+    outline: none;
+    border-color: var(--yellow-500);
+    box-shadow: 0 0 0 3px var(--yellow-100);
+}
+
+.checkbox:disabled {
+    background: var(--gray-100);
+    border-color: var(--gray-200);
+    cursor: not-allowed;
+}
+
+.checkbox:disabled:checked {
+    background: var(--gray-300);
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.checkbox-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.checkbox-sm::after {
+    font-size: 12px;
+}
+
+.checkbox-md {
+    width: 20px;
+    height: 20px;
+}
+
+.checkbox-md::after {
+    font-size: 14px;
+}
+
+.checkbox-lg {
+    width: 24px;
+    height: 24px;
+}
+
+.checkbox-lg::after {
+    font-size: 18px;
+}
+
+/* ============================================
+   LABEL
+   ============================================ */
+
+.label {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.label-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.label-md {
+    width: 20px;
+    height: 20px;
+}
+
+.label-lg {
+    width: 24px;
+    height: 24px;
+}
+
+.indeterminate-icon {
+    color: var(--yellow-500);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ============================================
+   TEXT
+   ============================================ */
+
+.text {
+    flex: 1;
+    color: var(--gray-700);
+    font-family: var(--font-body);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.text-sm {
+    font-size: 14px;
+}
+
+.text-md {
+    font-size: 16px;
+}
+
+.text-lg {
+    font-size: 18px;
+}
+
+.text:hover {
+    color: var(--gray-900);
+}
+
+.text-error {
+    color: var(--error-text);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.labelError {
+    border-color: var(--red-500);
+}
+
+/* ============================================
+   HELPER TEXT
+   ============================================ */
+
+.helperText {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin: 0;
+    font-weight: 500;
+    padding-left: 28px;
+}
+
+.helperTextError {
+    color: var(--error-text);
+}
+
+/* ============================================
+   DISABLED STATE
+   ============================================ */
+
+.disabled .text {
+    color: var(--gray-400);
+    cursor: not-allowed;
+}
+
+.disabled .label {
+    cursor: not-allowed;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .wrapper {
+        gap: var(--space-2);
+    }
+
+    .text-md {
+        font-size: 15px;
+    }
+}

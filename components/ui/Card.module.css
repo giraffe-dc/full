@@ -1,139 +1,144 @@
+/* ============================================
+   CARD - GIRAFFE JOY DESIGN
+   ============================================ */
+
 .card {
-    background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
-    transition: all var(--transition-normal);
+    background: var(--bg-surface);
+    border-radius: var(--radius-2xl);
+    border: 2px solid var(--gray-100);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
 
-.hover {
-    cursor: pointer;
-}
+/* ============================================
+   PADDING
+   ============================================ */
 
-.hover:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg), var(--shadow-glow);
-    border-color: var(--primary-200);
-}
-
-.hover:active {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-/* Glass Variant */
-.glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-/* Padding variants */
-.padding-none {
-    padding: 0;
-}
-
-.padding-sm {
-    padding: 16px;
-}
-
-.padding-md {
-    padding: 24px;
-}
-
-.padding-lg {
-    padding: 32px;
-}
-
-/* Card sections */
-.header {
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--gray-100);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--gray-800);
-    font-family: var(--font-heading);
-}
-
-.body {
-    flex: 1;
-}
-
-.footer {
-    padding-top: 16px;
-    border-top: 1px solid var(--gray-100);
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-}
-
-.hover {
-    cursor: pointer;
-}
-
-.hover:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-.hover:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-sm);
-}
-
-/* Padding variants */
-.padding-none {
-    padding: 0;
-}
-
-.padding-sm {
+.card-padding-sm {
     padding: var(--space-4);
 }
 
-.padding-md {
+.card-padding-md {
     padding: var(--space-6);
 }
 
-.padding-lg {
+.card-padding-lg {
     padding: var(--space-8);
 }
 
-/* Card sections */
-.header {
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--border-light);
-    margin-bottom: var(--space-4);
+.card-no-padding {
+    padding: 0;
 }
 
-.header h3 {
-    margin: 0;
-    font-size: var(--text-lg);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Default */
+.card-default {
+    box-shadow: var(--shadow-md);
 }
 
-.body {
-    flex: 1;
+/* Rainbow - colored top border */
+.card-rainbow {
+    border-top: 5px solid transparent;
+    border-image: var(--gradient-rainbow);
+    border-image-slice: 1;
+    box-shadow: var(--shadow-lg);
 }
 
-.footer {
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--border-light);
-    margin-top: var(--space-4);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: var(--space-3);
+/* Glass */
+.card-glass {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md);
+}
+
+/* Hover - interactive */
+.card-hover {
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+}
+
+.card-hover:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Outline - border only */
+.card-outline {
+    background: transparent;
+    border: 2px solid var(--gray-200);
+    box-shadow: none;
+}
+
+/* Interactive - with action buttons */
+.card-interactive {
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.card-interactive:hover {
+    border-color: var(--yellow-400);
+    box-shadow: var(--shadow-lg), var(--shadow-glow-yellow);
+}
+
+.card-interactive:hover .cardAction {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ============================================
+   COLOR VARIANTS (for hover borders)
+   ============================================ */
+
+.card-yellow:hover {
+    border-color: var(--yellow-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-yellow);
+}
+
+.card-blue:hover {
+    border-color: var(--blue-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-blue);
+}
+
+.card-green:hover {
+    border-color: var(--green-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-green);
+}
+
+.card-purple:hover {
+    border-color: var(--purple-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-purple);
+}
+
+.card-pink:hover {
+    border-color: var(--pink-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-pink);
+}
+
+.card-orange:hover {
+    border-color: var(--orange-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-orange);
+}
+
+.card-gray:hover {
+    border-color: var(--gray-400);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .card-padding-lg {
+        padding: var(--space-6);
+    }
+
+    .card-padding-md {
+        padding: var(--space-4);
+    }
 }

@@ -1,181 +1,230 @@
-.wrapper {
+/* ============================================
+   INPUT - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.container {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--space-2);
     width: 100%;
 }
 
-.fullWidth {
-    width: 100%;
-}
+/* ============================================
+   LABEL
+   ============================================ */
 
 .label {
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--gray-700);
-    margin-left: 2px;
+    font-family: var(--font-heading);
 }
 
-.required {
-    color: var(--error-main);
-    margin-left: 4px;
+/* ============================================
+   INPUT WRAPPER
+   ============================================ */
+
+.inputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
-.input,
-.select {
+/* ============================================
+   INPUT BASE STYLES
+   ============================================ */
+
+.input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    font-family: var(--font-body);
-    color: var(--gray-900);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+    transition: all var(--transition-normal);
     background: var(--bg-surface);
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
-    box-shadow: var(--shadow-xs);
+    font-family: var(--font-body);
+    color: var(--gray-800);
 }
 
-.input:focus,
-.select:focus {
+.input::placeholder {
+    color: var(--gray-400);
+}
+
+.input:focus {
     outline: none;
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 4px var(--primary-100);
-    background: white;
+    border-color: var(--yellow-500);
+    box-shadow: 0 0 0 4px var(--yellow-100);
+    transform: translateY(-2px);
 }
 
-.input:hover,
-.select:hover {
-    border-color: var(--gray-400);
-}
-
-.input:disabled,
-.select:disabled {
+.input:disabled {
     background: var(--gray-100);
-    color: var(--gray-500);
     cursor: not-allowed;
-    border-color: var(--gray-200);
+    opacity: 0.6;
 }
 
-.inputError {
-    border-color: var(--error-main);
+/* ============================================
+   SIZES
+   ============================================ */
+
+.input-sm {
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.input-sm+.icon {
+    font-size: 1rem;
+}
+
+.input-wrapper-sm .input:has(.leftIcon) {
+    padding-left: 40px;
+}
+
+.input-wrapper-sm .input:has(.rightIcon) {
+    padding-right: 40px;
+}
+
+.input-md {
+    padding: 14px 20px;
+    font-size: 16px;
+}
+
+.input-md+.icon {
+    font-size: 1.2rem;
+}
+
+.input-wrapper-md .input:has(.leftIcon) {
+    padding-left: 48px;
+}
+
+.input-wrapper-md .input:has(.rightIcon) {
+    padding-right: 48px;
+}
+
+.input-lg {
+    padding: 18px 24px;
+    font-size: 18px;
+}
+
+.input-lg+.icon {
+    font-size: 1.4rem;
+}
+
+.input-wrapper-lg .input:has(.leftIcon) {
+    padding-left: 56px;
+}
+
+.input-wrapper-lg .input:has(.rightIcon) {
+    padding-right: 56px;
+}
+
+/* ============================================
+   ICONS
+   ============================================ */
+
+.icon {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--gray-400);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.leftIcon {
+    left: 16px;
+}
+
+.rightIcon {
+    right: 16px;
+}
+
+/* Adjust padding for icons - using JavaScript-friendly approach */
+.inputWrapper:has(.leftIcon) .input {
+    padding-left: 48px;
+}
+
+.inputWrapper:has(.rightIcon) .input {
+    padding-right: 48px;
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Success */
+.inputWrapper-success .input {
+    border-color: var(--green-500);
+}
+
+.inputWrapper-success .input:focus {
+    border-color: var(--green-600);
+    box-shadow: 0 0 0 4px var(--green-100);
+}
+
+.inputWrapper-success .icon {
+    color: var(--green-500);
+}
+
+/* Error */
+.inputWrapper-error .input {
+    border-color: var(--red-500);
     background: var(--error-bg);
 }
 
-.inputError:focus {
-    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.2);
-    border-color: var(--error-main);
+.inputWrapper-error .input:focus {
+    border-color: var(--red-600);
+    box-shadow: 0 0 0 4px var(--red-100);
 }
 
-.error {
-    font-size: 0.8rem;
-    color: var(--error-main);
-    animation: slideInUp 0.2s ease-out;
-    margin-left: 2px;
+.inputWrapper-error .icon {
+    color: var(--red-500);
 }
+
+/* Warning */
+.inputWrapper-warning .input {
+    border-color: var(--orange-500);
+    background: var(--warning-bg);
+}
+
+.inputWrapper-warning .input:focus {
+    border-color: var(--orange-600);
+    box-shadow: 0 0 0 4px var(--orange-100);
+}
+
+.inputWrapper-warning .icon {
+    color: var(--orange-500);
+}
+
+/* ============================================
+   HELPER TEXT
+   ============================================ */
 
 .helperText {
-    font-size: 0.8rem;
+    font-size: 13px;
     color: var(--gray-500);
-    margin-left: 2px;
+    margin-top: -2px;
+    font-weight: 500;
 }
 
-/* Select specific */
-.select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    padding-right: 2.5rem;
+.helperTextError {
+    color: var(--error-text);
+    font-weight: 600;
 }
 
-.select:focus {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-}
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
+@media (max-width: 640px) {
+    .input-md {
+        padding: 12px 16px;
+        font-size: 15px;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .input-lg {
+        padding: 16px 20px;
+        font-size: 16px;
     }
-}
-
-.fullWidth {
-    width: 100%;
-}
-
-.label {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-primary);
-}
-
-.required {
-    color: var(--error-500);
-    margin-left: 2px;
-}
-
-.input,
-.select {
-    width: 100%;
-    padding: var(--space-3) var(--space-4);
-    font-size: var(--text-base);
-    font-family: var(--font-sans);
-    color: var(--text-primary);
-    background: var(--bg-primary);
-    border: 2px solid var(--border-medium);
-    border-radius: var(--radius-md);
-    transition: all var(--transition-base);
-}
-
-.input:focus,
-.select:focus {
-    outline: none;
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 4px var(--primary-50);
-}
-
-.input:disabled,
-.select:disabled {
-    background: var(--bg-secondary);
-    color: var(--text-tertiary);
-    cursor: not-allowed;
-}
-
-.inputError {
-    border-color: var(--error-500);
-}
-
-.inputError:focus {
-    box-shadow: 0 0 0 4px var(--error-50);
-}
-
-.error {
-    font-size: var(--text-sm);
-    color: var(--error-600);
-    animation: slideInUp var(--transition-fast) ease-out;
-}
-
-.helperText {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-}
-
-/* Select specific */
-.select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right var(--space-3) center;
-    padding-right: var(--space-8);
-}
-
-.select:focus {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230ea5e9' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
 }

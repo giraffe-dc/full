@@ -1,3 +1,8 @@
+/* ============================================
+   DEPARTMENT SELECTOR - GIRAFFE JOY DESIGN
+   🟡 Жовта тема
+   ============================================ */
+
 .container {
     padding: 32px;
     height: 100%;
@@ -9,15 +14,12 @@
 }
 
 .title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: white;
-    /* Contrast against dark/vibrant bg */
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: var(--font-display);
+    color: var(--gray-900);
     margin-bottom: 40px;
     text-align: center;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    font-family: var(--font-heading);
-    letter-spacing: -0.02em;
 }
 
 .grid {
@@ -30,98 +32,110 @@
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: var(--radius-xl);
+    background: white;
+    border: 3px solid var(--yellow-100);
+    border-radius: var(--radius-2xl);
     padding: 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: var(--shadow-md);
     position: relative;
-    overflow: hidden;
-}
-
-.card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
-    opacity: 0;
-    transition: opacity 0.3s;
 }
 
 .card:hover {
-    transform: translateY(-8px);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: var(--shadow-xl), 0 0 0 2px var(--primary-200);
-    border-color: white;
-}
-
-.card:hover::before {
-    opacity: 1;
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--yellow-400);
+    box-shadow: var(--shadow-xl), var(--shadow-glow-yellow);
+    background: var(--yellow-50);
 }
 
 .icon {
     font-size: 4rem;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     padding: 20px;
-    background: linear-gradient(135deg, var(--primary-100), var(--primary-50));
+    background: var(--yellow-50);
     border-radius: 50%;
     width: 120px;
     height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary-600);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s;
+    color: var(--yellow-600);
+    transition: all 0.3s;
+    animation: float 3s ease-in-out infinite;
 }
 
 .card:hover .icon {
     transform: scale(1.1) rotate(5deg);
-    background: linear-gradient(135deg, var(--primary-200), var(--primary-100));
+    background: white;
+    box-shadow: var(--shadow-md);
 }
 
 .name {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--gray-800);
-    z-index: 1;
+    font-family: var(--font-heading);
+    color: var(--gray-900);
+    text-align: center;
 }
 
 .addCard {
-    border: 2px dashed rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.2);
+    border: 3px dashed var(--gray-300);
+    background: transparent;
 }
 
 .addCard:hover {
-    border-color: var(--primary-300);
-    background: rgba(255, 255, 255, 0.4);
+    border-color: var(--yellow-400);
+    background: var(--yellow-50);
 }
 
 .addCard .icon {
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--gray-100);
     color: var(--gray-500);
     box-shadow: none;
+    animation: none;
 }
 
 .addCard:hover .icon {
-    color: var(--primary-600);
+    color: var(--yellow-600);
     background: white;
 }
 
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .container {
         padding: 16px;
     }
 
     .title {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         margin-bottom: 24px;
     }
 
@@ -133,7 +147,7 @@
     .card {
         flex-direction: row;
         padding: 20px;
-        justify-content: start;
+        justify-content: flex-start;
         gap: 20px;
     }
 
@@ -143,115 +157,10 @@
         height: 60px;
         font-size: 2rem;
         padding: 10px;
-    }
-
-    .card:hover {
-        transform: translateY(-4px);
-    }
-}
-
-.title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 1200px;
-}
-
-.card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    padding: 2.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    border-color: #3b82f6;
-}
-
-.icon {
-    font-size: 3.5rem;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #eff6ff;
-    border-radius: 50%;
-    width: 100px;
-    height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.name {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1f2937;
-}
-
-.addCard {
-    border: 2px dashed #d1d5db;
-    background: transparent;
-}
-
-.addCard:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-.addCard .icon {
-    background: white;
-    color: #3b82f6;
-    border: 1px solid #e5e7eb;
-}
-
-@media (max-width: 768px) {
-    .container {
-        padding: 1rem;
-    }
-
-    .title {
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    .card {
-        padding: 1.5rem;
-        flex-direction: row;
-        justify-content: flex-start;
-        gap: 1.5rem;
-    }
-
-    .icon {
-        margin-bottom: 0;
-        width: 60px;
-        height: 60px;
-        font-size: 2rem;
-        padding: 0.5rem;
+        animation: none;
     }
 
     .name {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
 }

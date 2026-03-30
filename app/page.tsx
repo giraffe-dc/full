@@ -1,63 +1,187 @@
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import jwt from 'jsonwebtoken'
-import Link from 'next/link'
-import styles from './page.module.css'
+"use client";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
+import { Button } from "@/components/ui/Button";
+import styles from "./page.module.css";
 
-export default async function Home() {
-    const c = await cookies()
-    const token = c.get('token')?.value ?? null
+interface Module {
+    href: string;
+    icon: string;
+    title: string;
+    description: string;
+    color: string;
+    roles: string[];
+}
 
-    if (!token) {
-        redirect('/login')
+interface DashboardStats {
+    todayVisitors: number;
+    activeEvents: number;
+    revenue: number;
+    pendingTasks: number;
+}
+
+export default function Dashboard() {
+    const [user, setUser] = useState<{ email: string; role: string } | null>(null);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        // Fetch user data
+        fetch("/api/auth/me")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.authenticated) {
+                    setUser(data.user);
+                    // Simulate stats loading
+                    setTimeout(() => {
+                        setStats({
+                            todayVisitors: 45,
+                            activeEvents: 3,
+                            revenue: 12500,
+                            pendingTasks: 7,
+                        });
+                        setIsLoading(false);
+                    }, 500);
+                }
+            })
+            .catch(() => setIsLoading(false));
+    }, []);
+
+    const modules: Module[] = [
+        { href: '/cash-register', icon: '💰', title: 'Каса', description: 'Продажі, чеки, звіти', color: 'yellow', roles: ['user', 'admin'] },
+        { href: '/clients', icon: '👥', title: 'Клієнти', description: 'База клієнтів, Telegram', color: 'blue', roles: ['user', 'admin'] },
+        { href: '/supply', icon: '📦', title: 'Постачання', description: 'Товари та інгредієнти', color: 'pink', roles: ['user', 'admin'] },
+        { href: '/accounting', icon: '📊', title: 'Бухгалтерія', description: 'Фінанси, аналітика', color: 'green', roles: ['admin'] },
+        { href: '/visits', icon: '🕒', title: 'Відвідування', description: 'Реєстрація відвідувачів', color: 'purple', roles: ['user', 'admin'] },
+        { href: '/events', icon: '🎉', title: 'Бронювання', description: 'Святкові події', color: 'purple', roles: ['user', 'admin'] },
+        { href: '/telegram', icon: '📱', title: 'Telegram', description: 'Інтеграція з Telegram', color: 'blue', roles: ['user', 'admin'] },
+        { href: '/staff', icon: '👨‍👩‍👧‍👦', title: 'Персонал', description: 'Графіки, зарплати', color: 'orange', roles: ['admin'] },
+    ];
+
+    const visibleModules = modules.filter(m => {
+        if (!user) return false;
+        if (user.role === 'user') {
+            return m.roles.includes('user');
+        }
+        return true;
+    });
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 6) return 'Доброї ночі';
+        if (hour < 12) return 'Доброго ранку';
+        if (hour < 18) return 'Доброго дня';
+        return 'Доброго вечора';
+    };
+
+    if (isLoading) {
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}>⏳</div>
+                <p>Завантаження...</p>
+            </div>
+        );
     }
-
-    let payload: any = null
-    try {
-        payload = jwt.verify(token, JWT_SECRET) as Record<string, any>
-    } catch (e) {
-        redirect('/login')
-    }
-
-    const userLabel = payload?.email ?? 'користувач'
-    const userRole = payload?.role ?? 'user'
-
-    const modules = [
-        { href: '/cash-register', icon: '💰', title: 'Каса', description: 'Продажі, чеки, звіти', roles: ['user', 'admin'] },
-        { href: '/clients', icon: '👥', title: 'Клієнти', description: 'База клієнтів, Telegram, розсилки', roles: ['user', 'admin'] },
-        { href: '/supply', icon: '📦', title: 'Постачання', description: 'Прихід товарів та інгредієнтів', roles: ['user', 'admin'] },
-        { href: '/accounting', icon: '📊', title: 'Бухгалтерія', description: 'Фінанси, транзакції, аналітика', roles: ['admin'] },
-        { href: '/staff', icon: '👥', title: 'Персонал', description: 'Співробітники, графіки, зарплати', roles: ['user', 'admin'] },
-        { href: '/projects', icon: '📁', title: 'Проекти', description: 'Управління проектами', roles: ['user', 'admin'] },
-        { href: '/docs', icon: '📄', title: 'Документи', description: 'Документація та файли', roles: ['user', 'admin'] },
-        { href: '/visits', icon: '🕒', title: 'Відвідування', description: 'Реєстрація відвідувачів', roles: ['user', 'admin'] },
-        { href: '/events', icon: '🎉', title: 'Події', description: 'Управління святковими подіями', roles: ['user', 'admin'] },
-    ]
-
-    const visibleModules = modules.filter(m => m.roles.includes(userRole))
 
     return (
-        <div className={styles.page}>
-            <main className={styles.main}>
-                <div className={styles.hero}>
-                    <h1 className={styles.title}>🦒 Giraffe</h1>
+        <div className={styles.dashboard}>
+            {/* Hero Section */}
+            <div className={styles.hero}>
+                <div className={styles.heroContent}>
+                    <h1 className={`${styles.title} animate-bounce-in`}>
+                        {getGreeting()}, {user?.email?.split('@')[0]}! 👋
+                    </h1>
                     <p className={styles.subtitle}>
-                        Система управління розважальним центром
+                        Система управління розважальним центром Жирафик
                     </p>
+                    <div className={styles.quickActions}>
+                        <Button variant="primary" size="md">
+                            💰 Новий продаж
+                        </Button>
+                        <Button variant="secondary" size="md">
+                            🎉 Бронювання
+                        </Button>
+                        <Button variant="outline" size="md">
+                            👥 Клієнт
+                        </Button>
+                    </div>
                 </div>
+            </div>
 
-                <div className={styles.grid}>
-                    {visibleModules.map((module) => (
-                        <Link key={module.href} href={module.href} className={styles.card}>
-                            <div className={styles.cardIcon}>{module.icon}</div>
-                            <h2 className={styles.cardTitle}>{module.title}</h2>
-                            <p className={styles.cardDescription}>{module.description}</p>
+            {/* Stats Section */}
+            {stats && (
+                <div className={styles.statsGrid}>
+                    <StatCard
+                        title="Відвідувачів сьогодні"
+                        value={stats.todayVisitors}
+                        icon="👥"
+                        trend={{ value: 12.5, isPositive: true }}
+                        color="blue"
+                    />
+                    <StatCard
+                        title="Активні події"
+                        value={stats.activeEvents}
+                        icon="🎉"
+                        color="purple"
+                    />
+                    <StatCard
+                        title="Прибуток за день"
+                        value={`₴${stats.revenue.toLocaleString()}`}
+                        icon="💰"
+                        trend={{ value: 8.2, isPositive: true }}
+                        color="green"
+                    />
+                    <StatCard
+                        title="Завдання"
+                        value={stats.pendingTasks}
+                        icon="📋"
+                        trend={{ value: 3.1, isPositive: false }}
+                        color="orange"
+                    />
+                </div>
+            )}
+
+            {/* Modules Grid */}
+            <div className={styles.modulesSection}>
+                <h2 className={styles.sectionTitle}>Модулі</h2>
+                <div className={styles.modulesGrid}>
+                    {visibleModules.map((module, index) => (
+                        <Link
+                            key={module.href}
+                            href={module.href}
+                            className={`${styles.moduleCard} animate-bounce-in`}
+                            style={{ animationDelay: `${index * 0.05}s` }}
+                        >
+                            <Card
+                                variant="hover"
+                                color={module.color as any}
+                                padding="md"
+                                className={styles.cardInner}
+                            >
+                                <div className={`${styles.moduleIcon} animate-float`}>
+                                    {module.icon}
+                                </div>
+                                <h3 className={styles.moduleTitle}>{module.title}</h3>
+                                <p className={styles.moduleDescription}>{module.description}</p>
+                            </Card>
                         </Link>
                     ))}
                 </div>
-            </main>
+            </div>
+
+            {/* Recent Activity Section */}
+            <div className={styles.recentSection}>
+                <h2 className={styles.sectionTitle}>Остання активність</h2>
+                <Card padding="md" className={styles.recentCard}>
+                    <div className={styles.recentEmpty}>
+                        <span className={styles.recentIcon}>📊</span>
+                        <p>Тут буде відображатись остання активність</p>
+                    </div>
+                </Card>
+            </div>
         </div>
-    )
+    );
 }

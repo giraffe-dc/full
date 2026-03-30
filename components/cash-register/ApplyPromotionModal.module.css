@@ -1,0 +1,223 @@
+/* ============================================
+   APPLY PROMOTION MODAL - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.modalContent {
+  padding: var(--space-6);
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  color: var(--gray-500);
+}
+
+.loadingText {
+  margin-top: var(--space-4);
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.emptyState {
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--gray-500);
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: 16px;
+  font-family: var(--font-body);
+}
+
+/* ============================================
+   PROMOTION LIST
+   ============================================ */
+
+.promotionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.promotionCard {
+  padding: var(--space-5);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all var(--transition-fast);
+  background: white;
+}
+
+.promotionCard:hover {
+  border-color: var(--yellow-400);
+  background: var(--yellow-50);
+  transform: translateY(-2px);
+}
+
+.promotionCard.active {
+  border-color: var(--success-main);
+  background: var(--success-bg);
+}
+
+.promotionInfo {
+  flex: 1;
+}
+
+.promotionName {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.promotionDiscount {
+  font-size: 14px;
+  color: var(--gray-600);
+  font-family: var(--font-body);
+}
+
+.promotionDiscount .amount {
+  color: var(--error-text);
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.promotionButtons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.applyButton {
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--gradient-ocean);
+  color: white;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.applyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.cancelButton {
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--error-main);
+  color: white;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cancelButton:hover {
+  background: var(--error-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================
+   PROMOTION TAGS
+   ============================================ */
+
+.promotionTags {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-heading);
+}
+
+.tag-percent {
+  background: var(--blue-50);
+  color: var(--blue-700);
+}
+
+.tag-fixed {
+  background: var(--purple-50);
+  color: var(--purple-700);
+}
+
+.tag-product {
+  background: var(--green-50);
+  color: var(--green-700);
+}
+
+.tag-category {
+  background: var(--orange-50);
+  color: var(--orange-700);
+}
+
+.tag-total {
+  background: var(--pink-50);
+  color: var(--pink-700);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .modalContent {
+    padding: var(--space-4);
+  }
+
+  .promotionCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .promotionButtons {
+    width: 100%;
+  }
+
+  .promotionButtons button {
+    flex: 1;
+  }
+
+  .promotionName {
+    font-size: 16px;
+  }
+
+  .promotionDiscount {
+    font-size: 13px;
+  }
+}

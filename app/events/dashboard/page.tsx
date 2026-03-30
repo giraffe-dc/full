@@ -39,7 +39,7 @@ export default function EventsDashboardPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ startDate, endDate });
-      
+
       const [statsRes, revenueRes] = await Promise.all([
         fetch(`/api/events/statistics/summary?${params.toString()}`),
         fetch(`/api/events/statistics/revenue?${params.toString()}&groupBy=day`),
@@ -92,7 +92,30 @@ export default function EventsDashboardPage() {
       </div>
 
       {loading ? (
-        <Preloader message="Завантаження статистики..." />
+        <div className={styles.loadingContainer}>
+          {/* Skeleton KPI Cards */}
+          <div className={styles.kpiGrid}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={styles.kpiCard}>
+                <div className={styles.kpiIconSkeleton} />
+                <div className={styles.kpiContent}>
+                  <div className={styles.kpiLabelSkeleton} />
+                  <div className={styles.kpiValueSkeleton} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Skeleton Charts */}
+          <div className={styles.chartsGrid}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className={styles.chartCard}>
+                <div className={styles.chartTitleSkeleton} />
+                <div className={styles.chartContentSkeleton} />
+              </div>
+            ))}
+          </div>
+        </div>
       ) : stats ? (
         <>
           {/* KPI Cards */}
@@ -159,7 +182,7 @@ export default function EventsDashboardPage() {
                     const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
                     const date = new Date(item.period);
                     const dayLabel = date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
-                    
+
                     return (
                       <div key={item.period} className={styles.barItem}>
                         <div className={styles.barContainer}>
@@ -191,13 +214,6 @@ export default function EventsDashboardPage() {
                     holiday: 'Свято',
                     other: 'Інше',
                   };
-                  const typeColors: Record<EventType, string> = {
-                    birthday: '#ec4899',
-                    corporate: '#3b82f6',
-                    graduation: '#10b981',
-                    holiday: '#f97316',
-                    other: '#8b5cf6',
-                  };
 
                   return (
                     <div key={type} className={styles.typeItem}>
@@ -208,7 +224,8 @@ export default function EventsDashboardPage() {
                       <div className={styles.typeBar}>
                         <div
                           className={styles.typeBarFill}
-                          style={{ width: `${percentage}%`, backgroundColor: typeColors[type] }}
+                          style={{ width: `${percentage}%` } as React.CSSProperties}
+                          data-type={type}
                         />
                       </div>
                     </div>
@@ -230,19 +247,12 @@ export default function EventsDashboardPage() {
                     completed: 'Завершено',
                     cancelled: 'Скасовано',
                   };
-                  const statusColors: Record<EventStatus, string> = {
-                    draft: '#6b7280',
-                    confirmed: '#3b82f6',
-                    in_progress: '#f59e0b',
-                    completed: '#10b981',
-                    cancelled: '#ef4444',
-                  };
 
                   return (
                     <div key={status} className={styles.statusItem}>
                       <div
                         className={styles.statusDot}
-                        style={{ backgroundColor: statusColors[status] }}
+                        data-status={status}
                       />
                       <span className={styles.statusName}>{statusLabels[status]}</span>
                       <span className={styles.statusCount}>{count} ({percentage.toFixed(1)}%)</span>

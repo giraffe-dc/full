@@ -1,189 +1,173 @@
+/* ============================================
+   TABLE SELECTOR - GIRAFFE JOY DESIGN
+   🟡 Жовта тема
+   ============================================ */
+
 .container {
-    padding: 32px;
+    padding: 24px;
     height: 100%;
     background: var(--bg-app);
-    display: flex;
-    flex-direction: column;
     overflow-y: auto;
 }
 
 .header {
     display: flex;
     align-items: center;
+    gap: 16px;
     margin-bottom: 32px;
     padding-bottom: 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid var(--gray-200);
 }
 
 .backButton {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    font-size: 1rem;
-    cursor: pointer;
-    color: var(--gray-700);
-    margin-right: 24px;
     padding: 10px 20px;
+    background: white;
+    border: 2px solid var(--gray-300);
     border-radius: var(--radius-full);
-    transition: all 0.2s;
     font-weight: 600;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-family: var(--font-heading);
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
 .backButton:hover {
-    background: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    color: var(--primary-600);
+    border-color: var(--yellow-500);
+    color: var(--yellow-600);
+    transform: translateX(-2px);
 }
 
 .title {
     font-size: 2rem;
-    font-weight: 800;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    font-family: var(--font-heading);
+    font-weight: 700;
+    font-family: var(--font-display);
+    color: var(--gray-900);
+    flex: 1;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 24px;
-    padding-bottom: 40px;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
     animation: fadeIn 0.4s ease-out;
 }
 
 .card {
+    background: white;
+    border: 3px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: center;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Table Status Variants */
+.free {
+    border-color: var(--green-400);
+}
+
+.free:hover {
+    border-color: var(--green-500);
+    box-shadow: var(--shadow-lg), var(--shadow-glow-green);
+    background: var(--green-50);
+}
+
+.busy {
+    border-color: var(--red-400);
+    background: var(--red-50);
+}
+
+.busy:hover {
+    border-color: var(--red-500);
+    box-shadow: var(--shadow-lg), var(--shadow-glow-red);
+}
+
+.reserved {
+    border-color: var(--orange-400);
+    background: var(--orange-50);
+}
+
+.reserved:hover {
+    border-color: var(--orange-500);
+    box-shadow: var(--shadow-lg), var(--shadow-glow-orange);
+}
+
+.tableNumber {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: var(--font-display);
+    color: var(--gray-900);
+    margin-bottom: 8px;
+}
+
+.seats {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+}
+
+.statusLabel {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    display: inline-block;
+}
+
+.free .statusLabel {
+    background: var(--green-100);
+    color: var(--green-700);
+}
+
+.busy .statusLabel {
+    background: var(--red-100);
+    color: var(--red-700);
+}
+
+.reserved .statusLabel {
+    background: var(--orange-100);
+    color: var(--orange-700);
+}
+
+.addCard {
+    border: 3px dashed var(--gray-300);
+    background: transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 32px;
-    border-radius: var(--radius-xl);
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    min-height: 180px;
-    box-shadow: var(--shadow-md);
-    background: white;
-}
-
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-xl);
-}
-
-/* Status variants */
-.free {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-.free:hover {
-    background: white;
-    border-color: var(--success-main);
-}
-
-.free .tableNumber {
-    color: var(--gray-800);
-}
-
-.free .statusLabel {
-    color: var(--success-700);
-    background: var(--success-bg);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.busy {
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px solid var(--primary-300);
-    box-shadow: 0 0 0 4px var(--primary-50);
-}
-
-.busy:hover {
-    border-color: var(--primary-500);
-    background: white;
-}
-
-.busy .tableNumber {
-    color: var(--primary-700);
-}
-
-.busy .statusLabel {
-    color: var(--primary-700);
-    background: var(--primary-50);
-    border: 1px solid var(--primary-200);
-}
-
-.reserved {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px dashed var(--warning-main);
-}
-
-.reserved:hover {
-    border-style: solid;
-    background: var(--warning-bg);
-}
-
-.reserved .statusLabel {
-    color: var(--warning-text);
-    background: rgba(245, 158, 11, 0.1);
-}
-
-.tableNumber {
-    font-size: 2rem;
-    font-weight: 800;
-    margin-bottom: 8px;
-    font-family: var(--font-heading);
-}
-
-.seats {
-    font-size: 0.9rem;
-    color: var(--gray-500);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 500;
-}
-
-.statusLabel {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    padding: 6px 12px;
-    border-radius: var(--radius-full);
-}
-
-.addCard {
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px dashed rgba(255, 255, 255, 0.4);
-    box-shadow: none;
-    backdrop-filter: blur(4px);
 }
 
 .addCard:hover {
-    border-color: var(--primary-300);
-    background: rgba(255, 255, 255, 0.4);
-    transform: translateY(-4px);
+    border-color: var(--yellow-400);
+    background: var(--yellow-50);
 }
 
 .addCard .tableNumber {
     font-size: 3rem;
-    font-weight: 300;
-    color: rgba(255, 255, 255, 0.8);
-    margin: 0;
+    color: var(--gray-400);
 }
 
+.addCard .statusLabel {
+    color: var(--gray-500);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .container {
         padding: 16px;
@@ -191,205 +175,8 @@
 
     .header {
         flex-direction: column;
-        align-items: start;
-        gap: 16px;
-    }
-
-    .backButton {
-        width: 100%;
-        justify-content: center;
-        margin: 0;
-    }
-
-    .grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-    }
-
-    .card {
-        padding: 20px;
-        min-height: 140px;
-    }
-
-    .tableNumber {
-        font-size: 1.5rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.backButton {
-    background: white;
-    border: 1px solid #e5e7eb;
-    font-size: 1rem;
-    cursor: pointer;
-    color: #374151;
-    margin-right: 1.5rem;
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s;
-    font-weight: 500;
-}
-
-.backButton:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
-}
-
-.title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #111827;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.5rem;
-    padding-bottom: 2rem;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    /* Center if max-width is reached */
-}
-
-.card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    border-radius: 1rem;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    min-height: 160px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-/* Status variants */
-.free {
-    background: white;
-    border-color: #e5e7eb;
-    color: #374151;
-}
-
-.free:hover {
-    border-color: #10b981;
-}
-
-.free .statusLabel {
-    color: #10b981;
-    background: #d1fae5;
-}
-
-.busy {
-    background: white;
-    border-color: #e5e7eb;
-}
-
-.busy:hover {
-    border-color: #3b82f6;
-}
-
-.busy .statusLabel {
-    color: #2563eb;
-    background: #dbeafe;
-}
-
-.reserved {
-    background: white;
-    border-color: #e5e7eb;
-}
-
-.reserved:hover {
-    border-color: #f59e0b;
-}
-
-.reserved .statusLabel {
-    color: #d97706;
-    background: #ffedd5;
-}
-
-.tableNumber {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.8rem;
-}
-
-.seats {
-    font-size: 0.95rem;
-    color: #6b7280;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.statusLabel {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 0.4rem 0.8rem;
-    border-radius: 999px;
-}
-
-.addCard {
-    background: transparent;
-    border: 2px dashed #d1d5db;
-    box-shadow: none;
-    color: #6b7280;
-}
-
-.addCard:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-    color: #2563eb;
-    transform: translateY(-2px);
-    box-shadow: none;
-}
-
-.addCard .tableNumber {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    font-weight: 300;
-}
-
-@media (max-width: 768px) {
-    .container {
-        padding: 1rem;
-    }
-
-    .header {
-        flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .backButton {
-        margin-right: 0;
-        width: 100%;
-        text-align: center;
+        gap: 12px;
     }
 
     .title {
@@ -398,21 +185,14 @@
 
     .grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+        gap: 12px;
     }
 
     .card {
-        padding: 1rem;
-        min-height: 120px;
+        padding: 16px;
     }
 
     .tableNumber {
-        font-size: 1.25rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .grid {
-        grid-template-columns: 1fr;
+        font-size: 2rem;
     }
 }

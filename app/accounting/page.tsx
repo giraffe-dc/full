@@ -618,8 +618,6 @@ function AccountingContent() {
 
   return (
     <div className={styles.container}>
-      {/* Sidebar is now in layout */}
-
       <div className={styles.main}>
         {/* <h1 className={styles.pageTitle}>{sectionTitle}</h1>
         <p className={styles.lead}>{sectionDescription}</p> */}
@@ -720,10 +718,7 @@ function AccountingContent() {
 
         {activeSection === "salary" && (
           <SalarySection
-            rows={salaryRows}
-            onPay={handlePaySalary}
-            onView={handleViewSalaryDetails}
-            onExport={handleExportSalary}
+            month={filters.startDate.slice(0, 7)}
           />
         )}
 
@@ -814,7 +809,6 @@ function AccountingContent() {
           onFormChange={setFormData}
           onSubmit={handleSubmit}
           categories={expenseCategories.map(c => c.name)}
-          categoryLabels={expenseCategories.reduce((acc, c) => ({ ...acc, [c.name]: c.name }), {})}
           accounts={accountsData}
         />
       </div>

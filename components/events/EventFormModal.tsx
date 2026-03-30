@@ -191,20 +191,13 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
       size="xl"
     >
       {/* Header with sync button */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '6px 14px',
-        borderBottom: '1px solid #e2e8f0',
-        background: '#f8fafc'
-      }}>
+      <div className={styles.syncHeader}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
+          <h2 className={styles.syncTitle}>
             {event ? 'Редагувати подію' : 'Нова подія'}
           </h2>
           {checkSync.existingCheck && (
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+            <p className={styles.syncHint}>
               🔔 Чек прив'язано до столу
             </p>
           )}
@@ -213,17 +206,7 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
           <button
             type="button"
             onClick={handleSyncFromCheck}
-            style={{
-              padding: '10px 20px',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-            }}
+            className={styles.syncBtn}
           >
             🔄 Оновити з чеку
           </button>
@@ -343,11 +326,11 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
           onClose={() => setShowStaffModal(false)}
           size="md"
         >
-          <div style={{ padding: '20px' }}>
-            <p style={{ marginBottom: '16px', color: '#64748b' }}>
+          <div className={styles.staffModalContent}>
+            <p className={styles.staffModalText}>
               На зміні працює кілька співробітників. Оберіть хто створює подію:
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className={styles.staffList}>
               {activeStaff.map(staff => (
                 <button
                   key={staff.id}
@@ -356,27 +339,10 @@ export function EventFormModal({ event, onClose, onSubmit }: EventFormModalProps
                     setSelectedStaffId(staff.id);
                     setShowStaffModal(false);
                   }}
-                  style={{
-                    padding: '14px 20px',
-                    background: 'white',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '10px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    fontSize: '14px',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#60a5fa';
-                    e.currentTarget.style.background = '#eff6ff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                    e.currentTarget.style.background = 'white';
-                  }}
+                  className={styles.staffBtn}
                 >
-                  <div style={{ fontWeight: 700, color: '#1e293b' }}>{staff.name}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>{staff.position}</div>
+                  <div className={styles.staffName}>{staff.name}</div>
+                  <div className={styles.staffPosition}>{staff.position}</div>
                 </button>
               ))}
             </div>

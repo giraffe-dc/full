@@ -1,8 +1,11 @@
+"use client";
+
 import { useState, useEffect } from 'react';
-import { Modal } from '@/components/ui';
+import { Modal, Button, Input } from '@/components/ui';
 import { useToast } from '@/components/ui/ToastContext';
 import { Check, Receipt } from '@/types/cash-register';
 import { formatCurrency } from '@/utils/format';
+import styles from './PaymentModal.module.css';
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -14,6 +17,9 @@ interface PaymentModalProps {
     onCloseReceipt: () => void;
 }
 
+// Cash denominations for quick selection
+const DENOMINATIONS = [500, 200, 100, 50, 20, 10, 5, 1];
+
 export const PaymentModal = ({
     isOpen,
     check,
@@ -24,6 +30,9 @@ export const PaymentModal = ({
     onCloseReceipt
 }: PaymentModalProps) => {
     const toast = useToast();
+
+    // Calculate total first (before hooks)
+    const total = check ? check.total : 0;
 
     // Payment State
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed'>('cash');
@@ -39,6 +48,18 @@ export const PaymentModal = ({
         }
     }, [isOpen, check]);
 
+    // Auto-calculate: when cash changes, card = total - cash
+    useEffect(() => {
+        if (paymentMethod === 'mixed' && total > 0) {
+            const remaining = total - paymentAmounts.cash;
+            if (remaining > 0) {
+                setPaymentAmounts(prev => ({ ...prev, card: remaining }));
+            } else {
+                setPaymentAmounts(prev => ({ ...prev, card: 0 }));
+            }
+        }
+    }, [paymentAmounts.cash, total, paymentMethod]);
+
     if (!check && !receipt) return null;
 
     const handleConfirmPay = async () => {
@@ -53,13 +74,25 @@ export const PaymentModal = ({
             console.log("✅ Payment Success");
         } catch (error) {
             console.error("❌ Payment Failed", error);
+            toast.error("Помилка оплати. Спробуйте ще раз.");
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const total = check ? check.total : 0;
+    const handleDenomClick = (denom: number) => {
+        const current = Number(amountGiven) || 0;
+        setAmountGiven((current + denom).toString());
+    };
+
     const change = (Number(amountGiven) || 0) - total;
+
+    // Check if payment is exactly equal to total (for mixed) or sufficient (for cash)
+    const isAmountExact = paymentMethod === 'mixed'
+        ? Math.abs((paymentAmounts.cash + paymentAmounts.card) - total) < 0.01
+        : paymentMethod === 'card'
+            ? true
+            : Math.abs((Number(amountGiven) || 0) - total) < 0.01 || (Number(amountGiven) || 0) >= total;
 
     return (
         <>
@@ -69,137 +102,150 @@ export const PaymentModal = ({
                     isOpen={true}
                     title={`💰 Оплата чеку #${check.id.slice(-4)}`}
                     onClose={() => !isProcessing && onClose()}
+                    size="lg"
                 >
-                    <div style={{ padding: '20px' }}>
-                        <div style={{ fontSize: '2rem', textAlign: 'center', margin: '20px 0', fontWeight: 'bold', color: '#374151' }}>
+                    <div className={styles.modalContent}>
+                        {/* Total Amount Display */}
+                        <div className={styles.amountDisplay}>
                             {formatCurrency(total)}
                         </div>
 
                         {/* Method Selection */}
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                        <div className={styles.paymentMethods}>
                             <button
+                                className={`${styles.paymentMethodBtn} ${paymentMethod === 'cash' ? styles.active : ''}`}
                                 onClick={() => setPaymentMethod('cash')}
                                 disabled={isProcessing}
-                                style={{
-                                    flex: 1,
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: paymentMethod === 'cash' ? '#22c55e' : '#f3f4f6',
-                                    color: paymentMethod === 'cash' ? 'white' : 'black',
-                                    fontWeight: 'bold',
-                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
-                                    opacity: isProcessing && paymentMethod !== 'cash' ? 0.5 : 1
-                                }}
                             >
-                                💵 Готівка
+                                <span className={styles.icon}>💵</span>
+                                <span className={styles.label}>Готівка</span>
                             </button>
                             <button
+                                className={`${styles.paymentMethodBtn} ${paymentMethod === 'card' ? styles.active : ''}`}
                                 onClick={() => setPaymentMethod('card')}
                                 disabled={isProcessing}
-                                style={{
-                                    flex: 1,
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: paymentMethod === 'card' ? '#3b82f6' : '#f3f4f6',
-                                    color: paymentMethod === 'card' ? 'white' : 'black',
-                                    fontWeight: 'bold',
-                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
-                                    opacity: isProcessing && paymentMethod !== 'card' ? 0.5 : 1
-                                }}
                             >
-                                💳 Картка
+                                <span className={styles.icon}>💳</span>
+                                <span className={styles.label}>Картка</span>
                             </button>
                             <button
+                                className={`${styles.paymentMethodBtn} ${paymentMethod === 'mixed' ? styles.active : ''}`}
                                 onClick={() => setPaymentMethod('mixed')}
                                 disabled={isProcessing}
-                                style={{
-                                    flex: 1,
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: paymentMethod === 'mixed' ? '#a855f7' : '#f3f4f6',
-                                    color: paymentMethod === 'mixed' ? 'white' : 'black',
-                                    fontWeight: 'bold',
-                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
-                                    opacity: isProcessing && paymentMethod !== 'mixed' ? 0.5 : 1
-                                }}
                             >
-                                🔀 Змішана
+                                <span className={styles.icon}>🔀</span>
+                                <span className={styles.label}>Змішана</span>
                             </button>
                         </div>
 
-                        <div style={{ marginBottom: '20px' }}>
-                            {paymentMethod === 'cash' && (
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Отримано від клієнта</label>
-                                    <input
+                        {/* Cash Payment */}
+                        {paymentMethod === 'cash' && (
+                            <div className={styles.cashSection}>
+                                <div className={styles.inputWrapper}>
+                                    <Input
+                                        label="Отримано від клієнта"
                                         type="number"
                                         value={amountGiven}
                                         onChange={(e) => setAmountGiven(e.target.value)}
                                         placeholder={total.toString()}
-                                        style={{ width: '100%', padding: '15px', fontSize: '1.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
+                                        size="lg"
                                         autoFocus
                                         disabled={isProcessing}
                                     />
-                                    <div style={{ marginTop: '10px', fontSize: '1.2rem', textAlign: 'right', fontWeight: 'bold', color: change >= 0 ? '#22c55e' : '#ef4444' }}>
-                                        Решта: {formatCurrency(change > 0 ? change : 0)}
-                                    </div>
                                 </div>
-                            )}
-                            {paymentMethod === 'card' && (
-                                <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                                    Проведіть оплату через термінал на суму <b>{formatCurrency(total)}</b>
-                                </div>
-                            )}
-                            {paymentMethod === 'mixed' && (
-                                <div>
-                                    <div style={{ marginBottom: '10px' }}>
-                                        <label style={{ display: 'block', marginBottom: '5px' }}>Готівка</label>
-                                        <input
-                                            type="number"
-                                            value={paymentAmounts.cash || ''}
-                                            onChange={(e) => setPaymentAmounts({ ...paymentAmounts, cash: Number(e.target.value) })}
-                                            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                            disabled={isProcessing}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', marginBottom: '5px' }}>Картка</label>
-                                        <input
-                                            type="number"
-                                            value={paymentAmounts.card || ''}
-                                            onChange={(e) => setPaymentAmounts({ ...paymentAmounts, card: Number(e.target.value) })}
-                                            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                            disabled={isProcessing}
-                                        />
-                                    </div>
-                                    <div style={{ marginTop: '10px', textAlign: 'right', fontWeight: 'bold' }}>
-                                        Разом: {formatCurrency((paymentAmounts.cash || 0) + (paymentAmounts.card || 0))} / {formatCurrency(total)}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
 
-                        <button
-                            onClick={handleConfirmPay}
-                            style={{
-                                width: '100%',
-                                padding: '15px',
-                                background: isProcessing ? '#9ca3af' : '#111827',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '1.2rem',
-                                fontWeight: 'bold',
-                                cursor: isProcessing ? 'not-allowed' : 'pointer',
-                                opacity: (paymentMethod === 'mixed' && ((paymentAmounts.cash + paymentAmounts.card) < total)) ? 0.5 : 1
-                            }}
-                            disabled={isProcessing || (paymentMethod === 'mixed' && ((paymentAmounts.cash + paymentAmounts.card) < total))}
-                        >
-                            {isProcessing ? 'Обробка...' : `Сплатити ${formatCurrency(total)}`}
-                        </button>
+                                {/* Quick Denominations */}
+                                <div className={styles.denominationsGrid}>
+                                    {DENOMINATIONS.map((denom) => (
+                                        <button
+                                            key={denom}
+                                            className={styles.denomBtn}
+                                            onClick={() => handleDenomClick(denom)}
+                                            disabled={isProcessing}
+                                        >
+                                            {denom}₴
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Change Display */}
+                                {amountGiven && (
+                                    <div className={styles.changeDisplay}>
+                                        <div className={styles.changeLabel}>Решта:</div>
+                                        <div className={`${styles.changeAmount} ${change < 0 ? styles.negative : ''}`}>
+                                            {formatCurrency(change > 0 ? change : 0)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Card Payment */}
+                        {paymentMethod === 'card' && (
+                            <div className={styles.cardSection}>
+                                <div className={styles.cardIcon}>💳</div>
+                                <p className={styles.cardText}>
+                                    Проведіть оплату через термінал на суму <b>{formatCurrency(total)}</b>
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Mixed Payment */}
+                        {paymentMethod === 'mixed' && (
+                            <div className={styles.mixedSection}>
+                                <div className={styles.mixedInput}>
+                                    <div className={styles.mixedLabel}>Готівка</div>
+                                    <Input
+                                        type="number"
+                                        value={paymentAmounts.cash || ''}
+                                        onChange={(e) => {
+                                            const value = Math.min(Number(e.target.value), total);
+                                            setPaymentAmounts({ cash: value, card: 0 });
+                                        }}
+                                        placeholder="0"
+                                        size="md"
+                                        disabled={isProcessing}
+                                        max={total}
+                                    />
+                                </div>
+                                <div className={styles.mixedInput}>
+                                    <div className={styles.mixedLabel}>Картка (автоматично)</div>
+                                    <Input
+                                        type="number"
+                                        value={paymentAmounts.card || ''}
+                                        readOnly
+                                        placeholder="0"
+                                        size="md"
+                                        disabled
+                                    />
+                                </div>
+                                <div className={styles.changeDisplay} style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
+                                    <div className={styles.changeLabel}>Разом:</div>
+                                    <div className={styles.changeAmount}>
+                                        {formatCurrency(paymentAmounts.cash + paymentAmounts.card)} / {formatCurrency(total)}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className={styles.actionButtons}>
+                            <Button
+                                variant="outline"
+                                onClick={() => !isProcessing && onClose()}
+                                disabled={isProcessing}
+                            >
+                                Скасувати
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={handleConfirmPay}
+                                disabled={isProcessing || !isAmountExact}
+                                fullWidth
+                            >
+                                {isProcessing ? 'Обробка...' : `Сплатити ${formatCurrency(total)}`}
+                            </Button>
+                        </div>
                     </div>
                 </Modal>
             )}
@@ -210,26 +256,31 @@ export const PaymentModal = ({
                     isOpen={true}
                     title="✅ Оплата успішна!"
                     onClose={onCloseReceipt}
+                    size="md"
                 >
-                    <div style={{ padding: '30px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '10px' }}>🧾</div>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Чек #{receipt.receiptNumber} закрит</h3>
-                        <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '30px' }}>
-                            Сума: <b>{formatCurrency(receipt.total)}</b>
-                        </p>
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                            <button
-                                onClick={onCloseReceipt}
-                                style={{ padding: '10px 30px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', cursor: 'pointer' }}
-                            >
-                                Новий чек
-                            </button>
-                            <button
-                                // onClick={() => printReceipt(receipt)} // TODO: Implement print
-                                style={{ padding: '10px 30px', background: '#e5e7eb', color: 'black', border: 'none', borderRadius: '8px', fontSize: '1.1rem', cursor: 'pointer' }}
-                            >
-                                🖨️ Друк
-                            </button>
+                    <div className={styles.receiptContent}>
+                        <div className={styles.receiptHeader}>
+                            <div style={{ fontSize: '4rem', marginBottom: '10px' }}>🧾</div>
+                            <h3 className={styles.receiptTitle}>Чек #{receipt.receiptNumber} закрит</h3>
+                        </div>
+
+                        <div className={styles.receiptBody}>
+                            <div className={styles.receiptTotal}>
+                                <span className={styles.label}>Сума:</span>
+                                <span className={styles.value}>{formatCurrency(receipt.total)}</span>
+                            </div>
+                        </div>
+
+                        <div className={styles.receiptFooter}>
+                            <p className={styles.receiptThank}>Дякуємо за покупку!</p>
+                            <div className={styles.actionButtons}>
+                                <Button variant="outline" onClick={onCloseReceipt}>
+                                    Новий чек
+                                </Button>
+                                <Button variant="primary" onClick={() => {/* TODO: Print */ }}>
+                                    🖨️ Друк
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </Modal>

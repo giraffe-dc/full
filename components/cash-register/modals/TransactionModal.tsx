@@ -1,6 +1,9 @@
+"use client";
+
 import { useState, useEffect } from 'react';
-import { Modal } from '@/components/ui';
+import { Modal, Button, Input, Textarea, Select } from '@/components/ui';
 import { useToast } from '@/components/ui/ToastContext';
+import styles from './TransactionModal.module.css';
 
 interface ExpenseCategory {
     _id: string;
@@ -15,7 +18,7 @@ interface TransactionModalProps {
     onClose: () => void;
     shiftId: string;
     activeStaffIds: string[];
-    allStaff: any[]; // Or proper Staff type
+    allStaff: any[];
     onSuccess: () => void;
 }
 
@@ -33,6 +36,7 @@ export const TransactionModal = ({
     const [category, setCategory] = useState("");
     const [comment, setComment] = useState("");
     const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
     // Fetch expense categories when modal opens and type is expense
     useEffect(() => {
@@ -42,19 +46,22 @@ export const TransactionModal = ({
     }, [isOpen, type]);
 
     const fetchExpenseCategories = async () => {
+        setIsLoadingCategories(true);
         try {
             const res = await fetch('/api/accounting/categories/expense');
             const data = await res.json();
             if (data.data) {
                 const activeCategories = data.data.filter((cat: ExpenseCategory) => cat.status === 'active');
                 setExpenseCategories(activeCategories);
-                // Set default category
                 if (activeCategories.length > 0 && !category) {
                     setCategory(activeCategories[0].name);
                 }
             }
         } catch (e) {
             console.error('Failed to fetch expense categories:', e);
+            toast.error("Не вдалося завантажити категорії");
+        } finally {
+            setIsLoadingCategories(false);
         }
     };
 
@@ -69,7 +76,6 @@ export const TransactionModal = ({
             return;
         }
 
-        // Auto-select author (first active staff or 'Admin')
         const authorId = activeStaffIds.length > 0 ? activeStaffIds[0] : null;
         const author = allStaff.find(s => s.id === authorId);
 
@@ -112,6 +118,11 @@ export const TransactionModal = ({
         onClose();
     };
 
+    const categoryOptions = expenseCategories.map(cat => ({
+        value: cat.name,
+        label: cat.name
+    }));
+
     return (
         <Modal
             isOpen={isOpen}
@@ -120,49 +131,35 @@ export const TransactionModal = ({
                     type === 'expense' ? '➖ Витрати' : '🏦 Інкасація'
             }
             onClose={handleClose}
+            size="md"
         >
-            <div style={{ padding: '24px' }}>
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '600', fontSize: '13px' }}>Сума</label>
+            <div className={`${styles.modalContent} ${type === 'income' ? styles.typeIncome :
+                    type === 'expense' ? styles.typeExpense : styles.typeIncasation
+                }`}>
+                {/* Amount */}
+                <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Сума</label>
                     <input
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="0.00"
-                        style={{ 
-                            width: '100%', 
-                            padding: '14px 16px', 
-                            border: '2px solid #e5e7eb', 
-                            borderRadius: '10px', 
-                            fontSize: '1.3rem', 
-                            fontWeight: 'bold',
-                            transition: 'all 0.2s',
-                            outline: 'none'
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                        className={styles.amountInput}
                         autoFocus
                     />
                 </div>
 
+                {/* Category (Expense only) */}
                 {type === 'expense' && (
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '600', fontSize: '13px' }}>Категорія витрат</label>
+                    <div className={styles.formGroup}>
+                        <label className={styles.formLabel}>Категорія витрат</label>
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            style={{ 
-                                width: '100%', 
-                                padding: '11px 14px', 
-                                border: '1.5px solid #e5e7eb', 
-                                borderRadius: '10px', 
-                                fontSize: '14px',
-                                background: 'white',
-                                transition: 'all 0.2s',
-                                cursor: 'pointer'
-                            }}
+                            className={styles.categorySelect}
+                            disabled={isLoadingCategories}
                         >
-                            {expenseCategories.length === 0 ? (
+                            {isLoadingCategories ? (
                                 <option value="">Завантаження...</option>
                             ) : (
                                 expenseCategories.map(cat => (
@@ -173,66 +170,33 @@ export const TransactionModal = ({
                     </div>
                 )}
 
-                <div style={{ marginBottom: '24px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontWeight: '600', fontSize: '13px' }}>Коментар</label>
+                {/* Comment */}
+                <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                        Коментар
+                    </label>
                     <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder={type === 'expense' ? "На що витрачено..." : "Примітка..."}
-                        style={{ 
-                            width: '100%', 
-                            padding: '11px 14px', 
-                            border: '1.5px solid #e5e7eb', 
-                            borderRadius: '10px', 
-                            minHeight: '80px',
-                            fontSize: '14px',
-                            fontFamily: 'inherit',
-                            resize: 'vertical',
-                            transition: 'all 0.2s',
-                            outline: 'none'
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                        className={styles.commentTextarea}
                     />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '2px solid #f3f4f6' }}>
-                    <button 
-                        onClick={handleClose} 
-                        style={{ 
-                            padding: '10px 20px', 
-                            background: 'white',
-                            border: '1.5px solid #e5e7eb',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                    >
+                {/* Action Buttons */}
+                <div className={styles.actionButtons}>
+                    <Button variant="outline" onClick={handleClose}>
                         Скасувати
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant={
+                            type === 'income' ? 'success' :
+                                type === 'expense' ? 'danger' : 'purple'
+                        }
                         onClick={handleCreateTransaction}
-                        style={{
-                            padding: '10px 24px',
-                            background: type === 'income' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' : 
-                                       type === 'expense' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 
-                                       'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-                            color: 'white',
-                            borderRadius: '10px',
-                            border: 'none',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
                         Зберегти
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

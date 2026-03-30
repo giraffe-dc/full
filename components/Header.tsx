@@ -15,16 +15,20 @@ export default function Header() {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
     const [hasNewNotifications, setHasNewNotifications] = useState(false);
-    const [lastCheckTime, setLastCheckTime] = useState<Date>(new Date());
     const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [hasPlayedSound, setHasPlayedSound] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     const notificationsRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
+    const navRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const router = useRouter();
     const pathname = usePathname();
     const [isAdminChatOpen, setIsAdminChatOpen] = useState(false);
+    const [showScrollGradient, setShowScrollGradient] = useState(false);
     const prevUnreadChatsCount = useRef(0);
 
     // Background chat polling
@@ -49,46 +53,28 @@ export default function Header() {
 
     // Initialize audio
     useEffect(() => {
-        // Create audio element for notification sound
         audioRef.current = new Audio('/single-snorting-giraffe.mp3');
         audioRef.current.volume = 0.5;
         audioRef.current.preload = 'auto';
-
-        return () => {
-            if (audioRef.current) {
-                audioRef.current = null;
-            }
-        };
+        return () => { if (audioRef.current) audioRef.current = null; };
     }, []);
 
-    // Play notification sound from MP3 file
+    // Play notification sound
     const playNotificationSound = (force = false) => {
         if (!force && (hasPlayedSound || !audioRef.current)) return;
         if (!audioRef.current) return;
-
-        // Reset audio to start
         audioRef.current.currentTime = 0;
-
-        audioRef.current.play().catch(e => {
-            console.log('Sound play blocked by browser:', e);
-        });
-
-        if (!force) {
-            setHasPlayedSound(true);
-        }
+        audioRef.current.play().catch(e => console.log('Sound blocked:', e));
+        if (!force) setHasPlayedSound(true);
     };
 
-    // Reset sound flag when dropdown is opened
     useEffect(() => {
-        if (isNotificationsOpen) {
-            setHasPlayedSound(false);
-        }
+        if (isNotificationsOpen) setHasPlayedSound(false);
     }, [isNotificationsOpen]);
 
     // Fetch notifications every 5 minutes
     useEffect(() => {
         if (!user) return;
-
         const fetchNotifications = async () => {
             setIsLoadingNotifications(true);
             try {
@@ -97,22 +83,14 @@ export default function Header() {
                     const data = await res.json();
                     const newNotifications = data.data || [];
                     const newStats = data.stats;
-
-                    // Check if there are new notifications since last check
                     const previousUnreadCount = stats?.unread || 0;
                     const newUnreadCount = newStats?.unread || 0;
-
                     if (newUnreadCount > previousUnreadCount) {
                         setHasNewNotifications(true);
-                        // Play sound only if dropdown is not open (user is not already looking at notifications)
-                        if (!isNotificationsOpen) {
-                            playNotificationSound();
-                        }
+                        if (!isNotificationsOpen) playNotificationSound();
                     }
-
                     setNotifications(newNotifications);
                     setStats(newStats);
-                    setLastCheckTime(new Date());
                 }
             } catch (e) {
                 console.error("Failed to fetch notifications:", e);
@@ -120,29 +98,50 @@ export default function Header() {
                 setIsLoadingNotifications(false);
             }
         };
-
-        // Initial fetch
         fetchNotifications();
-
-        // Poll every 5 minutes (300000 ms)
         const intervalId = setInterval(fetchNotifications, 5 * 60 * 1000);
-
         return () => clearInterval(intervalId);
     }, [user]);
 
-    // Close notifications dropdown when clicking outside
+    // Handle nav scroll gradient
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav) return;
+        const checkScroll = () => {
+            setShowScrollGradient(nav.scrollLeft > 20);
+        };
+        nav.addEventListener('scroll', checkScroll);
+        checkScroll();
+        return () => nav.removeEventListener('scroll', checkScroll);
+    }, []);
+
+    // Close dropdowns when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
                 setIsNotificationsOpen(false);
             }
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node) &&
+                !(event.target as Element).closest(`.${styles.mobileMenuButton}`)) {
+                setIsMobileMenuOpen(false);
+            }
         }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-        if (isNotificationsOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
+
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
         }
-    }, [isNotificationsOpen]);
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [isMobileMenuOpen]);
 
     // Mark notification as read
     const markAsRead = async (id: string) => {
@@ -153,16 +152,9 @@ export default function Header() {
                 body: JSON.stringify({ ids: [id] }),
             });
             if (res.ok) {
-                // Update local state
-                setNotifications(prev =>
-                    prev.map(n => n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n)
-                );
-                if (stats) {
-                    setStats(prev => prev ? { ...prev, unread: Math.max(0, prev.unread - 1) } : null);
-                }
-                // Clear new notification indicator when user interacts
+                setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n));
+                if (stats) setStats(prev => prev ? { ...prev, unread: Math.max(0, prev.unread - 1) } : null);
                 setHasNewNotifications(false);
-                // Update selected notification if it's open
                 if (selectedNotification?.id === id) {
                     setSelectedNotification(prev => prev ? { ...prev, isRead: true, readAt: new Date().toISOString() } : null);
                 }
@@ -172,23 +164,17 @@ export default function Header() {
         }
     };
 
-    // Open notification details modal
     const openNotificationModal = (notification: Notification) => {
         setSelectedNotification(notification);
         setIsModalOpen(true);
-        // Mark as read when opening modal
-        if (!notification.isRead && notification.id) {
-            markAsRead(notification.id);
-        }
+        if (!notification.isRead && notification.id) markAsRead(notification.id);
     };
 
-    // Close modal
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedNotification(null);
     };
 
-    // Close notifications dropdown and clear new indicator
     const markAllAsRead = async () => {
         try {
             const res = await fetch('/api/notifications', {
@@ -206,17 +192,12 @@ export default function Header() {
         }
     };
 
-    // Close notifications dropdown and clear new indicator
     const toggleNotifications = () => {
         const newState = !isNotificationsOpen;
         setIsNotificationsOpen(newState);
-        // Clear new indicator when opening dropdown
-        if (newState) {
-            setHasNewNotifications(false);
-        }
+        if (newState) setHasNewNotifications(false);
     };
 
-    // Get notification icon by type
     const getNotificationIcon = (type: string) => {
         switch (type) {
             case 'success': return '✅';
@@ -227,7 +208,6 @@ export default function Header() {
         }
     };
 
-    // Get notification color by type
     const getNotificationColor = (type: string) => {
         switch (type) {
             case 'success': return styles.notificationSuccess;
@@ -238,12 +218,10 @@ export default function Header() {
         }
     };
 
-    // Format time ago
     const timeAgo = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
         const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
         if (seconds < 60) return 'щойно';
         if (seconds < 3600) return `${Math.floor(seconds / 60)} хв тому`;
         if (seconds < 86400) return `${Math.floor(seconds / 3600)} год тому`;
@@ -254,28 +232,17 @@ export default function Header() {
         function checkAuth() {
             fetch("/api/auth/me")
                 .then((res) => res.json())
-                .then((data) => {
-                    if (data.authenticated) {
-                        setUser(data.user);
-                    } else {
-                        setUser(null);
-                    }
-                })
+                .then((data) => setUser(data.authenticated ? data.user : null))
                 .catch(() => setUser(null));
         }
-
         checkAuth();
-        // Перевіряємо авторизацію при зміні фокусу вікна
         window.addEventListener('focus', checkAuth);
         return () => window.removeEventListener('focus', checkAuth);
     }, []);
 
     function handleLogout() {
         fetch('/api/auth/logout', { method: 'POST' })
-            .then(() => {
-                setUser(null);
-                router.push('/login');
-            })
+            .then(() => { setUser(null); router.push('/login'); })
             .catch(() => {
                 document.cookie = "token=; path=/; max-age=0";
                 setUser(null);
@@ -284,16 +251,21 @@ export default function Header() {
     }
 
     const navItems = [
-        // { href: '/', label: 'Головна', icon: '🏠' },
         { href: '/cash-register', label: 'Каса', icon: '💰' },
-        { href: '/clients', label: 'Клієнти', icon: '👥' },
-        { href: '/supply', label: 'Постачання', icon: '📦' },
+        // { href: '/clients', label: 'Клієнти', icon: '👥' },
+        // { href: '/supply', label: 'Постачання', icon: '📦' },
         { href: '/accounting', label: 'Бухгалтерія', icon: '📊' },
         { href: '/visits', label: 'Відвідування', icon: '🕒' },
         { href: '/events', label: 'Бронювання', icon: '🎉' },
         { href: '/telegram', label: 'Telegram', icon: '📱' },
-        // { href: '/projects', label: 'Проекти', icon: '📁' },
-    ]
+    ];
+
+    const filteredNavItems = navItems.filter(item => {
+        if (user?.role === 'user') {
+            return ['/cash-register', '/supply', '/visits', '/events', '/telegram', '/clients'].includes(item.href);
+        }
+        return true;
+    });
 
     const unreadCount = stats?.unread || notifications.filter(n => !n.isRead).length;
 
@@ -308,41 +280,66 @@ export default function Header() {
 
                 {/* Navigation */}
                 {user && (
-                    <nav className={styles.nav}>
-                        {navItems.filter(item => {
-                            if (user.role === 'user') {
-                                return ['/', '/cash-register', '/projects', '/supply', '/visits', '/staff', '/events', '/telegram', '/clients'].includes(item.href);
-                            }
-                            return true;
-                        }).map((item) => {
-                            const isActive = pathname === item.href ||
-                                (item.href !== '/' && pathname.startsWith(item.href));
+                    <>
+                        <button
+                            className={`${styles.navScrollBtn} ${styles.visible} `}
+                            onClick={() => navRef.current?.scrollBy({ left: -200, behavior: 'smooth' })}
+                            aria-label="Scroll left"
+                        >
+                            ‹
+                        </button>
 
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-                                >
-                                    <span className={styles.navIcon}>{item.icon}</span>
-                                    <span className={styles.navLabel}>{item.label}</span>
-                                    {isActive && <span className={styles.activeIndicator} />}
-                                </Link>
-                            );
-                        })}
-                    </nav>
+                        <nav className={`${styles.nav} ${styles.navDesktop}`} ref={navRef}>
+                            {filteredNavItems.map((item) => {
+                                const isActive = pathname === item.href ||
+                                    (item.href !== '/' && pathname.startsWith(item.href));
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+                                    >
+                                        <span className={styles.navIcon}>{item.icon}</span>
+                                        <span className={styles.navLabel}>{item.label}</span>
+                                        {isActive && <span className={styles.activeIndicator} />}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+
+                        <button
+                            className={`${styles.navScrollBtn} ${styles.visible}`}
+                            onClick={() => navRef.current?.scrollBy({ left: 200, behavior: 'smooth' })}
+                            aria-label="Scroll right"
+                        >
+                            ›
+                        </button>
+                    </>
                 )}
 
                 {/* Right Section */}
                 <div className={styles.rightSection}>
                     {user ? (
                         <>
-                            {/* Admin Chat Toggle */}
+                            {/* Mobile Menu Button */}
+                            <button
+                                className={`${styles.mobileMenuButton} ${styles.mobileOnly} ${isMobileMenuOpen ? styles.active : ''}`}
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                aria-label="Toggle menu"
+                            >
+                                <span className={styles.hamburger}>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </span>
+                            </button>
+
+                            {/* Admin Chat */}
                             <div className={styles.notificationsWrapper}>
                                 <button
                                     className={`${styles.iconButton} ${isAdminChatOpen ? styles.navItemActive : ''}`}
-                                    aria-label="Chat Support"
                                     onClick={() => setIsAdminChatOpen(!isAdminChatOpen)}
+                                    aria-label="Chat Support"
                                 >
                                     <span className={styles.notificationIcon}>💬</span>
                                     {unreadChatsCount > 0 && (
@@ -357,13 +354,11 @@ export default function Header() {
                             <div className={styles.notificationsWrapper} ref={notificationsRef}>
                                 <button
                                     className={`${styles.iconButton} ${unreadCount > 0 ? styles.hasNotifications : ''} ${hasNewNotifications ? styles.hasNewNotifications : ''}`}
-                                    aria-label="Notifications"
                                     onClick={toggleNotifications}
+                                    aria-label="Notifications"
                                 >
                                     <span className={styles.notificationIcon}>🔔</span>
-                                    {hasNewNotifications && (
-                                        <span className={styles.newNotificationDot} />
-                                    )}
+                                    {hasNewNotifications && <span className={styles.newNotificationDot} />}
                                     {unreadCount > 0 && (
                                         <span className={styles.notificationBadge}>
                                             {unreadCount > 99 ? '99+' : unreadCount}
@@ -371,28 +366,21 @@ export default function Header() {
                                     )}
                                 </button>
 
-                                {/* Notifications Dropdown */}
                                 {isNotificationsOpen && (
                                     <div className={styles.notificationsDropdown}>
                                         <div className={styles.notificationsHeader}>
                                             <h3 className={styles.notificationsTitle}>Сповіщення</h3>
                                             {unreadCount > 0 && (
-                                                <button
-                                                    className={styles.markAllReadBtn}
-                                                    onClick={markAllAsRead}
-                                                >
+                                                <button className={styles.markAllReadBtn} onClick={markAllAsRead}>
                                                     Відмітити всі як прочитані
                                                 </button>
                                             )}
                                         </div>
-
                                         <div className={styles.notificationsList}>
                                             {isLoadingNotifications ? (
                                                 <div className={styles.notificationsLoading}>Завантаження...</div>
                                             ) : notifications.length === 0 ? (
-                                                <div className={styles.notificationsEmpty}>
-                                                    Немає сповіщень
-                                                </div>
+                                                <div className={styles.notificationsEmpty}>Немає сповіщень</div>
                                             ) : (
                                                 notifications.map((notification) => (
                                                     <div
@@ -406,59 +394,72 @@ export default function Header() {
                                                             </span>
                                                         </div>
                                                         <div className={styles.notificationContent}>
-                                                            <div className={styles.notificationTitle}>
-                                                                {notification.title}
-                                                            </div>
-                                                            <div className={styles.notificationMessage}>
-                                                                {notification.message}
-                                                            </div>
+                                                            <div className={styles.notificationTitle}>{notification.title}</div>
+                                                            <div className={styles.notificationMessage}>{notification.message}</div>
                                                             <div className={styles.notificationMeta}>
-                                                                <span className={styles.notificationTime}>
-                                                                    {timeAgo(notification.createdAt)}
-                                                                </span>
-                                                                <span className={styles.notificationSource}>
-                                                                    {notification.source}
-                                                                </span>
+                                                                <span className={styles.notificationTime}>{timeAgo(notification.createdAt)}</span>
+                                                                <span className={styles.notificationSource}>{notification.source}</span>
                                                             </div>
                                                         </div>
-                                                        {!notification.isRead && (
-                                                            <div className={styles.unreadDot} />
-                                                        )}
+                                                        {!notification.isRead && <div className={styles.unreadDot} />}
                                                     </div>
                                                 ))
                                             )}
                                         </div>
-
                                         <div className={styles.notificationsFooter}>
-                                            <Link
-                                                href="/notifications"
-                                                className={styles.viewAllLink}
-                                            >
-                                                Переглянути всі
-                                            </Link>
+                                            <Link href="/notifications" className={styles.viewAllLink}>Переглянути всі</Link>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
+                            {/* User Menu */}
                             <div className={styles.userMenu}>
                                 <div className={styles.userAvatar}>👤</div>
-                                <span className={styles.userName}>{user.email}</span>
+                                {/* <span className={styles.userName}>{user.email}</span> */}
                             </div>
 
-                            <button onClick={handleLogout} className={styles.logoutBtn}>
-                                Вийти
-                            </button>
+                            <button onClick={handleLogout} className={styles.logoutBtn}>Вийти</button>
                         </>
                     ) : (
-                        <Link href="/login" className={styles.loginLink}>
-                            Увійти
-                        </Link>
+                        <Link href="/login" className={styles.loginLink}>Увійти</Link>
                     )}
                 </div>
             </div>
 
-            {/* Notification Details Modal */}
+            {/* Mobile Menu */}
+            {isMobileMenuOpen && user && (
+                <>
+                    <div className={styles.mobileMenuOverlay} />
+                    <div className={styles.mobileMenu} ref={mobileMenuRef}>
+                        <div className={styles.mobileMenuHeader}>
+                            <div className={styles.mobileUserInfo}>
+                                <div className={styles.userAvatar}>👤</div>
+                                <span className={styles.userName}>{user.email}</span>
+                            </div>
+                            <button className={styles.closeMenuButton} onClick={() => setIsMobileMenuOpen(false)}>✕</button>
+                        </div>
+                        <nav className={styles.mobileNav}>
+                            {filteredNavItems.map((item) => {
+                                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                                return (
+                                    <Link key={item.href} href={item.href} className={`${styles.mobileNavItem} ${isActive ? styles.active : ''}`}>
+                                        <span className={styles.navIcon}>{item.icon}</span>
+                                        <span className={styles.navLabel}>{item.label}</span>
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                        <div className={styles.mobileMenuFooter}>
+                            <button onClick={handleLogout} className={styles.mobileLogoutBtn}>
+                                <span className={styles.navIcon}>🚪</span> Вийти
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Notification Modal */}
             {isModalOpen && selectedNotification && (
                 <div className={styles.modalOverlay} onClick={closeModal}>
                     <div className={styles.modalContent} ref={modalRef} onClick={(e) => e.stopPropagation()}>
@@ -469,101 +470,18 @@ export default function Header() {
                             </div>
                             <button className={styles.modalCloseBtn} onClick={closeModal}>×</button>
                         </div>
-
                         <div className={styles.modalBody}>
-                            <div className={styles.modalMessage}>
-                                {selectedNotification.message}
-                            </div>
-
-                            {/* Metadata */}
-                            {selectedNotification.metadata && Object.keys(selectedNotification.metadata).length > 0 && (
-                                <div className={styles.modalMetadata}>
-                                    <h4 className={styles.metadataTitle}>Деталі</h4>
-                                    <div className={styles.metadataGrid}>
-                                        {selectedNotification.metadata.customerName && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Клієнт:</span>
-                                                <span className={styles.metadataValue}>{selectedNotification.metadata.customerName}</span>
-                                            </div>
-                                        )}
-                                        {selectedNotification.metadata.phone && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Телефон:</span>
-                                                <span className={styles.metadataValue}>
-                                                    <a href={`tel:${selectedNotification.metadata.phone}`}>
-                                                        {selectedNotification.metadata.phone}
-                                                    </a>
-                                                </span>
-                                            </div>
-                                        )}
-                                        {selectedNotification.metadata.date && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Дата:</span>
-                                                <span className={styles.metadataValue}>
-                                                    {new Date(selectedNotification.metadata.date).toLocaleDateString('uk-UA')}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {selectedNotification.metadata.time && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Час:</span>
-                                                <span className={styles.metadataValue}>{selectedNotification.metadata.time}</span>
-                                            </div>
-                                        )}
-                                        {selectedNotification.metadata.status && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Статус:</span>
-                                                <span className={`${styles.metadataValue} ${styles[`status${selectedNotification.metadata.status}`]}`}>
-                                                    {selectedNotification.metadata.status}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {selectedNotification.metadata.notes && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Нотатки:</span>
-                                                <span className={styles.metadataValue}>{selectedNotification.metadata.notes}</span>
-                                            </div>
-                                        )}
-                                        {selectedNotification.metadata.createdAt && (
-                                            <div className={styles.metadataItem}>
-                                                <span className={styles.metadataLabel}>Створено:</span>
-                                                <span className={styles.metadataValue}>
-                                                    {new Date(selectedNotification.metadata.createdAt).toLocaleString('uk-UA')}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Additional info */}
-                            <div className={styles.modalFooter}>
-                                <div className={styles.modalInfo}>
-                                    <span>Джерело: <strong>{selectedNotification.source}</strong></span>
-                                    <span> • </span>
-                                    <span>Отримано: <strong>{timeAgo(selectedNotification.createdAt)}</strong></span>
-                                </div>
-                            </div>
+                            <div className={styles.modalMessage}>{selectedNotification.message}</div>
                         </div>
-
-                        <div className={styles.modalActions}>
-                            {!selectedNotification.isRead && (
-                                <button className={styles.markReadBtn} onClick={() => selectedNotification.id && markAsRead(selectedNotification.id)}>
-                                    ✅ Відмітити як прочитане
-                                </button>
-                            )}
-                            <button className={styles.closeModalBtn} onClick={closeModal}>
-                                Закрити
-                            </button>
+                        <div className={styles.modalFooter}>
+                            <button className={styles.modalCloseButton} onClick={closeModal}>Закрити</button>
                         </div>
                     </div>
                 </div>
             )}
 
             {/* Admin Chat Overlay */}
-            {isAdminChatOpen && (
-                <AdminChatOverlay onClose={() => setIsAdminChatOpen(false)} />
-            )}
+            <AdminChatOverlay isOpen={isAdminChatOpen} onClose={() => setIsAdminChatOpen(false)} />
         </header>
     );
 }

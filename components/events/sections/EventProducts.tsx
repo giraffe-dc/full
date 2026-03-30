@@ -144,12 +144,12 @@ export function EventProducts({
         </div>
       )}
 
-      <div className={styles.totalsSection}>
+      {/* <div className={styles.totalsSection}>
         <div className={styles.totalRow}>
           <span>Товари/Послуги:</span>
           <span className={styles.subtotal}>{productsTotal} ₴</span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

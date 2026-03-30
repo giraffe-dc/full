@@ -1,0 +1,229 @@
+/* ============================================
+   SWITCH / TOGGLE - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+}
+
+/* ============================================
+   SWITCH BASE
+   ============================================ */
+
+.switch {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 44px;
+    height: 24px;
+    border: none;
+    border-radius: 12px;
+    background: var(--gray-300);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.switch:checked {
+    background: var(--yellow-500);
+}
+
+.switch:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--yellow-100);
+}
+
+.switch:disabled {
+    background: var(--gray-200);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.switch:disabled:checked {
+    background: var(--gray-400);
+}
+
+/* ============================================
+   TOGGLE (Label for styling)
+   ============================================ */
+
+.toggle {
+    position: absolute;
+    pointer-events: none;
+}
+
+.toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.switch:checked + .toggle::after {
+    transform: translateX(20px);
+}
+
+/* ============================================
+   KNOB (Alternative approach)
+   ============================================ */
+
+.knob {
+    display: none;
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+/* Small */
+.switch-sm {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+}
+
+.switch-sm + .toggle {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+}
+
+.switch-sm + .toggle::after {
+    width: 16px;
+    height: 16px;
+}
+
+.switch-sm:checked + .toggle::after {
+    transform: translateX(16px);
+}
+
+/* Medium (default) */
+.switch-md {
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+}
+
+.switch-md + .toggle {
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+}
+
+.switch-md + .toggle::after {
+    width: 20px;
+    height: 20px;
+}
+
+.switch-md:checked + .toggle::after {
+    transform: translateX(20px);
+}
+
+/* Large */
+.switch-lg {
+    width: 56px;
+    height: 30px;
+    border-radius: 15px;
+}
+
+.switch-lg + .toggle {
+    width: 56px;
+    height: 30px;
+    border-radius: 15px;
+}
+
+.switch-lg + .toggle::after {
+    width: 26px;
+    height: 26px;
+}
+
+.switch-lg:checked + .toggle::after {
+    transform: translateX(26px);
+}
+
+/* ============================================
+   TEXT
+   ============================================ */
+
+.text {
+    flex: 1;
+    color: var(--gray-700);
+    font-family: var(--font-body);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    user-select: none;
+}
+
+.text-sm {
+    font-size: 14px;
+}
+
+.text-md {
+    font-size: 16px;
+}
+
+.text-lg {
+    font-size: 18px;
+}
+
+.text:hover {
+    color: var(--gray-900);
+}
+
+/* ============================================
+   HELPER TEXT
+   ============================================ */
+
+.helperText {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin: 0;
+    font-weight: 500;
+    padding-left: 52px;
+}
+
+/* ============================================
+   DISABLED STATE
+   ============================================ */
+
+.disabled .text {
+    color: var(--gray-400);
+    cursor: not-allowed;
+}
+
+.disabled .wrapper {
+    cursor: not-allowed;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .wrapper {
+        gap: var(--space-2);
+    }
+
+    .text-md {
+        font-size: 15px;
+    }
+}

@@ -275,10 +275,8 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                                 ) : (
                                     guestItems.map(item => (
                                         <div key={item.serviceId} className={styles.orderItem}>
-                                            <div className={styles.itemInfo}>
-                                                <div className={styles.itemName}>{item.serviceName}</div>
-                                            </div>
-                                            <div className={styles.itemControls}>
+                                            <div className={styles.itemName}>{item.serviceName}</div>
+                                            <div className={styles.itemQuantity}>
                                                 <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, -1); }}>-</button>
                                                 <span>{item.quantity}</span>
                                                 <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, 1); }}>+</button>

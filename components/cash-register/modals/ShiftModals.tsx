@@ -1,7 +1,10 @@
+"use client";
+
 import { useState, useEffect } from 'react';
-import { Modal } from '@/components/ui';
+import { Modal, Button, Input } from '@/components/ui';
 import { useToast } from '@/components/ui/ToastContext';
 import { formatCurrency } from '@/utils/format';
+import styles from './ShiftModals.module.css';
 
 interface ShiftModalsProps {
     showOpenShiftModal: boolean;
@@ -10,7 +13,7 @@ interface ShiftModalsProps {
     onCloseCloseShift: () => void;
     onOpenShift: (balance: number, cashierId: string) => Promise<void>;
     onCloseShift: (endBalance: number) => Promise<void>;
-    staff: any[]; // Or proper Staff type
+    staff: any[];
     closingData: {
         startBalance: number;
         totalSales: number;
@@ -57,7 +60,6 @@ export const ShiftModals = ({
         }
     }, [showCloseShiftModal]);
 
-
     const handleOpenShiftSubmit = () => {
         const balance = Number(startBalance);
         if (isNaN(balance)) {
@@ -83,6 +85,15 @@ export const ShiftModals = ({
     // Validation for close shift button
     const isCloseShiftDisabled = !endBalance || endBalance === '' || isNaN(Number(endBalance));
 
+    // Calculate difference
+    const difference = closingData ? Number(endBalance) - closingData.expectedBalance : 0;
+    const getDifferenceClass = () => {
+        if (!endBalance || endBalance === '') return '';
+        if (difference === 0) return styles.positive;
+        if (difference < 0) return styles.negative;
+        return styles.positive;
+    };
+
     return (
         <>
             {/* Open Shift Modal */}
@@ -91,49 +102,42 @@ export const ShiftModals = ({
                     isOpen={true}
                     title="🔓 Відкриття зміни"
                     onClose={onCloseOpenShift}
+                    size="md"
                 >
-                    <div style={{ padding: '20px' }}>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Початковий залишок</label>
+                    <div className={styles.modalContent}>
+                        <div className={styles.formGroup}>
+                            <label className={styles.formLabel}>Початковий залишок</label>
                             <input
                                 type="number"
                                 value={startBalance}
                                 onChange={(e) => setStartBalance(e.target.value)}
                                 placeholder="0.00"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}
+                                className={styles.balanceInput}
                             />
                         </div>
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>Хто відкриває?</label>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px' }}>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.formLabel}>Хто відкриває?</label>
+                            <div className={styles.staffGrid}>
                                 {staff.map(member => (
                                     <div
                                         key={member.id}
+                                        className={`${styles.staffMember} ${shiftOpenerId === member.id ? styles.active : ''}`}
                                         onClick={() => setShiftOpenerId(member.id)}
-                                        style={{
-                                            padding: '10px',
-                                            border: shiftOpenerId === member.id ? '2px solid #2563eb' : '1px solid #ccc',
-                                            borderRadius: '8px',
-                                            textAlign: 'center',
-                                            cursor: 'pointer',
-                                            background: shiftOpenerId === member.id ? '#eff6ff' : 'white',
-                                            fontWeight: shiftOpenerId === member.id ? 'bold' : 'normal',
-                                            color: shiftOpenerId === member.id ? '#1e3a8a' : 'inherit'
-                                        }}
                                     >
                                         {member.name}
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                            <button onClick={onCloseOpenShift} style={{ padding: '8px 16px', background: '#ccc', borderRadius: '4px', border: 'none' }}>Скасувати</button>
-                            <button
-                                onClick={handleOpenShiftSubmit}
-                                style={{ padding: '8px 16px', background: '#22c55e', color: 'white', borderRadius: '4px', border: 'none', fontWeight: 'bold' }}
-                            >
+
+                        <div className={styles.actionButtons}>
+                            <Button variant="outline" onClick={onCloseOpenShift}>
+                                Скасувати
+                            </Button>
+                            <Button variant="success" onClick={handleOpenShiftSubmit}>
                                 Відкрити зміну
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </Modal>
@@ -145,115 +149,90 @@ export const ShiftModals = ({
                     isOpen={true}
                     title="🔒 Закриття зміни (Z-звіт)"
                     onClose={onCloseCloseShift}
+                    size="lg"
                 >
-                    <div style={{ padding: '20px' }}>
-                        <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                <span>Початковий залишок:</span>
-                                <b>{formatCurrency(closingData.startBalance)}</b>
+                    <div className={styles.modalContent}>
+                        {/* Summary Card */}
+                        <div className={styles.summaryCard}>
+                            <div className={`${styles.summaryRow} ${styles.green}`}>
+                                <span className={styles.label}>Початковий залишок:</span>
+                                <span className={styles.value}>{formatCurrency(closingData.startBalance)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                <span>Продажі (Готівка):</span>
-                                <b style={{ color: '#22c55e' }}>{formatCurrency(closingData.totalSalesCash)}</b>
+                            <div className={`${styles.summaryRow} ${styles.green}`}>
+                                <span className={styles.label}>Продажі (Готівка):</span>
+                                <span className={styles.value}>{formatCurrency(closingData.totalSalesCash)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                <span>Продажі (Картка):</span>
-                                <b style={{ color: '#3b82f6' }}>{formatCurrency(closingData.totalSalesCard)}</b>
+                            <div className={`${styles.summaryRow} ${styles.blue}`}>
+                                <span className={styles.label}>Продажі (Картка):</span>
+                                <span className={styles.value}>{formatCurrency(closingData.totalSalesCard)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                <span>Внесення (Income):</span>
-                                <b style={{ color: '#22c55e' }}>{formatCurrency(closingData.totalIncome)}</b>
+                            <div className={`${styles.summaryRow} ${styles.green}`}>
+                                <span className={styles.label}>Внесення (Income):</span>
+                                <span className={styles.value}>{formatCurrency(closingData.totalIncome)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                <span>Витрати (Expense):</span>
-                                <b style={{ color: '#ef4444' }}>{formatCurrency(closingData.totalExpenses)}</b>
+                            <div className={`${styles.summaryRow} ${styles.red}`}>
+                                <span className={styles.label}>Витрати (Expense):</span>
+                                <span className={styles.value}>{formatCurrency(closingData.totalExpenses)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                <span>Інкасація:</span>
-                                <b style={{ color: '#a855f7' }}>{formatCurrency(closingData.totalIncasation)}</b>
+                            <div className={`${styles.summaryRow} ${styles.purple}`}>
+                                <span className={styles.label}>Інкасація:</span>
+                                <span className={styles.value}>{formatCurrency(closingData.totalIncasation)}</span>
                             </div>
-                            <div style={{ borderTop: '1px solid #ddd', margin: '10px 0' }}></div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem' }}>
-                                <span>Очікувана готівка в касі:</span>
-                                <b style={{ color: '#ca8a04' }}>{formatCurrency(closingData.expectedBalance)}</b>
+                            <div className={`${styles.summaryRow} ${styles.total} ${styles.yellow}`}>
+                                <span className={styles.label}>Очікувана готівка в касі:</span>
+                                <span className={styles.value}>{formatCurrency(closingData.expectedBalance)}</span>
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: '#374151' }}>
-                                Фактична готівка в касі <span style={{ color: '#ef4444' }}>*</span>
+                        <div className={styles.formGroup}>
+                            <label className={`${styles.formLabel} ${styles.formLabelRequired}`}>
+                                Фактична готівка в касі
                             </label>
                             <input
                                 type="number"
                                 value={endBalance}
                                 onChange={(e) => setEndBalance(e.target.value)}
-                                placeholder={"Введіть фактичну готівку"}
-                                required
-                                style={{
-                                    width: '100%',
-                                    padding: '10px',
-                                    border: '2px solid',
-                                    borderRadius: '4px',
-                                    fontSize: '1.2rem',
-                                    fontWeight: 'bold',
-                                    borderColor: !endBalance || endBalance === ''
-                                        ? '#ef4444'
+                                placeholder="Введіть фактичну готівку"
+                                className={`${styles.balanceInput} ${!endBalance || endBalance === ''
+                                        ? ''
                                         : Number(endBalance) === closingData.expectedBalance
-                                            ? '#22c55e'
+                                            ? styles.success
                                             : Math.abs(Number(endBalance) - closingData.expectedBalance) > 10
-                                                ? '#ef4444'
-                                                : '#eab308'
+                                                ? styles.error
+                                                : styles.warning
+                                    }`}
+                                style={{
+                                    borderColor: !endBalance || endBalance === ''
+                                        ? 'var(--gray-300)'
+                                        : Number(endBalance) === closingData.expectedBalance
+                                            ? 'var(--success-main)'
+                                            : Math.abs(Number(endBalance) - closingData.expectedBalance) > 10
+                                                ? 'var(--error-main)'
+                                                : 'var(--warning-main)'
                                 }}
                             />
                             {!endBalance || endBalance === '' ? (
-                                <div style={{
-                                    marginTop: '5px', 
-                                    fontSize: '0.85rem', 
-                                    color: '#ef4444',
-                                    fontWeight: '500'
-                                }}>
+                                <div className={styles.differenceDisplay} style={{ color: 'var(--error-text)' }}>
                                     ⚠️ Обов'язкове поле
                                 </div>
                             ) : (
-                                <div style={{
-                                    marginTop: '5px', fontSize: '0.9rem', textAlign: 'right', fontWeight: 'bold',
-                                    color: Number(endBalance) - closingData.expectedBalance === 0 ? '#22c55e' : (Number(endBalance) - closingData.expectedBalance < 0 ? '#ef4444' : '#22c55e')
-                                }}>
-                                    Різниця: {formatCurrency(Number(endBalance) - closingData.expectedBalance)}
+                                <div className={`${styles.differenceDisplay} ${getDifferenceClass()}`}>
+                                    Різниця: {formatCurrency(difference)}
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                            <button 
-                                onClick={onCloseCloseShift} 
-                                style={{ 
-                                    padding: '8px 16px', 
-                                    background: '#ccc', 
-                                    borderRadius: '4px', 
-                                    border: 'none',
-                                    cursor: 'pointer'
-                                }}
-                            >
+                        <div className={styles.actionButtons}>
+                            <Button variant="outline" onClick={onCloseCloseShift} disabled={isCloseShiftDisabled}>
                                 Скасувати
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="danger"
                                 onClick={handleCloseShiftSubmit}
                                 disabled={isCloseShiftDisabled}
-                                style={{ 
-                                    padding: '8px 16px', 
-                                    background: isCloseShiftDisabled ? '#d1d5db' : '#ef4444', 
-                                    color: 'white', 
-                                    borderRadius: '4px', 
-                                    border: 'none', 
-                                    fontWeight: 'bold',
-                                    cursor: isCloseShiftDisabled ? 'not-allowed' : 'pointer',
-                                    opacity: isCloseShiftDisabled ? 0.6 : 1,
-                                    transition: 'all 0.2s ease'
-                                }}
                             >
                                 Закрити зміну
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </Modal>

@@ -1,0 +1,175 @@
+/* ============================================
+   TOOLTIP - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.trigger {
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* ============================================
+   TOOLTIP BASE
+   ============================================ */
+
+.tooltip {
+    position: absolute;
+    z-index: 1000;
+    padding: 8px 12px;
+    background: var(--gray-900);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-body);
+    border-radius: var(--radius-md);
+    white-space: nowrap;
+    animation: fadeIn 0.2s ease-out;
+    box-shadow: var(--shadow-lg);
+    max-width: 300px;
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -10px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* ============================================
+   POSITIONS
+   ============================================ */
+
+/* Top */
+.tooltip-top {
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+}
+
+.tooltip-top .arrow {
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px 6px 0;
+    border-color: var(--gray-900) transparent transparent;
+}
+
+/* Bottom */
+.tooltip-bottom {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+}
+
+.tooltip-bottom .arrow {
+    bottom: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 0 6px 6px;
+    border-color: transparent transparent var(--gray-900);
+}
+
+/* Left */
+.tooltip-left {
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 8px;
+}
+
+.tooltip-left .arrow {
+    top: 50%;
+    right: -6px;
+    margin-top: -6px;
+    border-width: 6px 0 6px 6px;
+    border-color: transparent transparent transparent var(--gray-900);
+}
+
+/* Right */
+.tooltip-right {
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 8px;
+}
+
+.tooltip-right .arrow {
+    top: 50%;
+    left: -6px;
+    margin-top: -6px;
+    border-width: 6px 6px 6px 0;
+    border-color: transparent var(--gray-900) transparent transparent;
+}
+
+/* ============================================
+   ARROW
+   ============================================ */
+
+.arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Success */
+.tooltip-success {
+    background: var(--success-main);
+}
+
+.tooltip-success .arrow {
+    border-color: var(--success-main) transparent transparent;
+}
+
+/* Error */
+.tooltip-error {
+    background: var(--error-main);
+}
+
+.tooltip-error .arrow {
+    border-color: var(--error-main) transparent transparent;
+}
+
+/* Warning */
+.tooltip-warning {
+    background: var(--warning-main);
+}
+
+.tooltip-warning .arrow {
+    border-color: var(--warning-main) transparent transparent;
+}
+
+/* Info */
+.tooltip-info {
+    background: var(--info-main);
+}
+
+.tooltip-info .arrow {
+    border-color: var(--info-main) transparent transparent;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .tooltip {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}

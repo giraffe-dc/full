@@ -1,13 +1,14 @@
-/* Vibrant Flow Card */
+/* ============================================
+   SALARY SECTION - GIRAFFE JOY DESIGN
+   💰 Зарплата
+   ============================================ */
+
 .card {
     background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-    animation: slideUp 0.4s ease-out;
-    display: flex;
-    flex-direction: column;
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--green-100);
 }
 
 /* Header */
@@ -15,229 +16,349 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px;
-    border-bottom: 1px solid var(--gray-100);
-    background: white;
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 2px solid var(--gray-100);
 }
 
 .titleBlock {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .title {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
     color: var(--gray-900);
-    font-family: var(--font-heading);
-    letter-spacing: -0.02em;
+    margin: 0;
 }
 
-/* Toolbar */
+.subtitle {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin: 0;
+    font-family: var(--font-body);
+}
+
 .toolbarRight {
     display: flex;
-    gap: 12px;
-    align-items: center;
+    gap: var(--space-3);
 }
 
-.toolbarButton {
+.btnExport,
+.btnRefresh {
+    padding: 12px 24px;
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 15px;
+    font-family: var(--font-heading);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    border-radius: var(--radius-full);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid var(--gray-200);
+}
+
+.btnExport {
+    background: linear-gradient(135deg, var(--green-500), var(--green-600));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btnExport:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow-green);
+}
+
+.btnRefresh {
     background: white;
     color: var(--gray-700);
+    border: 2px solid var(--gray-200);
 }
 
-.toolbarButton:hover {
+.btnRefresh:hover {
     background: var(--gray-50);
     border-color: var(--gray-300);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
-    color: var(--primary-600);
-}
-
-.dateRangeContainer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    background: var(--gray-50);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--gray-200);
-}
-
-.dateInput {
-    border: none;
-    background: transparent;
-    font-family: inherit;
-    font-size: 0.9rem;
-    color: var(--gray-900);
-    outline: none;
-    cursor: pointer;
-}
-
-/* Search & Filter Toolbar */
-.toolbarRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.quickSearch {
-    padding: 8px 16px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius-full);
-    font-size: 0.9rem;
-    width: 250px;
-    outline: none;
-    transition: all 0.2s;
-    background: white;
-}
-
-.quickSearch:focus {
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 3px var(--primary-50);
-    width: 280px;
-}
-
-.toolbarLeftButtons {
-    display: flex;
-    gap: 8px;
-}
-
-.toolbarLink {
-    background: none;
-    border: none;
-    color: var(--primary-600);
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: var(--radius-md);
-    transition: background 0.2s;
-}
-
-.toolbarLink:hover {
-    background: var(--primary-50);
 }
 
 /* Table */
 .tableWrapper {
     overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
-}
-
-.table thead {
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
+    font-size: 14px;
 }
 
 .table th {
-    padding: 16px 24px;
+    background: var(--gray-50);
+    padding: var(--space-3) var(--space-4);
     text-align: left;
-    font-weight: 600;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: var(--gray-700);
+    font-family: var(--font-heading);
+    border-bottom: 2px solid var(--gray-200);
+    white-space: nowrap;
 }
 
 .table td {
-    padding: 16px 24px;
+    padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--gray-100);
-    color: var(--gray-900);
-    font-size: 0.95rem;
-    vertical-align: middle;
+    color: var(--gray-700);
+    font-family: var(--font-body);
 }
 
-.table tbody tr:hover {
-    background: var(--gray-50);
+.table tr:hover {
+    background: var(--green-50);
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Cells */
+.nameCell {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-family: var(--font-heading);
+}
+
+.hoursCell {
+    font-weight: 700;
+    color: var(--green-700);
+    font-family: var(--font-heading);
+}
+
+.center {
+    text-align: center;
 }
 
 .bold {
     font-weight: 700;
+}
+
+.bonus {
+    color: var(--green-600);
+    font-weight: 700;
+}
+
+.fine {
+    color: var(--red-600);
+    font-weight: 700;
+}
+
+.toPay {
+    font-weight: 900;
+    font-size: 15px;
     color: var(--gray-900);
+    font-family: var(--font-display);
 }
 
-.noData {
-    text-align: center;
-    padding: 48px;
-    color: var(--gray-400);
-    font-style: italic;
-}
-
-/* Status Badges */
+/* Status Badge */
 .statusBadge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    display: inline-block;
+    letter-spacing: 0.5px;
+    font-family: var(--font-heading);
 }
 
 .statusSuccess {
-    background: var(--success-50);
-    color: var(--success-700);
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 .statusWarning {
-    background: var(--warning-50);
-    color: var(--warning-700);
+    background: var(--warning-bg);
+    color: var(--warning-text);
 }
 
 .statusDanger {
-    background: var(--error-50);
-    color: var(--error-700);
+    background: var(--error-bg);
+    color: var(--error-text);
 }
 
 /* Actions */
 .actions {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .actionButton {
-    padding: 6px 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--success-200);
-    background: var(--success-50);
-    color: var(--success-700);
-    font-size: 0.85rem;
-    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-fast);
+    border: none;
+    font-family: var(--font-heading);
+}
+
+.actionButton {
+    background: linear-gradient(135deg, var(--green-500), var(--green-600));
+    color: white;
+    box-shadow: var(--shadow-sm);
 }
 
 .actionButton:hover {
-    background: var(--success-100);
-    border-color: var(--success-300);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .secondaryButton {
     background: white;
-    border: 1px solid var(--gray-200);
-    color: var(--gray-600);
+    color: var(--gray-700);
+    border: 2px solid var(--gray-200);
+    box-shadow: none;
 }
 
 .secondaryButton:hover {
     background: var(--gray-50);
-    color: var(--gray-900);
     border-color: var(--gray-300);
+}
+
+/* Input */
+.input {
+    width: 80px;
+    padding: 6px 10px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-family: var(--font-body);
+    text-align: right;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--green-500);
+    box-shadow: 0 0 0 3px var(--green-100);
+}
+
+/* No Data */
+.noData {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--gray-500);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Loading */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-16);
+    color: var(--gray-500);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Summary Footer */
+.summaryFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5);
+    margin-top: var(--space-6);
+    background: linear-gradient(135deg, var(--green-50), var(--green-100));
+    border-radius: var(--radius-xl);
+    border: 2px solid var(--green-200);
+}
+
+.summaryItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summaryLabel {
+    font-size: 13px;
+    color: var(--gray-600);
+    font-weight: 600;
+    font-family: var(--font-heading);
+}
+
+.summaryValue {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--green-700);
+    font-family: var(--font-display);
+}
+
+.summaryValueTotal {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--green-600), var(--green-700));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-family: var(--font-display);
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .table {
+        font-size: 13px;
+    }
+
+    .table th,
+    .table td {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .summaryFooter {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+    }
+
+    .summaryItem {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .card {
+        padding: var(--space-4);
+    }
+
+    .headerRow {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+    }
+
+    .toolbarRight {
+        justify-content: stretch;
+    }
+
+    .btnExport,
+    .btnRefresh {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .table th,
+    .table td {
+        padding: var(--space-2);
+    }
 }

@@ -1,0 +1,330 @@
+/* ============================================
+   PAYMENT MODAL - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.modalContent {
+  padding: var(--space-6);
+}
+
+/* ============================================
+   AMOUNT DISPLAY
+   ============================================ */
+
+.amountDisplay {
+  font-size: 42px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--gray-900);
+  text-align: center;
+  margin: var(--space-6) 0;
+  padding: var(--space-4);
+  background: var(--gray-50);
+  border-radius: var(--radius-xl);
+}
+
+/* ============================================
+   PAYMENT METHOD SELECTION
+   ============================================ */
+
+.paymentMethods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.paymentMethodBtn {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--gray-200);
+  background: white;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.paymentMethodBtn .icon {
+  font-size: 24px;
+}
+
+.paymentMethodBtn .label {
+  font-size: 13px;
+}
+
+.paymentMethodBtn:hover:not(:disabled) {
+  border-color: var(--yellow-400);
+  background: var(--yellow-50);
+  transform: translateY(-2px);
+}
+
+.paymentMethodBtn.active {
+  border-color: var(--yellow-500);
+  background: var(--yellow-100);
+  color: var(--yellow-700);
+}
+
+.paymentMethodBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   CASH INPUT SECTION
+   ============================================ */
+
+.cashSection {
+  margin-bottom: var(--space-6);
+}
+
+.inputWrapper {
+  margin-bottom: var(--space-4);
+}
+
+/* ============================================
+   CASH DENOMINATIONS
+   ============================================ */
+
+.denominationsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.denomBtn {
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--gray-200);
+  background: var(--gray-50);
+  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.denomBtn:hover:not(:disabled) {
+  border-color: var(--yellow-400);
+  background: var(--yellow-50);
+}
+
+.denomBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   CHANGE DISPLAY
+   ============================================ */
+
+.changeDisplay {
+  padding: var(--space-4);
+  background: var(--success-bg);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.changeLabel {
+  font-size: 13px;
+  color: var(--success-text);
+  margin-bottom: var(--space-1);
+}
+
+.changeAmount {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--success-main);
+}
+
+.changeAmount.negative {
+  color: var(--error-main);
+}
+
+/* ============================================
+   CARD PAYMENT SECTION
+   ============================================ */
+
+.cardSection {
+  text-align: center;
+  padding: var(--space-8);
+  background: var(--gray-50);
+  border-radius: var(--radius-xl);
+}
+
+.cardIcon {
+  font-size: 48px;
+  margin-bottom: var(--space-4);
+}
+
+.cardText {
+  font-size: 16px;
+  color: var(--gray-600);
+  font-family: var(--font-body);
+}
+
+/* ============================================
+   MIXED PAYMENT SECTION
+   ============================================ */
+
+.mixedSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.mixedInput {
+  padding: var(--space-4);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+}
+
+.mixedLabel {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: var(--space-2);
+  font-family: var(--font-body);
+}
+
+.mixedAmount {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--gray-900);
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.actionButtons {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.actionButtons button {
+  flex: 1;
+}
+
+/* ============================================
+   RECEIPT MODAL
+   ============================================ */
+
+.receiptContent {
+  padding: var(--space-6);
+}
+
+.receiptHeader {
+  text-align: center;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 2px solid var(--gray-100);
+}
+
+.receiptTitle {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.receiptNumber {
+  font-size: 14px;
+  color: var(--gray-500);
+  font-family: var(--font-mono);
+}
+
+.receiptBody {
+  margin-bottom: var(--space-6);
+}
+
+.receiptRow {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  font-size: 14px;
+}
+
+.receiptRow .label {
+  color: var(--gray-600);
+  font-family: var(--font-body);
+}
+
+.receiptRow .value {
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--gray-900);
+}
+
+.receiptTotal {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+  margin-top: var(--space-4);
+  border-top: 2px solid var(--gray-200);
+}
+
+.receiptTotal .label {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--gray-900);
+}
+
+.receiptTotal .value {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--yellow-600);
+}
+
+.receiptFooter {
+  text-align: center;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--gray-100);
+}
+
+.receiptThank {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-bottom: var(--space-4);
+}
+
+.printButton {
+  width: 100%;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .paymentMethods {
+    grid-template-columns: 1fr;
+  }
+
+  .denominationsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .mixedSection {
+    grid-template-columns: 1fr;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .actionButtons button {
+    width: 100%;
+  }
+}

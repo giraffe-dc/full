@@ -1,0 +1,380 @@
+/* ============================================
+   SIDEBAR - GIRAFFE JOY DESIGN
+   Адаптивний sidebar з можливістю згортання
+   ============================================ */
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: var(--header-height, 80px);
+  /* width: var(--sidebar-width, 280px); */
+  height: calc(100vh - var(--header-height, 80px));
+  background: white;
+  border-right: 2px solid var(--gray-100);
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Collapsed state */
+.collapsed {
+  width: var(--sidebar-collapsed-width, 80px);
+}
+
+.collapsed .navItem {
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Hover state when collapsed */
+.hovered {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   TOGGLE BUTTON
+   ============================================ */
+
+.toggleBtn {
+  position: absolute;
+  top: 16px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--gray-200);
+  color: var(--gray-600);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+
+.toggleBtn:hover {
+  background: var(--yellow-50);
+  border-color: var(--yellow-400);
+  color: var(--yellow-600);
+  transform: scale(1.1);
+}
+
+.collapsed .toggleBtn {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   LOGO
+   ============================================ */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--gray-100);
+  transition: all 0.2s;
+}
+
+.logo:hover {
+  background: var(--gray-50);
+}
+
+.logoIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: var(--gradient-rainbow);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.collapsed .logo {
+  padding: 24px 16px;
+  justify-content: center;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.nav {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  position: relative;
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  background: var(--gray-50);
+  color: var(--blue-600);
+  transform: translateX(4px);
+}
+
+.navItem.active {
+  background: linear-gradient(135deg, var(--blue-50), var(--blue-100));
+  color: var(--blue-700);
+  font-weight: 700;
+}
+
+.navItem.active:hover {
+  transform: none;
+}
+
+.navIcon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.navItem:hover .navIcon {
+  transform: scale(1.1);
+}
+
+.navLabel {
+  flex: 1;
+}
+
+.activeIndicator {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: var(--blue-500);
+  border-radius: var(--radius-full);
+}
+
+/* Collapsed navigation */
+.collapsed .nav {
+  padding: 16px 8px;
+}
+
+.collapsed .navItem {
+  padding: 12px;
+  justify-content: center;
+}
+
+.collapsed .navLabel,
+.collapsed .activeIndicator {
+  display: none;
+}
+
+/* ============================================
+   QUICK ACTIONS
+   ============================================ */
+
+.quickActions {
+  padding: 16px 20px;
+  border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+
+.quickActionsTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  font-family: var(--font-heading);
+}
+
+.quickActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: var(--gray-700);
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.quickActionBtn:hover {
+  border-color: var(--yellow-400);
+  background: var(--yellow-50);
+  color: var(--yellow-700);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.quickActionBtn:last-child {
+  margin-bottom: 0;
+}
+
+.quickActionIcon {
+  font-size: 1.2rem;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+  padding: 16px 20px;
+  border-top: 2px solid var(--gray-100);
+  background: var(--gray-50);
+}
+
+.footerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footerText {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+.footerIcon {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapsed .footer {
+  padding: 16px 8px;
+  text-align: center;
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE (Hidden)
+   ============================================ */
+
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - TABLET (Narrow)
+   ============================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .collapsed {
+    width: 70px;
+  }
+
+  .logoText {
+    font-size: 1.5rem;
+  }
+
+  .navItem {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - DESKTOP (Full)
+   ============================================ */
+
+@media (min-width: 1024px) {
+  .sidebar {
+    /* width: var(--sidebar-width, 280px); */
+  }
+
+  .collapsed {
+    width: var(--sidebar-collapsed-width, 80px);
+  }
+}
+
+/* ============================================
+   MAIN CONTENT WRAPPER
+   ============================================ */
+
+.mainWithSidebar {
+  margin-left: var(--sidebar-width, 280px);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mainWithSidebar.collapsed {
+  margin-left: var(--sidebar-collapsed-width, 80px);
+}
+
+@media (max-width: 767px) {
+  .mainWithSidebar {
+    margin-left: 0 !important;
+  }
+}

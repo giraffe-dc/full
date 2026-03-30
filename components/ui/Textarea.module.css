@@ -1,0 +1,230 @@
+/* ============================================
+   TEXTAREA - GIRAFFE JOY DESIGN
+   ============================================ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+/* ============================================
+   LABEL
+   ============================================ */
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-family: var(--font-heading);
+}
+
+/* ============================================
+   TEXTAREA WRAPPER
+   ============================================ */
+
+.textareaWrapper {
+    position: relative;
+}
+
+/* ============================================
+   TEXTAREA BASE
+   ============================================ */
+
+.textarea {
+    width: 100%;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+    transition: all var(--transition-normal);
+    background: var(--bg-surface);
+    font-family: var(--font-body);
+    color: var(--gray-800);
+    padding: 14px 20px;
+    line-height: 1.5;
+}
+
+.textarea::placeholder {
+    color: var(--gray-400);
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--yellow-500);
+    box-shadow: 0 0 0 4px var(--yellow-100);
+    transform: translateY(-2px);
+}
+
+.textarea:disabled {
+    background: var(--gray-100);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.textarea-sm {
+    padding: 10px 14px;
+    font-size: 14px;
+    min-height: 80px;
+}
+
+.textarea-md {
+    padding: 14px 20px;
+    font-size: 16px;
+    min-height: 120px;
+}
+
+.textarea-lg {
+    padding: 18px 24px;
+    font-size: 18px;
+    min-height: 160px;
+}
+
+/* ============================================
+   RESIZE OPTIONS
+   ============================================ */
+
+.textarea-resize-none {
+    resize: none;
+}
+
+.textarea-resize-vertical {
+    resize: vertical;
+}
+
+.textarea-resize-horizontal {
+    resize: horizontal;
+    min-width: 100%;
+}
+
+.textarea-resize-both {
+    resize: both;
+    min-width: 100%;
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Success */
+.textareaWrapper-success .textarea {
+    border-color: var(--green-500);
+}
+
+.textareaWrapper-success .textarea:focus {
+    border-color: var(--green-600);
+    box-shadow: 0 0 0 4px var(--green-100);
+}
+
+/* Error */
+.textareaWrapper-error .textarea {
+    border-color: var(--red-500);
+    background: var(--error-bg);
+}
+
+.textareaWrapper-error .textarea:focus {
+    border-color: var(--red-600);
+    box-shadow: 0 0 0 4px var(--red-100);
+}
+
+/* Warning */
+.textareaWrapper-warning .textarea {
+    border-color: var(--orange-500);
+    background: var(--warning-bg);
+}
+
+.textareaWrapper-warning .textarea:focus {
+    border-color: var(--orange-600);
+    box-shadow: 0 0 0 4px var(--orange-100);
+}
+
+/* ============================================
+   HELPER TEXT
+   ============================================ */
+
+.helperText {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin: 0;
+    font-weight: 500;
+}
+
+.helperTextError {
+    color: var(--error-text);
+    font-weight: 600;
+}
+
+/* ============================================
+   CHAR COUNT
+   ============================================ */
+
+.charCount {
+    font-size: 13px;
+    color: var(--gray-400);
+    font-weight: 500;
+    font-family: var(--font-mono);
+}
+
+.charCountWarning {
+    color: var(--warning-text);
+    font-weight: 600;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+.textarea::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.textarea::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+}
+
+.textarea::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: var(--radius-full);
+    transition: background var(--transition-fast);
+}
+
+.textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .textarea-md {
+        padding: 12px 16px;
+        font-size: 15px;
+        min-height: 100px;
+    }
+
+    .textarea-lg {
+        padding: 16px 20px;
+        font-size: 16px;
+        min-height: 140px;
+    }
+
+    .footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+}
