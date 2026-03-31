@@ -283,6 +283,12 @@ export interface Visit {
   amount: number;
   createdAt: string;
   updatedAt: string;
+  productId?: string;
+  hallId?: string;
+  tableId?: string;
+  staffId?: string;
+  checkId?: string;
+  customerId?: string;
 }
 
 // ============================================
@@ -303,8 +309,8 @@ export type DailyPoint = {
 
 export type PnLData = {
   revenue: { total: number; categories: CategoryItem[] };
-  cogs: { 
-    total: number; 
+  cogs: {
+    total: number;
     categories: CategoryItem[];
     details?: {
       openingStock?: number;
