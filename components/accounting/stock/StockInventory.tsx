@@ -115,7 +115,7 @@ export function StockInventory() {
             // 3. Merge with balances and calculate cost
             const merged = allSourceItems.map((si: any) => {
                 const bal = balances.find((b: any) => b.itemId === si._id);
-                
+
                 // Priority for cost: balance.lastCost > item.costPerUnit > last purchase price > 0
                 let cost = 0;
                 if (bal && bal.lastCost) {
@@ -225,6 +225,82 @@ export function StockInventory() {
         }
     }
 
+    async function exportToExcel(dataToExport?: any) {
+        try {
+            let exportData: any = {};
+
+            if (dataToExport) {
+                // Exporting from history view
+                exportData = {
+                    history: {
+                        _id: dataToExport._id,
+                        date: dataToExport.date,
+                        warehouseName: warehouses.find(w => w._id === dataToExport.warehouseId)?.name || 'Склад',
+                        description: dataToExport.description,
+                        items: dataToExport.items
+                    }
+                };
+            } else if (selectedHistory) {
+                // Exporting currently viewed history
+                exportData = {
+                    history: {
+                        _id: selectedHistory._id,
+                        date: selectedHistory.date,
+                        warehouseName: warehouses.find(w => w._id === selectedHistory.warehouseId)?.name || 'Склад',
+                        description: selectedHistory.description,
+                        items: selectedHistory.items
+                    }
+                };
+            } else if (isStarted && items.length > 0) {
+                // Exporting current inventory in progress
+                exportData = {
+                    inventory: {
+                        warehouseName: warehouses.find(w => w._id === selectedWarehouse)?.name || 'Склад',
+                        inventoryType,
+                        date: inventoryDate,
+                        items: items
+                    }
+                };
+            } else {
+                toast.error('Немає даних для експорту');
+                return;
+            }
+
+            const res = await fetch('/api/accounting/stock/inventory/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(exportData)
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+
+                let filename = 'Inventory_Export.xlsx';
+                if (selectedHistory) {
+                    filename = `Inventory_${new Date(selectedHistory.date).toISOString().split('T')[0]}.xlsx`;
+                } else if (isStarted) {
+                    filename = `Inventory_${warehouses.find(w => w._id === selectedWarehouse)?.name || 'Warehouse'}_${inventoryDate}.xlsx`;
+                }
+
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                toast.success('Експорт успішно виконано');
+            } else {
+                const err = await res.json();
+                toast.error(`Помилка експорту: ${err.error || 'Невідома помилка'}`);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Помилка експорту');
+        }
+    }
+
     const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
     const [draftData, setDraftData] = useState<any>(null);
 
@@ -255,7 +331,7 @@ export function StockInventory() {
             const merged = allSourceItems.map((si: any) => {
                 const bal = balances.find((b: any) => b.itemId === si._id);
                 const draftItem = draftData.items.find((di: any) => di.itemId === si._id);
-                
+
                 // Priority for cost: balance.lastCost > item.costPerUnit > last purchase price > 0
                 let cost = 0;
                 if (bal && bal.lastCost) {
@@ -320,9 +396,14 @@ export function StockInventory() {
                 </div>
                 <div className={styles.toolbarRight}>
                     {selectedHistory ? (
-                        <button className={styles.buttonSecondary} onClick={handleBackToHistory}>
-                            Назад до списку
-                        </button>
+                        <>
+                            <button className={styles.buttonSecondary} onClick={() => exportToExcel()}>
+                                📊 Експорт Excel
+                            </button>
+                            <button className={styles.buttonSecondary} onClick={handleBackToHistory}>
+                                Назад до списку
+                            </button>
+                        </>
                     ) : (
                         <>
                             <button className={styles.buttonSecondary} onClick={() => setShowHistory(!showHistory)}>
@@ -335,6 +416,9 @@ export function StockInventory() {
                             )}
                             {isStarted && (
                                 <>
+                                    <button className={styles.buttonSecondary} onClick={() => exportToExcel()} disabled={loading} style={{ marginRight: '12px' }}>
+                                        📊 Експорт Excel
+                                    </button>
                                     <button className={styles.buttonSecondary} onClick={saveDraft} disabled={loading} style={{ marginRight: '12px' }}>
                                         Зберегти чернетку
                                     </button>
@@ -374,6 +458,14 @@ export function StockInventory() {
                                             onClick={() => handleViewHistory(h)}
                                         >
                                             👁
+                                        </button>
+                                        <button
+                                            className={styles.actionButton}
+                                            title="Експорт Excel"
+                                            onClick={() => exportToExcel(h)}
+                                            style={{ marginLeft: '8px' }}
+                                        >
+                                            📊
                                         </button>
                                     </td>
                                 </tr>
