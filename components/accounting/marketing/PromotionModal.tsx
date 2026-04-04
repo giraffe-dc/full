@@ -36,6 +36,7 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
 
     // Conditions
     const [conditions, setConditions] = useState<PromotionCondition[]>(promotion?.conditions || [defaultCondition]);
+    const [conditionLogic, setConditionLogic] = useState<'AND' | 'OR'>(promotion?.conditionLogic || 'AND');
 
     // Schedule
     const [daysOfWeek, setDaysOfWeek] = useState<number[]>(promotion?.daysOfWeek || [0, 1, 2, 3, 4, 5, 6]);
@@ -47,7 +48,7 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
 
     // Result
     const [resultType, setResultType] = useState<PromotionResult['type']>(promotion?.result?.type || 'percent_discount');
-    const [resultValue, setResultValue] = useState(promotion?.result?.value || 10);
+    const [resultValue, setResultValue] = useState(promotion?.result?.value || 10.0);
 
     // Search Data
     const [searchItems, setSearchItems] = useState<SearchItem[]>([]);
@@ -97,6 +98,7 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
             earnBonuses,
             autoApply,
             conditions,
+            conditionLogic,
             daysOfWeek,
             timeStart,
             timeEnd,
@@ -223,6 +225,29 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
                     <div className={styles.section}>
                         <h3 className={styles.sectionTitle}>Умови акції</h3>
 
+                        <div className={styles.row}>
+                            <label className={styles.label}>Логіка умов</label>
+                            <div className={styles.logicButtons}>
+                                <button
+                                    className={`${styles.venueBtn} ${conditionLogic === 'AND' ? styles.active : ''}`}
+                                    onClick={() => setConditionLogic('AND')}
+                                >
+                                    Всі умови (І)
+                                </button>
+                                <button
+                                    className={`${styles.venueBtn} ${conditionLogic === 'OR' ? styles.active : ''}`}
+                                    onClick={() => setConditionLogic('OR')}
+                                >
+                                    Хоча б одна (АБО)
+                                </button>
+                            </div>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                            {conditionLogic === 'AND'
+                                ? 'Акція спрацює, коли виконані ВСІ додані умови одночасно'
+                                : 'Акція спрацює, коли виконана ХОЧА Б одна з доданих умов'}
+                        </p>
+
                         <div className={styles.row} style={{ alignItems: 'flex-start' }}>
                             <label className={styles.label} style={{ paddingTop: '8px' }}>Категорії та товари</label>
                             <div style={{ flex: 1 }}>
@@ -306,7 +331,7 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
                                         }}>×</button>
                                     </div>
                                 ))}
-                                <button style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }} onClick={() => setConditions([...conditions, defaultCondition])}>
+                                <button style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }} onClick={() => setConditions([...conditions, { ...defaultCondition }])}>
                                     + Додати умову
                                 </button>
                             </div>
@@ -357,7 +382,14 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
                                 {resultType === 'percent_discount' ? 'Відсоток знижки' : resultType === 'fixed_discount' ? 'Сума знижки' : 'Кількість бонусів'}
                             </label>
                             <div style={{ display: 'flex', alignItems: 'center', width: '200px' }}>
-                                <input className={styles.input} type="number" value={resultValue} onChange={e => setResultValue(Number(e.target.value))} />
+                                <input
+                                    className={styles.input}
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={resultValue}
+                                    onChange={e => setResultValue(parseFloat(e.target.value) || 0)}
+                                />
                                 <span style={{ marginLeft: '10px', color: '#6b7280' }}>
                                     {resultType === 'percent_discount' ? '%' : '₴'}
                                 </span>
@@ -368,8 +400,8 @@ export function PromotionModal({ promotion, onClose, onSave }: PromotionModalPro
 
                 <div className={styles.footer}>
                     {promotion && (
-                        <button 
-                            className={styles.broadcastButton} 
+                        <button
+                            className={styles.broadcastButton}
                             onClick={handleBroadcast}
                             disabled={isBroadcasting}
                         >
