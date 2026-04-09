@@ -35,17 +35,18 @@ export default function Dashboard() {
             .then((data) => {
                 if (data.authenticated) {
                     setUser(data.user);
-                    // Simulate stats loading
-                    setTimeout(() => {
-                        setStats({
-                            todayVisitors: 45,
-                            activeEvents: 3,
-                            revenue: 12500,
-                            pendingTasks: 7,
-                        });
-                        setIsLoading(false);
-                    }, 500);
                 }
+            })
+            .catch(console.error);
+
+        // Fetch dashboard stats
+        fetch("/api/dashboard/stats")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success && data.data) {
+                    setStats(data.data);
+                }
+                setIsLoading(false);
             })
             .catch(() => setIsLoading(false));
     }, []);
@@ -135,7 +136,7 @@ export default function Dashboard() {
                         color="green"
                     />
                     <StatCard
-                        title="Завдання"
+                        title="Відкриті чеки"
                         value={stats.pendingTasks}
                         icon="📋"
                         trend={{ value: 3.1, isPositive: false }}
