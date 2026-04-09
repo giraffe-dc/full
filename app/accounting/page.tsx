@@ -812,6 +812,7 @@ function AccountingContent() {
           accounts={accountsData}
           categoryLabels={expenseCategories.reduce((acc, c) => ({ ...acc, [c.name]: c.name }), {})}
         />
+        
       </div>
     </div>
   );
