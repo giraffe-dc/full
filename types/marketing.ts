@@ -26,6 +26,7 @@ export interface Promotion {
 
     // Conditions
     conditions: PromotionCondition[];
+    conditionLogic?: 'AND' | 'OR'; // Logic for combining conditions: AND (all must match) or OR (any can match)
 
     // Schedule
     daysOfWeek: number[]; // 0 = Sunday, 1 = Monday, etc.

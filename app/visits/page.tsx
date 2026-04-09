@@ -21,7 +21,7 @@ export default function VisitingTimePage() {
     // Form / Modal state
     const [showModal, setShowModal] = useState(false);
     const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
-    
+
     // Data for selects
     const [products, setProducts] = useState<any[]>([]);
     const [halls, setHalls] = useState<any[]>([]);
@@ -90,8 +90,8 @@ export default function VisitingTimePage() {
             const prodData = await prodRes.json();
             if (prodData.success) {
                 // Filter by category "Розважальні послуги" (case insensitive)
-                setProducts(prodData.data.filter((p: any) => 
-                    p.category?.toLowerCase().includes("розважальні послуги") || 
+                setProducts(prodData.data.filter((p: any) =>
+                    p.category?.toLowerCase().includes("розважальні послуги") ||
                     p.category?.toLowerCase().includes("послуги")
                 ));
             }
@@ -118,20 +118,82 @@ export default function VisitingTimePage() {
     };
 
     useEffect(() => {
-        if (showModal && !editingVisit) {
+        if (showModal) {
             fetchInitialData();
         }
     }, [showModal, editingVisit]);
 
-    const fetchTables = async (hallId: string) => {
+    // Populate form data after initial data is loaded when editing
+    useEffect(() => {
+        if (editingVisit && products.length > 0 && halls.length > 0) {
+            // Find matching product
+            const matchedProduct = products.find(p =>
+                p.id === editingVisit.productId || p._id === editingVisit.productId ||
+                p.name === editingVisit.serviceName
+            );
+
+            setFormData(prev => ({
+                ...prev,
+                date: editingVisit.date,
+                serviceName: editingVisit.serviceName,
+                productId: editingVisit.productId || matchedProduct?.id || "",
+                childName: editingVisit.childName,
+                parentName: editingVisit.parentName,
+                childAge: String(editingVisit.childAge),
+                phone: editingVisit.phone,
+                duration: editingVisit.duration,
+                startTime: editingVisit.startTime,
+                endTime: editingVisit.endTime,
+                paymentStatus: editingVisit.paymentStatus,
+                amount: String(editingVisit.amount),
+                hallId: editingVisit.hallId || "",
+                staffId: editingVisit.staffId || ""
+                // tableId will be set after tables are loaded
+            }));
+
+            // Fetch tables for the selected hall AFTER setting formData
+            if (editingVisit.hallId) {
+                // When editing, fetch only the selected table
+                fetchTables(editingVisit.hallId, false, editingVisit.tableId);
+            }
+        }
+    }, [editingVisit, products, halls]);
+
+    // Set tableId after tables are loaded when editing
+    useEffect(() => {
+        if (editingVisit && tables.length === 1 && editingVisit.tableId) {
+            // When editing, tables should contain exactly  table (the selected one)
+            const loadedTable = tables[0];
+            const tableMatches = loadedTable.id === editingVisit.tableId || loadedTable._id === editingVisit.tableId;
+
+            if (tableMatches) {
+                setFormData(prev => ({
+                    ...prev,
+                    tableId: editingVisit.tableId!
+                }));
+            }
+        }
+    }, [tables, editingVisit]);
+
+    const fetchTables = async (hallId: string, includeBusy: boolean = false, selectedTableId?: string) => {
         if (!hallId) return;
         try {
             const res = await fetch(`/api/cash-register/tables?departmentId=${hallId}`);
             const data = await res.json();
             if (data.success) {
-                // Show all tables but mark busy ones? 
-                // User said "free table", so filter by free.
-                setTables(data.data.filter((t: any) => t.status === 'free'));
+                let filteredTables = data.data;
+
+                // If editing and we have a selected table, show only that table
+                if (selectedTableId) {
+                    filteredTables = data.data.filter((t: any) =>
+                        t.id === selectedTableId || t._id === selectedTableId
+                    );
+                } else if (!includeBusy) {
+                    // When creating new visit, show only free tables
+                    filteredTables = data.data.filter((t: any) => t.status === 'free');
+                }
+
+                setTables(filteredTables);
             }
         } catch (e) {
             console.error("Error fetching tables", e);
@@ -188,23 +250,7 @@ export default function VisitingTimePage() {
 
     const handleOpenEdit = (visit: Visit) => {
         setEditingVisit(visit);
-        setFormData({
-            date: visit.date,
-            serviceName: visit.serviceName,
-            productId: (visit as any).productId || "",
-            childName: visit.childName,
-            parentName: visit.parentName,
-            childAge: String(visit.childAge),
-            phone: visit.phone,
-            duration: visit.duration,
-            startTime: visit.startTime,
-            endTime: visit.endTime,
-            paymentStatus: visit.paymentStatus,
-            amount: String(visit.amount),
-            hallId: (visit as any).hallId || "",
-            tableId: (visit as any).tableId || "",
-            staffId: (visit as any).staffId || ""
-        });
+        // Form data will be populated by useEffect after initial data is loaded
         setShowModal(true);
     };
 
@@ -418,7 +464,7 @@ export default function VisitingTimePage() {
                                                 value={formData.tableId}
                                                 onChange={e => setFormData({ ...formData, tableId: e.target.value })}
                                                 required
-                                                disabled={!formData.hallId}
+                                                disabled={!formData.hallId || !!editingVisit}
                                             >
                                                 <option value="">Оберіть стіл</option>
                                                 {tables.map(t => (
@@ -433,20 +479,20 @@ export default function VisitingTimePage() {
                                                     className={styles.select}
                                                     value={formData.staffId}
                                                     onChange={e => setFormData({ ...formData, staffId: e.target.value })}
-                                                        required
-                                                    >
-                                                        <option value="">Оберіть співробітника</option>
-                                                        {activeStaff.map(s => (
-                                                            <option key={s.id} value={s.id}>{s.name}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            ) : (
-                                                <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-                                                    <label>Дата відвідування</label>
-                                                    <input
-                                                        type="date"
-                                                        className={styles.input}
+                                                    required
+                                                >
+                                                    <option value="">Оберіть співробітника</option>
+                                                    {activeStaff.map(s => (
+                                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ) : (
+                                            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+                                                <label>Дата відвідування</label>
+                                                <input
+                                                    type="date"
+                                                    className={styles.input}
                                                     value={formData.date}
                                                     onChange={e => setFormData({ ...formData, date: e.target.value })}
                                                     required

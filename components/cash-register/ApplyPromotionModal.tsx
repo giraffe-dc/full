@@ -91,15 +91,36 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
             const percent = p.result.value;
             const matchingItemIndices = new Set<number>();
 
-            p.conditions.forEach(cond => {
+            // Identify matching items based on conditionLogic
+            if (p.conditionLogic === 'OR') {
+                // OR logic: item matches if it satisfies ANY condition
                 updatedItems.forEach((item, idx) => {
-                    let isMatch = false;
-                    if (cond.type === 'total_amount') isMatch = true;
-                    if (cond.type === 'product' && ((item.productId && cond.targetIds?.includes(item.productId)) || (cond.targetNames?.includes(item.serviceName)))) isMatch = true;
-                    if (cond.type === 'category' && (cond.targetNames?.includes(item.category) || cond.targetIds?.includes(item.category))) isMatch = true;
-                    if (isMatch) matchingItemIndices.add(idx);
+                    p.conditions.forEach(cond => {
+                        let isMatch = false;
+                        // Simplistic matching logic
+                        if (cond.type === 'total_amount') isMatch = true;
+                        if (cond.type === 'product' && ((item.productId && cond.targetIds?.includes(item.productId)) || (cond.targetNames?.includes(item.serviceName)))) isMatch = true;
+                        if (cond.type === 'category' && (cond.targetNames?.includes(item.category) || cond.targetIds?.includes(item.category))) isMatch = true;
+
+                        if (isMatch) matchingItemIndices.add(idx);
+                    });
                 });
-            });
+            } else {
+                // AND logic (default): item matches if it satisfies any condition from ALL conditions
+                // The promotion only triggers if ALL conditions are met, but we apply discount to matching items
+                p.conditions.forEach(cond => {
+                    updatedItems.forEach((item, idx) => {
+                        let isMatch = false;
+                        // Simplistic matching logic
+                        if (cond.type === 'total_amount') isMatch = true;
+                        if (cond.type === 'product' && ((item.productId && cond.targetIds?.includes(item.productId)) || (cond.targetNames?.includes(item.serviceName)))) isMatch = true;
+                        if (cond.type === 'category' && (cond.targetNames?.includes(item.category) || cond.targetIds?.includes(item.category))) isMatch = true;
+                        // Note: Category matching by name fallback
+
+                        if (isMatch) matchingItemIndices.add(idx);
+                    });
+                });
+            }
 
             updatedItems.forEach((item, idx) => {
                 if (matchingItemIndices.has(idx)) {
@@ -135,7 +156,18 @@ export function ApplyPromotionModal({ check, onClose, onApply }: ApplyPromotionM
 
     const availablePromotions = promotions.map(p => {
         if (!isPromotionEligibleBySettings(p)) return null;
-        const isEligible = p.conditions.every(c => validateCondition(c, check.items));
+
+        // Conditions check - respect conditionLogic (AND/OR)
+        let isEligible = false;
+
+        if (p.conditionLogic === 'OR') {
+            // OR logic: at least one condition must be met
+            isEligible = p.conditions.some(c => validateCondition(c, check.items));
+        } else {
+            // AND logic (default): all conditions must be met
+            isEligible = p.conditions.every(c => validateCondition(c, check.items));
+        }
+
         if (!isEligible) return null;
         return calculatePromotion(p);
     }).filter(p => p !== null) as PromotionCalculation[];

@@ -165,7 +165,7 @@
      ============================================ */
 
   /* Успіх */
-  --success-bg: #ECFDF5;
+  --success-bg: #c3e2d4;
   --success-text: #047857;
   --success-main: var(--green-500);
   --success-light: var(--green-400);
@@ -196,12 +196,12 @@
      ФОНОВІ КОЛЬОРИ
      ============================================ */
 
-  --bg-app: #F9FAFB;
-  --bg-surface: #FFFFFF;
+  --bg-app: #c9d5e0;
+  --bg-surface: #d3cdcd;
   --bg-glass: rgba(255, 255, 255, 0.85);
   --bg-overlay: rgba(17, 24, 39, 0.5);
   --bg-sidebar: #FFFFFF;
-  --bg-card: #FFFFFF;
+  --bg-card: #b8c5a9;
 
   /* ============================================
      КОРДОНИ
@@ -332,7 +332,8 @@ body {
   overflow-x: hidden;
   font-family: var(--font-body);
   color: var(--gray-800);
-  background-color: var(--bg-app);
+  /* background-color: var(--bg-app); */
+  background-color: darkgrey;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

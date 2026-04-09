@@ -316,7 +316,7 @@
 }
 
 .btnCancel {
-    background: white;
+    background: rgb(233, 172, 172);
     border: 1px solid var(--gray-200);
     color: var(--gray-700);
     padding: 12px 24px;
@@ -332,8 +332,8 @@
 }
 
 .btnSubmit {
-    background: var(--gradient-primary);
-    color: white;
+    background: rgb(153, 255, 142);
+    color: rgb(8, 46, 3);
     border: none;
     padding: 12px 32px;
     border-radius: var(--radius-md);

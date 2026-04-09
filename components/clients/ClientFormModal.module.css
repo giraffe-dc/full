@@ -186,19 +186,19 @@
 }
 
 .cancelButton {
-    background: white;
+    background: rgb(235, 168, 168);
     color: var(--gray-700);
     border: 2px solid var(--gray-200);
 }
 
 .cancelButton:hover {
-    background: var(--gray-50);
+    background: rgb(238, 75, 75);
     border-color: var(--gray-300);
 }
 
 .submitButton {
-    background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
-    color: white;
+    background: rgb(153, 255, 142);
+    color: rgb(8, 46, 3);
     box-shadow: var(--shadow-md);
 }
 

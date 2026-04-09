@@ -69,15 +69,15 @@
 }
 
 .addButton {
-    background: var(--primary-600);
-    color: white;
+    background: rgb(153, 255, 142);
+    color: rgb(8, 46, 3);
     border: none;
     box-shadow: var(--shadow-sm);
 }
 
 .addButton:hover {
-    background: var(--primary-700);
-    color: white;
+    background: rgb(153, 255, 142);
+    color: rgb(8, 46, 3);
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
