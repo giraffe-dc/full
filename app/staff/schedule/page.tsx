@@ -170,9 +170,7 @@ export default function StaffSchedulePage() {
     const grouped: Record<string, ScheduleEntry[]> = {};
     calendarDates.forEach(({ date }) => {
       grouped[date] = schedules.filter(s => {
-        const scheduleDate = s.date instanceof Date
-          ? s.date.toISOString().split('T')[0]
-          : s.date.split('T')[0];
+        const scheduleDate = s.date.split('T')[0];
         return scheduleDate === date;
       });
     });
@@ -182,9 +180,7 @@ export default function StaffSchedulePage() {
   // Calculate shift statistics for selected staff
   const shiftStats = useMemo(() => {
     const currentMonthSchedules = schedules.filter(s => {
-      const scheduleDate = s.date instanceof Date
-        ? s.date.toISOString().split('T')[0]
-        : s.date.split('T')[0];
+      const scheduleDate = s.date.split('T')[0];
       const scheduleMonth = new Date(scheduleDate).getMonth();
       const currentMonth = selectedDate.getMonth();
       return scheduleMonth === currentMonth;

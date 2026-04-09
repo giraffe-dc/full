@@ -6,7 +6,7 @@ import styles from './Avatar.module.css';
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type AvatarVariant = 'solid' | 'outline' | 'gradient';
 
-interface AvatarProps {
+export type AvatarProps = {
     src?: string;
     alt?: string;
     name?: string;

@@ -5,7 +5,7 @@ import styles from './Switch.module.css';
 
 export type SwitchSize = 'sm' | 'md' | 'lg';
 
-interface SwitchProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export type SwitchProps = React.InputHTMLAttributes<HTMLInputElement> & {
     label?: string;
     size?: SwitchSize;
     helperText?: string;

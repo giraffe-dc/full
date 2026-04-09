@@ -12,7 +12,7 @@ export interface SelectOption {
     disabled?: boolean;
 }
 
-interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+export type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
     label?: string;
     options: SelectOption[];
     placeholder?: string;

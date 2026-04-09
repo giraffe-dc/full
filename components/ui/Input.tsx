@@ -6,7 +6,7 @@ import styles from './Input.module.css';
 export type InputVariant = 'default' | 'success' | 'error' | 'warning';
 export type InputSize = 'sm' | 'md' | 'lg';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
     label?: string;
     error?: string;
     variant?: InputVariant;

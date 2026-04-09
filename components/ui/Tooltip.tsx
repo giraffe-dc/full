@@ -6,7 +6,7 @@ import styles from './Tooltip.module.css';
 export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 export type TooltipVariant = 'default' | 'success' | 'error' | 'warning' | 'info';
 
-interface TooltipProps {
+export type TooltipProps = {
     content: string;
     children: React.ReactNode;
     position?: TooltipPosition;
@@ -25,7 +25,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout>();
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

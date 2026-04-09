@@ -17,14 +17,17 @@ export type ButtonVariant =
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: ButtonVariant;
     size?: ButtonSize;
     leftIcon?: React.ReactNode;
     rightIcon?: React.ReactNode;
     isLoading?: boolean;
     fullWidth?: boolean;
+    icon?: React.ReactNode;
 }
+
+
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     (

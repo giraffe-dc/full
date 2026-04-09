@@ -20,7 +20,7 @@ export type CardColor =
     | 'orange'
     | 'gray';
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+export type CardProps = React.HTMLAttributes<HTMLDivElement> & {
     variant?: CardVariant;
     color?: CardColor;
     padding?: 'sm' | 'md' | 'lg';

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styles from './DateRangePicker.module.css';
 
-interface DateRangePickerProps {
+export type DateRangePickerProps = {
     startDate: string;
     endDate: string;
     onChange: (start: string, end: string) => void;

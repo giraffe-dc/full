@@ -5,7 +5,7 @@ import styles from './Checkbox.module.css';
 
 export type CheckboxSize = 'sm' | 'md' | 'lg';
 
-interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export type CheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
     label?: string;
     size?: CheckboxSize;
     error?: string;

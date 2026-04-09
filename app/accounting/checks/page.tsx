@@ -1,10 +1,40 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, JSX } from 'react';
 import { DateRangePicker } from '../../../components/ui/DateRangePicker';
 import { Receipt } from '../../../types/cash-register';
 import styles from './page.module.css';
 import { useToast } from '../../../components/ui/ToastContext';
+
+const renderItemsDiff = (prev: any[], next: any[]) => {
+    if (!Array.isArray(prev) || !Array.isArray(next)) return null;
+    const prevMap = new Map(prev.map(i => [i.serviceId, i]));
+    const nextMap = new Map(next.map(i => [i.serviceId, i]));
+    const changes: JSX.Element[] = [];
+
+    // Added or Modified
+    next.forEach((newItem, idx) => {
+        const prevItem = prevMap.get(newItem.serviceId);
+        if (!prevItem) {
+            changes.push(<div key={`add-${newItem.serviceId}-${idx}`} className={styles.diffAdded}>➕ Додано: {newItem.serviceName} (+{newItem.quantity} шт.)</div>);
+        } else if (prevItem.quantity !== newItem.quantity) {
+            changes.push(<div key={`mod-${newItem.serviceId}-${idx}`} className={styles.historyDiff}>📝 Змінено: {newItem.serviceName} ({prevItem.quantity} шт. → {newItem.quantity} шт.)</div>);
+        }
+    });
+
+    // Removed
+    prev.forEach((prevItem, idx) => {
+        if (!nextMap.has(prevItem.serviceId)) {
+            changes.push(<div key={`rm-${prevItem.serviceId}-${idx}`} className={styles.diffRemoved}>❌ Видалено: {prevItem.serviceName} ({prevItem.quantity} шт.)</div>);
+        }
+    });
+
+    if (changes.length === 0) {
+        return <div className={styles.historyDiff}>Змінилися інші параметри позицій (наприклад, знижка)</div>;
+    }
+
+    return <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>{changes}</div>;
+};
 
 export default function AccountingChecksPage() {
     const toast = useToast();
@@ -359,10 +389,7 @@ export default function AccountingChecksPage() {
 
                                                                                 {h.action === 'update_items' && h.previousDetails && h.newDetails && (
                                                                                     <div className={styles.historyDetails}>
-                                                                                        <div className={styles.historyDiff}>
-                                                                                            <span>Було: {(h.previousDetails as any[]).length} поз.</span>
-                                                                                            <span>Stack: {(h.newDetails as any[]).length} поз.</span>
-                                                                                        </div>
+                                                                                        {renderItemsDiff(h.previousDetails as any[], h.newDetails as any[])}
                                                                                     </div>
                                                                                 )}
 

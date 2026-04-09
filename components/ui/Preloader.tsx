@@ -4,7 +4,7 @@ import styles from './Preloader.module.css';
 export type PreloaderVariant = 'yellow' | 'blue' | 'green' | 'purple' | 'pink' | 'orange';
 export type PreloaderSize = 'sm' | 'md' | 'lg';
 
-interface PreloaderProps {
+export type PreloaderProps = {
     message?: string;
     fullScreen?: boolean;
     variant?: PreloaderVariant;

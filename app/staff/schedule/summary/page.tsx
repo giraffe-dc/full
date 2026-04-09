@@ -88,9 +88,7 @@ export default function StaffScheduleSummaryPage() {
   const getShiftForDate = (staffId: string, date: string) => {
     return schedules.find(s => {
       const sStaffId = s.staffId;
-      const sDate = s.date instanceof Date
-        ? s.date.toISOString().split('T')[0]
-        : s.date.split('T')[0];
+      const sDate = s.date.split('T')[0];
       return sStaffId === staffId && sDate === date;
     });
   };
@@ -139,8 +137,9 @@ export default function StaffScheduleSummaryPage() {
 
       if (data.success) {
         // Convert to CSV
-        const { columns, rows } = data.data;
-        const csvRows = [];
+        const columns = data.data.columns as { label: string; key: string }[];
+        const rows = data.data.rows as any[];
+        const csvRows: string[] = [];
 
         // Header row
         csvRows.push(columns.map(c => c.label).join(','));

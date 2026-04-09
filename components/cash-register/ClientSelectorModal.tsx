@@ -143,9 +143,9 @@ export function ClientSelectorModal({
                                             <div className={styles.clientEmail}>📧 {client.email}</div>
                                         )}
                                     </div>
-                                    {client.discount && (
+                                    {(client as any).discount && (
                                         <Badge variant="success" size="sm">
-                                            -{client.discount}%
+                                            -{(client as any).discount}%
                                         </Badge>
                                     )}
                                 </div>

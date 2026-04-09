@@ -19,7 +19,7 @@ export type BadgeVariant =
 
 export type BadgeSize = 'sm' | 'md' | 'lg';
 
-interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+export type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
     variant?: BadgeVariant;
     size?: BadgeSize;
     leftIcon?: React.ReactNode;

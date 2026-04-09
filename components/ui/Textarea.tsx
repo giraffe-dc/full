@@ -6,7 +6,7 @@ import styles from './Textarea.module.css';
 export type TextareaVariant = 'default' | 'success' | 'error' | 'warning';
 export type TextareaSize = 'sm' | 'md' | 'lg';
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
     label?: string;
     error?: string;
     variant?: TextareaVariant;

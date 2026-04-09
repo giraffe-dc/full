@@ -5,7 +5,7 @@ import styles from './Pagination.module.css';
 
 export type PaginationSize = 'sm' | 'md' | 'lg';
 
-interface PaginationProps {
+export type PaginationProps = {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;

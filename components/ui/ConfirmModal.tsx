@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './ConfirmModal.module.css';
 
-interface ConfirmModalProps {
+export type ConfirmModalProps = {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
