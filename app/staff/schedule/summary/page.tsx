@@ -29,6 +29,7 @@ export default function StaffScheduleSummaryPage() {
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
+  const [scheduleType, setScheduleType] = useState<'planned' | 'actual'>('planned');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -41,7 +42,7 @@ export default function StaffScheduleSummaryPage() {
       try {
         const [staffRes, scheduleRes] = await Promise.all([
           fetch('/api/staff?status=active'),
-          fetch(`/api/staff/schedule?startDate=${selectedMonth}-01&endDate=${selectedMonth}-31`),
+          fetch(`/api/staff/schedule?startDate=${selectedMonth}-01&endDate=${selectedMonth}-31&type=${scheduleType}`),
         ]);
 
         const staffData = await staffRes.json();
@@ -58,7 +59,7 @@ export default function StaffScheduleSummaryPage() {
     };
 
     fetchData();
-  }, [selectedMonth]);
+  }, [selectedMonth, scheduleType]);
 
   // Get days in month
   const daysInMonth = useMemo(() => {
@@ -95,7 +96,6 @@ export default function StaffScheduleSummaryPage() {
 
   // Calculate stats for staff member
   const calculateStats = (staffId: string) => {
-    const [year, month] = selectedMonth.split('-').map(Number);
     let totalShifts = 0;
     let totalHours = 0;
     let weekendShifts = 0;
@@ -105,9 +105,13 @@ export default function StaffScheduleSummaryPage() {
       if (shift) {
         totalShifts++;
         const [startHour, startMin] = shift.startTime.split(':').map(Number);
-        const [endHour, endMin] = shift.endTime.split(':').map(Number);
-        const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
-        totalHours += hours;
+        
+        if (shift.endTime && shift.endTime !== 'Триває') {
+          const [endHour, endMin] = shift.endTime.split(':').map(Number);
+          const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
+          totalHours += hours;
+        }
+        
         if (isWeekend) weekendShifts++;
       }
     });
@@ -132,7 +136,7 @@ export default function StaffScheduleSummaryPage() {
 
   const handleExport = async () => {
     try {
-      const res = await fetch(`/api/staff/schedule/export?month=${selectedMonth}`);
+      const res = await fetch(`/api/staff/schedule/export?month=${selectedMonth}&type=${scheduleType}`);
       const data = await res.json();
 
       if (data.success) {
@@ -162,7 +166,8 @@ export default function StaffScheduleSummaryPage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Графік_${selectedMonth}.csv`;
+        const typeLabel = scheduleType === 'actual' ? 'Фактичний' : 'Плановий';
+        link.download = `Графік_${typeLabel}_${selectedMonth}.csv`;
         link.click();
         URL.revokeObjectURL(url);
 
@@ -178,6 +183,7 @@ export default function StaffScheduleSummaryPage() {
 
   const getShiftDisplay = (shift?: ScheduleEntry) => {
     if (!shift) return '';
+    if (shift.endTime === 'Триває') return '—';
     const [startHour, startMin] = shift.startTime.split(':').map(Number);
     const [endHour, endMin] = shift.endTime.split(':').map(Number);
     const hours = endHour - startHour + (endMin - startMin) / 60;
@@ -207,6 +213,24 @@ export default function StaffScheduleSummaryPage() {
             </div>
             <button onClick={handleExport} className={styles.btnExport}>
               📥 Експорт Excel
+            </button>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className={styles.controls} style={{ marginBottom: "1.5rem" }}>
+          <div className={styles.viewModeToggle}>
+            <button
+              className={`${styles.viewBtn} ${scheduleType === 'planned' ? styles.active : ''}`}
+              onClick={() => setScheduleType('planned')}
+            >
+              Плановий графік
+            </button>
+            <button
+              className={`${styles.viewBtn} ${scheduleType === 'actual' ? styles.active : ''}`}
+              onClick={() => setScheduleType('actual')}
+            >
+              Фактичні виходи
             </button>
           </div>
         </div>
@@ -247,7 +271,7 @@ export default function StaffScheduleSummaryPage() {
                       const hours = getShiftDisplay(shift);
                       return (
                         <td key={fullDate} className={`${styles.shiftCell} ${isWeekend ? styles.weekend : ''}`}>
-                          {shift ? hours : ''}
+                          {shift ? (hours === '—' ? <span style={{fontSize: "0.7rem"}}>Триває</span> : hours) : ''}
                         </td>
                       );
                     })}

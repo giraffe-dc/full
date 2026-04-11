@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const endDate = searchParams.get("endDate");
 
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
     let query: any = { staffId: new ObjectId(id) };
 
     if (startDate || endDate) {
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
     const result = await db.collection("staff_schedule").insertOne({
       staffId: new ObjectId(id),
       date: new Date(date),

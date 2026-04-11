@@ -46,3 +46,10 @@ CASH_REGISTER_README.md
 
 docs
 .codebuddy
+.qwen
+QWEN.md
+automated-visual-test.js
+playwright-visual-test.js
+server.log
+test-screenshots/
+

@@ -28,7 +28,7 @@ export async function DELETE(
 
     const { id } = await params;
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
 
     const result = await db.collection("staff_schedule").deleteOne({
       _id: new ObjectId(id),

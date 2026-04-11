@@ -24,6 +24,7 @@ type ScheduleEntry = {
   startTime: string;
   endTime: string;
   notes?: string;
+  isManualEdit?: boolean;
 };
 
 export default function StaffSchedulePage() {
@@ -36,15 +37,30 @@ export default function StaffSchedulePage() {
   const [selectedStaffId, setSelectedStaffId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'week' | 'month'>('month');
+  const [scheduleType, setScheduleType] = useState<'planned' | 'actual'>('planned');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: string } | null>(null);
   const [formData, setFormData] = useState({
+    id: "",
     staffId: "",
     date: "",
     startTime: "09:00",
     endTime: "18:00",
     notes: "",
   });
+
+  // Fetch role
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsAdmin(data.user?.role === 'admin');
+      } catch (e) {}
+    };
+    fetchRole();
+  }, []);
 
   // Fetch staff list
   useEffect(() => {
@@ -81,19 +97,30 @@ export default function StaffSchedulePage() {
         const diff = currentDate.getDate() - day + (day === 0 ? -6 : 1);
         const monday = new Date(currentDate);
         monday.setDate(diff);
-        startDate = monday.toISOString().split('T')[0];
+        
+        // Expand range by 3 days for safety in week view
+        const rangeStart = new Date(monday);
+        rangeStart.setDate(monday.getDate() - 3);
+        startDate = rangeStart.toISOString().split('T')[0];
 
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        endDate = sunday.toISOString().split('T')[0];
+        const rangeEnd = new Date(monday);
+        rangeEnd.setDate(monday.getDate() + 9);
+        endDate = rangeEnd.toISOString().split('T')[0];
       } else {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-        startDate = new Date(year, month, 1).toISOString().split('T')[0];
-        endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+        
+        // Fetch from 7 days before start of month to 7 days after end of month
+        const rangeStart = new Date(year, month, 1);
+        rangeStart.setDate(rangeStart.getDate() - 7);
+        startDate = rangeStart.toISOString().split('T')[0];
+
+        const rangeEnd = new Date(year, month + 1, 0);
+        rangeEnd.setDate(rangeEnd.getDate() + 7);
+        endDate = rangeEnd.toISOString().split('T')[0];
       }
 
-      const res = await fetch(`/api/staff/schedule?startDate=${startDate}&endDate=${endDate}&staffId=${selectedStaffId}`);
+      const res = await fetch(`/api/staff/schedule?startDate=${startDate}&endDate=${endDate}&staffId=${selectedStaffId}&type=${scheduleType}`);
       const data = await res.json();
       if (data.data) {
         setSchedules(data.data);
@@ -110,7 +137,7 @@ export default function StaffSchedulePage() {
     if (selectedStaffId) {
       fetchSchedules();
     }
-  }, [selectedDate, viewMode, selectedStaffId]);
+  }, [selectedDate, viewMode, selectedStaffId, scheduleType]);
 
   // Get calendar dates
   const calendarDates = useMemo(() => {
@@ -187,13 +214,17 @@ export default function StaffSchedulePage() {
     });
 
     const totalShifts = currentMonthSchedules.length;
-    const totalHours = currentMonthSchedules.reduce((acc, shift) => {
+    let totalHours = 0;
+
+    currentMonthSchedules.forEach(shift => {
       const [startHour, startMin] = shift.startTime.split(':').map(Number);
-      const [endHour, endMin] = shift.endTime.split(':').map(Number);
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
-      return acc + (endMinutes - startMinutes);
-    }, 0);
+      if (shift.endTime && shift.endTime !== 'Триває') {
+        const [endHour, endMin] = shift.endTime.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+        totalHours += (endMinutes - startMinutes);
+      }
+    });
 
     const totalHoursFormatted = Math.floor(totalHours / 60);
     const totalMinutes = totalHours % 60;
@@ -212,17 +243,21 @@ export default function StaffSchedulePage() {
   };
 
   const handleAddShift = () => {
+    if (scheduleType === 'actual' && !isAdmin) return;
     if (!selectedStaffId) {
       toast.error('Оберіть співробітника');
       return;
     }
+    setFormData(prev => ({ ...prev, id: "", date: new Date().toISOString().split('T')[0] }));
     setShowAddModal(true);
   };
 
   const handleSlotClick = (date: string) => {
+    if (scheduleType === 'actual' && !isAdmin) return;
     setSelectedSlot({ date });
     setFormData(prev => ({
       ...prev,
+      id: "",
       date,
     }));
     setShowAddModal(true);
@@ -230,12 +265,14 @@ export default function StaffSchedulePage() {
 
   const handleEditShift = (shift: ScheduleEntry, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (scheduleType === 'actual' && !isAdmin) return;
     setSelectedSlot({ date: shift.date });
     setFormData({
+      id: shift._id,
       staffId: shift.staffId,
       date: shift.date.split('T')[0],
       startTime: shift.startTime,
-      endTime: shift.endTime,
+      endTime: shift.endTime === "Триває" ? "" : shift.endTime,
       notes: shift.notes || "",
     });
     setShowAddModal(true);
@@ -243,10 +280,12 @@ export default function StaffSchedulePage() {
 
   const handleDeleteShift = async (shiftId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (scheduleType === 'actual' && !isAdmin) return;
     if (!confirm('Видалити цю зміну?')) return;
 
     try {
-      const res = await fetch(`/api/staff/schedule/${shiftId}`, { method: 'DELETE' });
+      const url = scheduleType === 'actual' ? `/api/staff/schedule/actual/${shiftId}` : `/api/staff/schedule/${shiftId}`;
+      const res = await fetch(url, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Зміну видалено');
         fetchSchedules();
@@ -267,16 +306,23 @@ export default function StaffSchedulePage() {
     }
 
     try {
-      const res = await fetch(`/api/staff/${formData.staffId}/schedule`, {
-        method: 'POST',
+      const url = scheduleType === 'actual' 
+        ? formData.id ? `/api/staff/schedule/actual/${formData.id}` : `/api/staff/schedule/actual`
+        : `/api/staff/${formData.staffId}/schedule`;
+
+      const method = scheduleType === 'actual' ? (formData.id ? 'PUT' : 'POST') : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (res.ok) {
-        toast.success('Зміну додано');
+        toast.success('Змебережено');
         setShowAddModal(false);
         setFormData({
+          id: "",
           staffId: selectedStaffId,
           date: "",
           startTime: "09:00",
@@ -331,9 +377,11 @@ export default function StaffSchedulePage() {
             <button onClick={() => router.push('/staff/schedule/summary')} className={styles.btnSecondary}>
               📊 Зведений
             </button>
-            <button onClick={handleAddShift} className={styles.btnAdd}>
-              + Додати зміну
-            </button>
+            {(!scheduleType || scheduleType === 'planned' || isAdmin) && (
+              <button onClick={handleAddShift} className={styles.btnAdd}>
+                + Додати зміну
+              </button>
+            )}
           </div>
         </div>
 
@@ -392,19 +440,39 @@ export default function StaffSchedulePage() {
               Сьогодні
             </button>
           </div>
-          <div className={styles.viewModeToggle}>
-            <button
-              className={`${styles.viewBtn} ${viewMode === 'week' ? styles.active : ''}`}
-              onClick={() => setViewMode('week')}
-            >
-              Тиждень
-            </button>
-            <button
-              className={`${styles.viewBtn} ${viewMode === 'month' ? styles.active : ''}`}
-              onClick={() => setViewMode('month')}
-            >
-              Місяць
-            </button>
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {/* View Type Toggle */}
+            <div className={styles.viewModeToggle}>
+              <button
+                className={`${styles.viewBtn} ${scheduleType === 'planned' ? styles.active : ''}`}
+                onClick={() => setScheduleType('planned')}
+              >
+                Плановий
+              </button>
+              <button
+                className={`${styles.viewBtn} ${scheduleType === 'actual' ? styles.active : ''}`}
+                onClick={() => setScheduleType('actual')}
+              >
+                Фактичний
+              </button>
+            </div>
+
+            {/* Scale Toggle */}
+            <div className={styles.viewModeToggle}>
+              <button
+                className={`${styles.viewBtn} ${viewMode === 'week' ? styles.active : ''}`}
+                onClick={() => setViewMode('week')}
+              >
+                Тиждень
+              </button>
+              <button
+                className={`${styles.viewBtn} ${viewMode === 'month' ? styles.active : ''}`}
+                onClick={() => setViewMode('month')}
+              >
+                Місяць
+              </button>
+            </div>
           </div>
         </div>
 
@@ -439,6 +507,7 @@ export default function StaffSchedulePage() {
                     ${daySchedules.length > 0 ? styles.hasShifts : ''}
                   `}
                   onClick={() => handleSlotClick(date)}
+                  style={{ cursor: scheduleType === 'actual' && !isAdmin ? 'default' : 'pointer' }}
                 >
                   <div className={styles.dayNumber}>
                     {dayNum}
@@ -450,18 +519,24 @@ export default function StaffSchedulePage() {
                         key={shift._id}
                         className={styles.shiftCard}
                         onClick={(e) => handleEditShift(shift, e)}
+                        style={{ cursor: scheduleType === 'actual' && !isAdmin ? 'default' : 'pointer' }}
                       >
-                        <span className={styles.shiftTime}>{shift.startTime} - {shift.endTime}</span>
-                        <button
-                          className={styles.shiftDelete}
-                          onClick={(e) => handleDeleteShift(shift._id, e)}
-                          title="Видалити зміну"
-                        >
-                          ✕
-                        </button>
+                        <span className={styles.shiftTime}>
+                          {shift.startTime} - {shift.endTime}
+                          {shift.isManualEdit && <span style={{fontSize: "0.6rem", display:"block"}}>🛠️ Ручне ред.</span>}
+                        </span>
+                        {(!scheduleType || scheduleType === 'planned' || isAdmin) && (
+                          <button
+                            className={styles.shiftDelete}
+                            onClick={(e) => handleDeleteShift(shift._id, e)}
+                            title="Видалити зміну"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     ))}
-                    {daySchedules.length === 0 && (
+                    {daySchedules.length === 0 && (!scheduleType || scheduleType === 'planned' || isAdmin) && (
                       <span className={styles.emptyDay}>+</span>
                     )}
                   </div>
@@ -522,13 +597,13 @@ export default function StaffSchedulePage() {
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>Кінець *</label>
+                <label>Кінець</label>
                 <input
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                   className={styles.input}
-                  required
+                  required={scheduleType === 'planned'}
                 />
               </div>
             </div>

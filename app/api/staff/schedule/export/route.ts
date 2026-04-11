@@ -8,12 +8,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const month = searchParams.get("month"); // Format: YYYY-MM
 
+    const type = searchParams.get("type") || "planned";
+
     if (!month) {
       return NextResponse.json({ error: "Month parameter is required" }, { status: 400 });
     }
 
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
 
     // Parse month
     const [year, monthNum] = month.split("-").map(Number);
@@ -23,15 +25,36 @@ export async function GET(req: NextRequest) {
     const staff = await db.collection("staff").find({ status: { $ne: "inactive" } }).toArray();
 
     // Fetch all schedules for the month
-    const startDate = new Date(year, monthNum - 1, 1).toISOString().split("T")[0];
-    const endDate = new Date(year, monthNum - 1, daysInMonth).toISOString().split("T")[0];
+    const startDateStr = `${year}-${String(monthNum).padStart(2, "0")}-01`;
+    const endDateStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
 
-    const schedules = await db.collection("staff_schedule").find({
-      date: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
-      },
-    }).toArray();
+    let schedules = [];
+
+    if (type === "actual") {
+      const logs = await db.collection("staff_logs").find({
+        startTime: {
+          $gte: new Date(startDateStr + "T00:00:00.000Z"),
+          $lte: new Date(endDateStr + "T23:59:59.999Z"),
+        },
+      }).toArray();
+
+      schedules = logs.map(log => {
+        const start = new Date(log.startTime);
+        return {
+          staffId: new ObjectId(log.staffId),
+          date: new Date(start.getFullYear(), start.getMonth(), start.getDate()),
+          startTime: `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
+          endTime: log.endTime ? `${String(new Date(log.endTime).getHours()).padStart(2, '0')}:${String(new Date(log.endTime).getMinutes()).padStart(2, '0')}` : "Триває"
+        };
+      });
+    } else {
+      schedules = await db.collection("staff_schedule").find({
+        date: {
+          $gte: new Date(startDateStr + "T00:00:00.000Z"),
+          $lte: new Date(endDateStr + "T23:59:59.999Z"),
+        },
+      }).toArray();
+    }
 
     // Build export data
     const monthName = new Date(year, monthNum - 1, 1).toLocaleDateString("uk-UA", { month: "long", year: "numeric" });
@@ -40,6 +63,7 @@ export async function GET(req: NextRequest) {
       month: monthName,
       generatedAt: new Date().toISOString(),
       daysInMonth,
+      type: type === "actual" ? "Фактичний" : "Плановий",
     };
 
     const columns = [
@@ -73,12 +97,17 @@ export async function GET(req: NextRequest) {
         });
 
         if (shift) {
-          const [startHour, startMin] = shift.startTime.split(":").map(Number);
-          const [endHour, endMin] = shift.endTime.split(":").map(Number);
-          const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
-          row[`day${day}`] = Math.round(hours);
-          totalShifts++;
-          totalHours += hours;
+          if (shift.endTime === "Триває") {
+            row[`day${day}`] = "—";
+            totalShifts++;
+          } else {
+            const [startHour, startMin] = shift.startTime.split(":").map(Number);
+            const [endHour, endMin] = shift.endTime.split(":").map(Number);
+            const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
+            row[`day${day}`] = Math.round(hours) || "0";
+            totalShifts++;
+            totalHours += hours;
+          }
         } else {
           row[`day${day}`] = "";
         }
