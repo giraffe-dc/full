@@ -17,11 +17,18 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
+    // Parse event types and statuses from comma-separated string
+    const eventTypesParam = searchParams.get('eventTypes');
+    const statusesParam = searchParams.get('statuses');
+    
+    const eventTypes = eventTypesParam ? eventTypesParam.split(',') as EventType[] : undefined;
+    const statuses = statusesParam ? statusesParam.split(',') as EventStatus[] : undefined;
+
     const params = {
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
-      status: searchParams.get('status') as EventStatus | undefined,
-      eventType: searchParams.get('eventType') as EventType | undefined,
+      eventTypes,
+      statuses,
       search: searchParams.get('search') || undefined,
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50,

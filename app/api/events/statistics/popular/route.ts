@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { data: events } = await findEvents({
       startDate,
       endDate,
-      status: 'completed',
+      statuses: ['completed'],
       limit: 1000,
     });
     

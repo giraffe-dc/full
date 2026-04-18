@@ -51,6 +51,14 @@ const STATUS_LABELS: Record<EventStatus, string> = {
   cancelled: 'Скасовано',
 };
 
+// Helper function to format date as YYYY-MM-DD without timezone conversion
+const formatDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function EventsPage() {
   const router = useRouter();
   const toast = useToast();
@@ -62,7 +70,7 @@ export default function EventsPage() {
 
   // Filters
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(formatDateString(new Date()));
   const [filterEventTypes, setFilterEventTypes] = useState<EventType[]>([]);
   const [filterStatuses, setFilterStatuses] = useState<EventStatus[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,15 +110,15 @@ export default function EventsPage() {
           weekStart.setDate(currentDate.getDate() - currentDate.getDay());
           const weekEnd = new Date(weekStart);
           weekEnd.setDate(weekStart.getDate() + 6);
-          startDate = weekStart.toISOString().split('T')[0];
-          endDate = weekEnd.toISOString().split('T')[0];
+          startDate = formatDateString(weekStart);
+          endDate = formatDateString(weekEnd);
           break;
         case 'month':
         default:
           const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
           const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-          startDate = monthStart.toISOString().split('T')[0];
-          endDate = monthEnd.toISOString().split('T')[0];
+          startDate = formatDateString(monthStart);
+          endDate = formatDateString(monthEnd);
           break;
       }
 
@@ -261,11 +269,11 @@ export default function EventsPage() {
         break;
     }
 
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
+    setSelectedDate(formatDateString(currentDate));
   };
 
   const goToToday = () => {
-    setSelectedDate(new Date().toISOString().split('T')[0]);
+    setSelectedDate(formatDateString(new Date()));
   };
 
   // Modal handlers
@@ -536,7 +544,7 @@ export default function EventsPage() {
                     const actualYear = m < 0 ? year - 1 : m > 11 ? year + 1 : year;
                     const dateStr = `${actualYear}-${String(actualMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const dayEvents = calendarEvents.filter(e => e.start.startsWith(dateStr));
-                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+                    const isToday = dateStr === formatDateString(new Date());
 
                     return (
                       <div

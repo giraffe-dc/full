@@ -39,8 +39,8 @@ export async function findEventById(id: string): Promise<Event | null> {
 export async function findEvents(params: {
   startDate?: string;
   endDate?: string;
-  status?: EventStatus;
-  eventType?: EventType;
+  statuses?: EventStatus[];
+  eventTypes?: EventType[];
   search?: string;
   page?: number;
   limit?: number;
@@ -60,12 +60,12 @@ export async function findEvents(params: {
     query.date = { $lte: params.endDate };
   }
   
-  if (params.status) {
-    query.status = params.status;
+  if (params.statuses && params.statuses.length > 0) {
+    query.status = { $in: params.statuses };
   }
   
-  if (params.eventType) {
-    query.eventType = params.eventType;
+  if (params.eventTypes && params.eventTypes.length > 0) {
+    query.eventType = { $in: params.eventTypes };
   }
   
   if (params.search) {
