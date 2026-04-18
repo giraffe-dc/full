@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
+import SocialPlannerPreview from "@/components/social-planner/SocialPlannerPreview";
 import styles from "./page.module.css";
 
 interface Module {
@@ -59,6 +60,7 @@ export default function Dashboard() {
         { href: '/visits', icon: '🕒', title: 'Відвідування', description: 'Реєстрація відвідувачів', color: 'purple', roles: ['user', 'admin'] },
         { href: '/events', icon: '🎉', title: 'Бронювання', description: 'Святкові події', color: 'purple', roles: ['user', 'admin'] },
         { href: '/telegram', icon: '📱', title: 'Telegram', description: 'Інтеграція з Telegram', color: 'blue', roles: ['user', 'admin'] },
+        { href: '/social-planner', icon: '📅', title: 'Соцмережі', description: 'Планувальник постів', color: 'purple', roles: ['user', 'admin'] },
         { href: '/staff', icon: '👨‍👩‍👧‍👦', title: 'Персонал', description: 'Графіки, зарплати', color: 'orange', roles: ['admin'] },
     ];
 
@@ -144,6 +146,8 @@ export default function Dashboard() {
                     />
                 </div>
             )}
+
+            <SocialPlannerPreview />
 
             {/* Modules Grid */}
             <div className={styles.modulesSection}>

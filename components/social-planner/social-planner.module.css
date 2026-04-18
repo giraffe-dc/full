@@ -1,0 +1,498 @@
+/* Social planner layout */
+.page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.pageTitle {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.pageIntro {
+    color: var(--gray-600);
+    max-width: 720px;
+}
+
+.planGrid {
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr;
+    gap: var(--space-6);
+}
+
+.calendarCard,
+.listCard,
+.dayListCard,
+.previewCalendarCard,
+.previewListCard {
+    min-height: 420px;
+}
+
+.dayListCard {
+    margin-top: var(--space-6);
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    gap: var(--space-4);
+}
+
+.sectionHeader h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.postList {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.postCard {
+    padding: var(--space-4);
+    border-radius: var(--radius-2xl);
+    background: white;
+    box-shadow: var(--shadow-sm);
+    display: grid;
+    gap: var(--space-3);
+}
+
+.postCardHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.postTitle {
+    font-weight: 700;
+    margin: 0;
+}
+
+.postMeta {
+    color: var(--gray-500);
+    font-size: 13px;
+}
+
+.postContent {
+    color: var(--gray-700);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-full);
+    background: var(--gray-100);
+    color: var(--gray-700);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.tagBadge {
+    display: inline-flex;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-full);
+    background: var(--gray-100);
+    color: var(--gray-600);
+    font-size: 12px;
+}
+
+.emptyState {
+    color: var(--gray-500);
+}
+
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    z-index: 50;
+}
+
+.modal {
+    width: min(100%, 980px);
+    max-height: min(100%, 1000px);
+    overflow-y: auto;
+    background: white;
+    border-radius: var(--radius-3xl);
+    box-shadow: var(--shadow-2xl);
+    padding: var(--space-6);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    align-items: flex-start;
+    margin-bottom: var(--space-5);
+}
+
+.modalHeader h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.modalBody {
+    display: grid;
+    gap: var(--space-5);
+}
+
+.fieldRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+    .planGrid,
+    .fieldRow {
+        grid-template-columns: 1fr;
+    }
+}
+
+.modalActions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.aiPanel {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-4);
+    background: var(--gray-50);
+}
+
+.panelHeading {
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.closeButton {
+    border: none;
+    background: transparent;
+    font-size: 1.35rem;
+    cursor: pointer;
+}
+
+.errorText {
+    color: var(--red-600);
+    font-weight: 600;
+}
+
+.hintText {
+    color: var(--gray-600);
+    font-size: 13px;
+}
+
+.calendarWidget {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.calendarCompact {
+    min-height: 320px;
+}
+
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.calendarTitle {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.calendarControls {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.calendarNavButton {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    background: white;
+    padding: 0.55rem 0.85rem;
+    cursor: pointer;
+    color: var(--gray-700);
+    transition: background 0.2s ease;
+}
+
+.calendarNavButton:hover {
+    background: var(--gray-100);
+}
+
+.calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.45rem;
+}
+
+.calendarDayName {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray-500);
+}
+
+.calendarCell {
+    min-height: 110px;
+    border-radius: var(--radius-2xl);
+    background: var(--gray-50);
+    border: 1px solid transparent;
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: var(--gray-900);
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.calendarCellInactive {
+    opacity: 0.4;
+}
+
+.calendarCellToday {
+    border-color: var(--purple-500);
+    border-width: 2px;
+}
+
+.calendarCellSelected {
+    background: var(--purple-50);
+    border-color: var(--purple-300);
+}
+
+.calendarCellHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.calendarCellNumber {
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.calendarCellStats {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.statBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.calendarPostsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.calendarPostItem {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.45rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    border: none;
+    border-left: 2.5px solid;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calendarPostItem:hover {
+    background: var(--gray-100);
+    box-shadow: var(--shadow-sm);
+}
+
+.calendarPostItemTitle {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.calendarPostsMore {
+    font-size: 10px;
+    color: var(--gray-500);
+    padding: 0.2rem;
+    text-align: center;
+}
+
+.calendarEventCount {
+    align-self: flex-end;
+    display: inline-flex;
+    padding: 0.2rem 0.5rem;
+    background: var(--purple-500);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+}
+
+.calendarLegend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.calendarDayListSection {
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--gray-200);
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray-600);
+    font-size: 13px;
+}
+
+.legendDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.previewSection {
+    margin-bottom: var(--space-10);
+}
+
+.previewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+}
+
+.previewDescription {
+    margin: 0;
+    color: var(--gray-600);
+}
+
+.previewLayout {
+    display: block;
+}
+
+.previewCalendarCard {
+    display: none;
+}
+
+.previewListCard {
+    min-height: auto;
+}
+
+.previewListHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.postInfo {
+    flex: 1;
+}
+
+.previewPostList {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.previewPostRow {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-4);
+    border-radius: var(--radius-3xl);
+    background: var(--gray-50);
+}
+
+.previewPostTitle {
+    font-weight: 700;
+}
+
+.previewPostMeta {
+    color: var(--gray-500);
+    font-size: 13px;
+}
+
+.previewPostStatus {
+    white-space: nowrap;
+    color: var(--gray-700);
+    font-size: 12px;
+    background: var(--gray-100);
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-full);
+}
+
+@media (max-width: 900px) {
+    .previewLayout {
+        grid-template-columns: 1fr;
+    }
+}

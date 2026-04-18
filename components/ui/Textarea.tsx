@@ -52,6 +52,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                         ref={ref}
                         className={`${styles.textarea} ${styles[`textarea-${size}`]} ${styles[`textarea-resize-${resize}`]} ${disabled ? styles.textareaDisabled : ''}`}
                         disabled={disabled}
+                        value={currentValue}
                         maxLength={maxLength}
                         aria-invalid={variant === 'error' ? 'true' : 'false'}
                         {...props}

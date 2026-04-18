@@ -258,11 +258,12 @@ export default function Header() {
         { href: '/visits', label: 'Відвідування', icon: '🕒' },
         { href: '/events', label: 'Бронювання', icon: '🎉' },
         { href: '/telegram', label: 'Telegram', icon: '📱' },
+        { href: '/social-planner', label: 'Соцмережі', icon: '📅' },
     ];
 
     const filteredNavItems = navItems.filter(item => {
         if (user?.role === 'user') {
-            return ['/cash-register', '/supply', '/visits', '/events', '/telegram', '/clients'].includes(item.href);
+            return ['/cash-register', '/supply', '/visits', '/events', '/telegram', '/clients', '/social-planner'].includes(item.href);
         }
         return true;
     });
