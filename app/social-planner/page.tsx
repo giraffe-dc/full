@@ -20,12 +20,18 @@ export default function SocialPlannerPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activePost, setActivePost] = useState<SocialPost | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [monthStart, setMonthStart] = useState<string>('');
+    const [monthEnd, setMonthEnd] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
 
-    const loadPosts = async () => {
+    const loadPosts = async (start?: string, end?: string) => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/social-posts?limit=50');
+            let url = '/api/social-posts?limit=0';
+            if (start) url += `&start=${encodeURIComponent(start)}`;
+            if (end) url += `&end=${encodeURIComponent(end)}`;
+
+            const response = await fetch(url);
             const result = await response.json();
             if (response.ok && result.ok) {
                 setPosts(result.data || []);
@@ -40,8 +46,9 @@ export default function SocialPlannerPage() {
     };
 
     useEffect(() => {
-        loadPosts();
-    }, []);
+        if (!monthStart || !monthEnd) return;
+        loadPosts(monthStart, monthEnd);
+    }, [monthStart, monthEnd]);
 
     const sortedPosts = useMemo(
         () => [...posts].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
@@ -77,6 +84,11 @@ export default function SocialPlannerPage() {
         setIsModalOpen(true);
     };
 
+    const handleMonthChange = (start: string, end: string) => {
+        setMonthStart(start);
+        setMonthEnd(end);
+    };
+
     const openEditPost = (post: SocialPost) => {
         setActivePost(post);
         setIsModalOpen(true);
@@ -95,7 +107,7 @@ export default function SocialPlannerPage() {
             if (!response.ok || !result.ok) {
                 throw new Error(result.error || 'Не вдалося зберегти пост.');
             }
-            await loadPosts();
+            await loadPosts(monthStart || undefined, monthEnd || undefined);
             setIsModalOpen(false);
         } catch (saveError) {
             setError(saveError instanceof Error ? saveError.message : 'Помилка збереження.');
@@ -111,7 +123,7 @@ export default function SocialPlannerPage() {
             if (!response.ok || !result.ok) {
                 throw new Error(result.error || 'Не вдалося видалити пост.');
             }
-            await loadPosts();
+            await loadPosts(monthStart || undefined, monthEnd || undefined);
         } catch (deleteError) {
             setError(deleteError instanceof Error ? deleteError.message : 'Помилка видалення.');
         }
@@ -137,12 +149,13 @@ export default function SocialPlannerPage() {
                         <h3>Календар</h3>
                         <span>{sortedPosts.length} постів</span>
                     </div>
-                    <CalendarWidget
+                            <CalendarWidget
                         posts={posts}
                         selectedDate={selectedDate || undefined}
                         onSelectDate={(date) => setSelectedDate(date)}
                         onPostClick={openEditPost}
                         onEmptyCellClick={openNewPostForDate}
+                        onMonthChange={handleMonthChange}
                     />
 
                     {selectedDate && (

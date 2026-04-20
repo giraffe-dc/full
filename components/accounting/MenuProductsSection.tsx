@@ -51,7 +51,7 @@ export function MenuProductsSection({ }: MenuProductsSectionProps) {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getProducts();
+      const data = await getProducts({status: 'active'});
       const categoriesData = await getCategories();
 
       // Deduplicate products by id to avoid key collisions

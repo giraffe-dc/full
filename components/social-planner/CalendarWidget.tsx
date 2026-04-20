@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SocialPost } from '@/types/social';
 import styles from './social-planner.module.css';
 
@@ -10,6 +10,7 @@ interface CalendarWidgetProps {
     onSelectDate?: (date: string) => void;
     onPostClick?: (post: SocialPost) => void;
     onEmptyCellClick?: (date: string) => void;
+    onMonthChange?: (start: string, end: string) => void;
     showNavigation?: boolean;
     compact?: boolean;
 }
@@ -35,10 +36,27 @@ export function CalendarWidget({
     onSelectDate,
     onPostClick,
     onEmptyCellClick,
+    onMonthChange,
     showNavigation = true,
     compact = false,
 }: CalendarWidgetProps) {
     const [monthOffset, setMonthOffset] = useState(0);
+
+    useEffect(() => {
+        if (!onMonthChange) return;
+
+        const start = new Date();
+        start.setDate(1);
+        start.setMonth(start.getMonth() + monthOffset);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(start);
+        end.setMonth(start.getMonth() + 1);
+        end.setDate(0);
+        end.setHours(23, 59, 59, 999);
+
+        onMonthChange(start.toISOString(), end.toISOString());
+    }, [monthOffset, onMonthChange]);
 
     const mapByDate = useMemo(() => {
         const map = new Map<string, SocialPost[]>();
