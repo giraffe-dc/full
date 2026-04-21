@@ -7,6 +7,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import SocialPlannerPreview from "@/components/social-planner/SocialPlannerPreview";
 import styles from "./page.module.css";
+import { useRouter } from "next/navigation";
 
 interface Module {
     href: string;
@@ -19,12 +20,17 @@ interface Module {
 
 interface DashboardStats {
     todayVisitors: number;
+    visitorsTrend: number;
     activeEvents: number;
+    eventsTrend: number;
     revenue: number;
+    revenueTrend: number;
+    staffOnDuty: number;
     pendingTasks: number;
 }
 
 export default function Dashboard() {
+    const router = useRouter();
     const [user, setUser] = useState<{ email: string; role: string } | null>(null);
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -101,13 +107,13 @@ export default function Dashboard() {
                         Система управління розважальним центром Жирафик
                     </p>
                     <div className={styles.quickActions}>
-                        <Button variant="primary" size="md">
+                        <Button variant="primary" size="md" onClick={() => router.push('/cash-register')}>
                             💰 Новий продаж
                         </Button>
-                        <Button variant="secondary" size="md">
+                        <Button variant="secondary" size="md" onClick={() => router.push('/events')}>
                             🎉 Бронювання
                         </Button>
-                        <Button variant="outline" size="md">
+                        <Button variant="outline" size="md" onClick={() => router.push('/clients')}>
                             👥 Клієнт
                         </Button>
                     </div>
@@ -121,28 +127,34 @@ export default function Dashboard() {
                         title="Відвідувачів сьогодні"
                         value={stats.todayVisitors}
                         icon="👥"
-                        trend={{ value: 12.5, isPositive: true }}
+                        trend={{ value: Math.abs(stats.visitorsTrend), isPositive: stats.visitorsTrend >= 0 }}
                         color="blue"
                     />
                     <StatCard
                         title="Активні події"
                         value={stats.activeEvents}
                         icon="🎉"
+                        trend={{ value: Math.abs(stats.eventsTrend), isPositive: stats.eventsTrend >= 0 }}
                         color="purple"
                     />
                     <StatCard
                         title="Прибуток за день"
-                        value={`₴${stats.revenue.toLocaleString()}`}
+                        value={`₴${Math.round(stats.revenue).toLocaleString()}`}
                         icon="💰"
-                        trend={{ value: 8.2, isPositive: true }}
+                        trend={{ value: Math.abs(stats.revenueTrend), isPositive: stats.revenueTrend >= 0 }}
                         color="green"
+                    />
+                    <StatCard
+                        title="Персонал на зміні"
+                        value={stats.staffOnDuty}
+                        icon="👨‍👩‍👧‍👦"
+                        color="orange"
                     />
                     <StatCard
                         title="Відкриті чеки"
                         value={stats.pendingTasks}
                         icon="📋"
-                        trend={{ value: 3.1, isPositive: false }}
-                        color="orange"
+                        color="pink"
                     />
                 </div>
             )}

@@ -52,4 +52,4 @@ automated-visual-test.js
 playwright-visual-test.js
 server.log
 test-screenshots/
-
+/scratch
