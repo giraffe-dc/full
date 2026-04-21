@@ -8,10 +8,18 @@ import { useToast } from "@/components/ui/ToastContext";
 
 type StaffMember = {
   _id: string;
+  lastName: string;
   name: string;
+  patronymic?: string;
+  firstName?: string;
   position?: string;
   salary?: number;
   status: string;
+};
+
+const getDisplayName = (member: StaffMember) => {
+  const parts = [member.lastName, member.name || member.firstName, member.patronymic].filter(Boolean);
+  return parts.join(' ') || member.name || 'Без імені';
 };
 
 type ScheduleEntry = {
@@ -34,6 +42,7 @@ export default function StaffScheduleSummaryPage() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [currentNorm, setCurrentNorm] = useState<number>(0);
 
   // Fetch staff and schedules
   useEffect(() => {
@@ -61,6 +70,25 @@ export default function StaffScheduleSummaryPage() {
     fetchData();
   }, [selectedMonth, scheduleType]);
 
+  // Fetch norm for current month
+  useEffect(() => {
+    const fetchNorm = async () => {
+      try {
+        const [year, month] = selectedMonth.split('-');
+        const res = await fetch(`/api/staff/norms?year=${year}`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.months) {
+          setCurrentNorm(data.data.months[parseInt(month).toString()] || 0);
+        } else {
+          setCurrentNorm(0);
+        }
+      } catch (error) {
+        console.error('Error fetching norm:', error);
+      }
+    };
+    fetchNorm();
+  }, [selectedMonth]);
+
   // Get days in month
   const daysInMonth = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
@@ -86,8 +114,8 @@ export default function StaffScheduleSummaryPage() {
   }, [selectedMonth, daysInMonth]);
 
   // Get shifts for staff member by date
-  const getShiftForDate = (staffId: string, date: string) => {
-    return schedules.find(s => {
+  const getShiftsForDate = (staffId: string, date: string) => {
+    return schedules.filter(s => {
       const sStaffId = s.staffId;
       const sDate = s.date.split('T')[0];
       return sStaffId === staffId && sDate === date;
@@ -101,24 +129,31 @@ export default function StaffScheduleSummaryPage() {
     let weekendShifts = 0;
 
     dayLabels.forEach(({ fullDate, isWeekend }) => {
-      const shift = getShiftForDate(staffId, fullDate);
-      if (shift) {
-        totalShifts++;
-        const [startHour, startMin] = shift.startTime.split(':').map(Number);
-        
-        if (shift.endTime && shift.endTime !== 'Триває') {
-          const [endHour, endMin] = shift.endTime.split(':').map(Number);
-          const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
-          totalHours += hours;
-        }
-        
-        if (isWeekend) weekendShifts++;
+      const dayShifts = getShiftsForDate(staffId, fullDate);
+      if (dayShifts.length > 0) {
+        totalShifts += dayShifts.length;
+
+        dayShifts.forEach(shift => {
+          const [startHour, startMin] = shift.startTime.split(':').map(Number);
+
+          if (shift.endTime && shift.endTime !== 'Триває') {
+            const [endHour, endMin] = shift.endTime.split(':').map(Number);
+
+            let diffMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+            if (diffMinutes < 0) diffMinutes += 1440; // Midnight crossover fix
+
+            const hours = diffMinutes / 60;
+            totalHours += hours;
+          }
+        });
+
+        if (isWeekend) weekendShifts += dayShifts.length;
       }
     });
 
     return {
       shifts: totalShifts,
-      hours: Math.round(totalHours),
+      hours: Number(totalHours.toFixed(1)),
       weekendShifts,
     };
   };
@@ -181,13 +216,31 @@ export default function StaffScheduleSummaryPage() {
     }
   };
 
-  const getShiftDisplay = (shift?: ScheduleEntry) => {
-    if (!shift) return '';
-    if (shift.endTime === 'Триває') return '—';
-    const [startHour, startMin] = shift.startTime.split(':').map(Number);
-    const [endHour, endMin] = shift.endTime.split(':').map(Number);
-    const hours = endHour - startHour + (endMin - startMin) / 60;
-    return hours.toFixed(0);
+  const getShiftDisplay = (dayShifts: ScheduleEntry[]) => {
+    if (dayShifts.length === 0) return '';
+
+    let totalDayHours = 0;
+    let hasActive = false;
+
+    dayShifts.forEach(shift => {
+      if (shift.endTime === 'Триває') {
+        hasActive = true;
+      } else {
+        const [startHour, startMin] = shift.startTime.split(':').map(Number);
+        const [endHour, endMin] = shift.endTime.split(':').map(Number);
+
+        let diffMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+        if (diffMinutes < 0) diffMinutes += 1440; // Midnight crossover fix
+
+        totalDayHours += diffMinutes / 60;
+      }
+    });
+
+    if (totalDayHours === 0 && hasActive) return '—';
+    if (totalDayHours === 0) return '';
+
+    // Display with 1 decimal if needed, otherwise as integer
+    return totalDayHours % 1 === 0 ? totalDayHours.toString() : totalDayHours.toFixed(1);
   };
 
   if (loading) return <Preloader message="Завантаження табеля..." />;
@@ -242,10 +295,12 @@ export default function StaffScheduleSummaryPage() {
               <tr className={styles.headerRow}>
                 <th rowSpan={2} className={styles.headerCell}>ПІП</th>
                 <th rowSpan={2} className={styles.headerCell}>Посада</th>
-                <th rowSpan={2} className={styles.headerCell}>Оклад</th>
+                {/*<th rowSpan={2} className={styles.headerCell}>Оклад</th>*/}
                 <th colSpan={daysInMonth} className={styles.daysHeader}>Дні місяця</th>
                 <th rowSpan={2} className={styles.headerCell}>Вихід</th>
                 <th rowSpan={2} className={styles.headerCell}>Годин</th>
+                <th rowSpan={2} className={styles.headerCell}>Норма</th>
+                <th rowSpan={2} className={styles.headerCell}>+/-</th>
               </tr>
               <tr className={styles.headerRow}>
                 {dayLabels.map(({ day, dayName, isWeekend }) => (
@@ -263,20 +318,24 @@ export default function StaffScheduleSummaryPage() {
                 const stats = calculateStats(member._id);
                 return (
                   <tr key={member._id} className={styles.staffRow}>
-                    <td className={styles.nameCell}>{member.name}</td>
+                    <td className={styles.nameCell}>{getDisplayName(member)}</td>
                     <td className={styles.positionCell}>{member.position || '-'}</td>
-                    <td className={styles.salaryCell}>{member.salary ? `${member.salary} ₴` : '-'}</td>
+                    {/*<td className={styles.salaryCell}>{member.salary ? `${member.salary} ₴` : '-'}</td>*/}
                     {dayLabels.map(({ fullDate, isWeekend }) => {
-                      const shift = getShiftForDate(member._id, fullDate);
-                      const hours = getShiftDisplay(shift);
+                      const dayShifts = getShiftsForDate(member._id, fullDate);
+                      const hours = getShiftDisplay(dayShifts);
                       return (
                         <td key={fullDate} className={`${styles.shiftCell} ${isWeekend ? styles.weekend : ''}`}>
-                          {shift ? (hours === '—' ? <span style={{fontSize: "0.7rem"}}>Триває</span> : hours) : ''}
+                          {dayShifts.length > 0 ? (hours === '' && dayShifts.some(s => s.endTime === 'Триває') ? <span style={{ fontSize: "0.7rem" }}>Триває</span> : hours) : ''}
                         </td>
                       );
                     })}
                     <td className={styles.statsCell}>{stats.shifts}</td>
                     <td className={`${styles.statsCell} ${styles.totalHours}`}>{stats.hours}</td>
+                    <td className={styles.statsCell}>{currentNorm || '-'}</td>
+                    <td className={`${styles.statsCell} ${currentNorm > 0 ? (stats.hours >= currentNorm ? styles.positive : styles.negative) : ''}`}>
+                      {currentNorm > 0 ? (stats.hours - currentNorm).toFixed(1) : '-'}
+                    </td>
                   </tr>
                 );
               })}

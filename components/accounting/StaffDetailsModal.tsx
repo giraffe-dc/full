@@ -43,7 +43,9 @@ export function StaffDetailsModal({ staffId, dateRange, onClose }: StaffDetailsM
             <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
                 <div className={styles.modalHeader}>
                     <div>
-                        <h2 className={styles.modalTitle}>{data.staff.name}</h2>
+                        <h2 className={styles.modalTitle}>
+                            {[data.staff.lastName, data.staff.name, data.staff.patronymic].filter(Boolean).join(' ') || data.staff.name}
+                        </h2>
                         <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{data.staff.position} • {data.staff.phone}</p>
                     </div>
                     <button className={styles.closeButton} onClick={onClose}>×</button>

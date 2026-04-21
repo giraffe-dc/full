@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
     const staff = await db.collection("staff").findOne({ _id: new ObjectId(id) });
     if (!staff) {
       return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
@@ -39,12 +39,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { name, email, phone, position, status, hireDate, salary } = await req.json();
+    const { lastName, name, patronymic, email, phone, position, status, hireDate, salary } = await req.json();
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
 
     const updateData: any = { updatedAt: new Date() };
+    if (lastName !== undefined) updateData.lastName = lastName;
     if (name !== undefined) updateData.name = name;
+    if (patronymic !== undefined) updateData.patronymic = patronymic;
     if (email !== undefined) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
     if (position !== undefined) updateData.position = position;
@@ -76,7 +78,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("giraffe");
     const result = await db
       .collection("staff")
       .deleteOne({ _id: new ObjectId(id) });

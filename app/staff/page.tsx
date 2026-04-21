@@ -13,7 +13,10 @@ import { Badge } from "@/components/ui/Badge";
 
 type StaffMember = {
   _id: string;
+  lastName: string;
   name: string;
+  patronymic?: string;
+  firstName?: string; // For backward compatibility
   email: string;
   phone?: string;
   position?: string;
@@ -46,7 +49,9 @@ export default function StaffPage() {
   });
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    lastName: "",
     name: "",
+    patronymic: "",
     email: "",
     phone: "",
     position: "",
@@ -104,7 +109,9 @@ export default function StaffPage() {
 
   function resetForm() {
     setFormData({
+      lastName: "",
       name: "",
+      patronymic: "",
       email: "",
       phone: "",
       position: "",
@@ -119,7 +126,9 @@ export default function StaffPage() {
   function handleEdit(member: StaffMember) {
     setEditingStaff(member);
     setFormData({
-      name: member.name,
+      lastName: member.lastName || "",
+      name: member.name || member.firstName || "",
+      patronymic: member.patronymic || "",
       email: member.email,
       phone: member.phone || "",
       position: member.position || "",
@@ -165,13 +174,11 @@ export default function StaffPage() {
     setConfirmDelete({ isOpen: false, id: null });
   }
 
-  // Get initials for avatar
-  const getInitials = (name: string) => {
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
+  // Get display name from new fields if available, otherwise fallback to name
+  const getDisplayName = (member: StaffMember) => {
+    const parts = [member.lastName, member.name || member.firstName, member.patronymic].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ');
+    return member.name || 'Без імені';
   };
 
   if (loading) return <Preloader message="Завантаження списку персоналу..." />;
@@ -248,12 +255,31 @@ export default function StaffPage() {
               <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
+                    <label>Прізвище *</label>
+                    <input
+                      placeholder="Іванов"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      required
+                      className={styles.input}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
                     <label>Ім'я *</label>
                     <input
-                      placeholder="Іван Петренко"
+                      placeholder="Іван"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
+                      className={styles.input}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>По батькові</label>
+                    <input
+                      placeholder="Іванович"
+                      value={formData.patronymic}
+                      onChange={(e) => setFormData({ ...formData, patronymic: e.target.value })}
                       className={styles.input}
                     />
                   </div>
@@ -359,7 +385,7 @@ export default function StaffPage() {
                     </Badge>
                   </div>
                   <div className={styles.staffCardContent}>
-                    <h3 className={styles.staffName}>{member.name}</h3>
+                    <h3 className={styles.staffName}>{getDisplayName(member)}</h3>
                     {member.position && (
                       <p className={styles.staffPosition}>{positionLabels[member.position] || member.position}</p>
                     )}

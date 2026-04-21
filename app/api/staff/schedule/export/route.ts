@@ -79,8 +79,9 @@ export async function GET(req: NextRequest) {
     ];
 
     const rows = staff.map((member: any) => {
+      const fullName = [member.lastName, member.name, member.patronymic].filter(Boolean).join(" ") || member.name;
       const row: any = {
-        fullName: member.name,
+        fullName,
         position: member.position || "-",
         salary: member.salary ? `${member.salary} ₴` : "-",
       };
@@ -91,22 +92,37 @@ export async function GET(req: NextRequest) {
       // Fill days
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        const shift = schedules.find((s: any) => {
+        const dayShifts = schedules.filter((s: any) => {
           const sDate = s.date instanceof Date ? s.date.toISOString().split("T")[0] : s.date.split("T")[0];
           return s.staffId.toString() === member._id.toString() && sDate === dateStr;
         });
 
-        if (shift) {
-          if (shift.endTime === "Триває") {
+        if (dayShifts.length > 0) {
+          totalShifts += dayShifts.length;
+          let dayHours = 0;
+          let hasActive = false;
+
+          dayShifts.forEach((shift: any) => {
+            if (shift.endTime === "Триває") {
+              hasActive = true;
+            } else {
+              const [startHour, startMin] = shift.startTime.split(":").map(Number);
+              const [endHour, endMin] = shift.endTime.split(":").map(Number);
+              
+              let diffMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+              if (diffMinutes < 0) diffMinutes += 1440; // Midnight crossover fix
+              
+              dayHours += diffMinutes / 60;
+            }
+          });
+
+          if (dayHours > 0) {
+            row[`day${day}`] = dayHours % 1 === 0 ? dayHours.toString() : dayHours.toFixed(1);
+            totalHours += dayHours;
+          } else if (hasActive) {
             row[`day${day}`] = "—";
-            totalShifts++;
           } else {
-            const [startHour, startMin] = shift.startTime.split(":").map(Number);
-            const [endHour, endMin] = shift.endTime.split(":").map(Number);
-            const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
-            row[`day${day}`] = Math.round(hours) || "0";
-            totalShifts++;
-            totalHours += hours;
+            row[`day${day}`] = "0";
           }
         } else {
           row[`day${day}`] = "";
@@ -114,7 +130,7 @@ export async function GET(req: NextRequest) {
       }
 
       row.totalShifts = totalShifts;
-      row.totalHours = Math.round(totalHours);
+      row.totalHours = Number(totalHours.toFixed(1));
 
       return row;
     });

@@ -594,6 +594,27 @@
   transform: none;
 }
 
+/* Norms Modal Styles */
+.monthsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.monthInput {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.monthInput span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+}
+
 /* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */

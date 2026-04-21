@@ -61,7 +61,7 @@ export default function Dashboard() {
         { href: '/events', icon: '🎉', title: 'Бронювання', description: 'Святкові події', color: 'purple', roles: ['user', 'admin'] },
         { href: '/telegram', icon: '📱', title: 'Telegram', description: 'Інтеграція з Telegram', color: 'blue', roles: ['user', 'admin'] },
         { href: '/social-planner', icon: '📅', title: 'Соцмережі', description: 'Планувальник постів', color: 'purple', roles: ['user', 'admin'] },
-        { href: '/staff', icon: '👨‍👩‍👧‍👦', title: 'Персонал', description: 'Графіки, зарплати', color: 'orange', roles: ['admin','user'] },
+        { href: '/staff', icon: '👨‍👩‍👧‍👦', title: 'Персонал', description: 'Графіки, зарплати', color: 'orange', roles: ['admin', 'user'] },
     ];
 
     const visibleModules = modules.filter(m => {

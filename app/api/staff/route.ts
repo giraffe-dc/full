@@ -27,7 +27,10 @@ export async function GET(req: NextRequest) {
 
     if (search) {
       query.$or = [
+        { lastName: { $regex: search, $options: "i" } },
         { name: { $regex: search, $options: "i" } },
+        { firstName: { $regex: search, $options: "i" } },
+        { patronymic: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
       ];
@@ -56,15 +59,17 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { name, email, phone, position, status = "active", hireDate, salary } = await req.json();
-    if (!name || !email) {
+    const { lastName, name, patronymic, email, phone, position, status = "active", hireDate, salary } = await req.json();
+    if (!lastName || !name || !email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db("giraffe");
     const result = await db.collection("staff").insertOne({
+      lastName,
       name,
+      patronymic,
       email,
       phone,
       position,

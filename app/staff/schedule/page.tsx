@@ -12,9 +12,17 @@ import { Select } from "@/components/ui/Select";
 
 type StaffMember = {
   _id: string;
+  lastName: string;
   name: string;
+  patronymic?: string;
+  firstName?: string;
   position?: string;
   status: string;
+};
+
+const getDisplayName = (member: StaffMember) => {
+  const parts = [member.lastName, member.name || member.firstName, member.patronymic].filter(Boolean);
+  return parts.join(' ') || member.name || 'Без імені';
 };
 
 type ScheduleEntry = {
@@ -40,7 +48,11 @@ export default function StaffSchedulePage() {
   const [scheduleType, setScheduleType] = useState<'planned' | 'actual'>('planned');
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showNormsModal, setShowNormsModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: string } | null>(null);
+  const [normsYear, setNormsYear] = useState(new Date().getFullYear());
+  const [monthlyNorms, setMonthlyNorms] = useState<Record<string, number>>({});
+  const [savingNorms, setSavingNorms] = useState(false);
   const [formData, setFormData] = useState({
     id: "",
     staffId: "",
@@ -57,7 +69,7 @@ export default function StaffSchedulePage() {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         setIsAdmin(data.user?.role === 'admin');
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchRole();
   }, []);
@@ -97,7 +109,7 @@ export default function StaffSchedulePage() {
         const diff = currentDate.getDate() - day + (day === 0 ? -6 : 1);
         const monday = new Date(currentDate);
         monday.setDate(diff);
-        
+
         // Expand range by 3 days for safety in week view
         const rangeStart = new Date(monday);
         rangeStart.setDate(monday.getDate() - 3);
@@ -109,7 +121,7 @@ export default function StaffSchedulePage() {
       } else {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-        
+
         // Fetch from 7 days before start of month to 7 days after end of month
         const rangeStart = new Date(year, month, 1);
         rangeStart.setDate(rangeStart.getDate() - 7);
@@ -138,6 +150,51 @@ export default function StaffSchedulePage() {
       fetchSchedules();
     }
   }, [selectedDate, viewMode, selectedStaffId, scheduleType]);
+
+  // Fetch norms when modal opens or year changes
+  useEffect(() => {
+    const fetchNorms = async () => {
+      if (!showNormsModal) return;
+      try {
+        const res = await fetch(`/api/staff/norms?year=${normsYear}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          setMonthlyNorms(data.data.months);
+        } else {
+          // Initialize empty norms if not found
+          const emptyNorms: Record<string, number> = {};
+          for (let i = 1; i <= 12; i++) emptyNorms[i.toString()] = 160;
+          setMonthlyNorms(emptyNorms);
+        }
+      } catch (error) {
+        console.error('Error fetching norms:', error);
+      }
+    };
+    fetchNorms();
+  }, [showNormsModal, normsYear]);
+
+  const handleSaveNorms = async () => {
+    setSavingNorms(true);
+    try {
+      const res = await fetch('/api/staff/norms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ year: normsYear, months: monthlyNorms }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Норми на ${normsYear} рік збережено`);
+        setShowNormsModal(false);
+      } else {
+        toast.error(data.error || 'Помилка збереження');
+      }
+    } catch (error) {
+      console.error('Error saving norms:', error);
+      toast.error('Помилка сервера');
+    } finally {
+      setSavingNorms(false);
+    }
+  };
 
   // Get calendar dates
   const calendarDates = useMemo(() => {
@@ -306,7 +363,7 @@ export default function StaffSchedulePage() {
     }
 
     try {
-      const url = scheduleType === 'actual' 
+      const url = scheduleType === 'actual'
         ? formData.id ? `/api/staff/schedule/actual/${formData.id}` : `/api/staff/schedule/actual`
         : `/api/staff/${formData.staffId}/schedule`;
 
@@ -377,6 +434,11 @@ export default function StaffSchedulePage() {
             <button onClick={() => router.push('/staff/schedule/summary')} className={styles.btnSecondary}>
               📊 Зведений
             </button>
+            {isAdmin && (
+              <button onClick={() => setShowNormsModal(true)} className={styles.btnSecondary}>
+                ⚙️ Норми
+              </button>
+            )}
             {(!scheduleType || scheduleType === 'planned' || isAdmin) && (
               <button onClick={handleAddShift} className={styles.btnAdd}>
                 + Додати зміну
@@ -394,14 +456,14 @@ export default function StaffSchedulePage() {
             className={styles.staffSelect}
           >
             {staff.map(s => (
-              <option key={s._id} value={s._id}>{s.name} ({s.position || 'Без посади'})</option>
+              <option key={s._id} value={s._id}>{getDisplayName(s)} ({s.position || 'Без посади'})</option>
             ))}
           </select>
           {selectedStaff && (
             <div className={styles.staffInfo}>
-              <Avatar name={selectedStaff.name} size="md" variant="gradient" />
+              <Avatar name={getDisplayName(selectedStaff)} size="md" variant="gradient" />
               <div className={styles.staffDetails}>
-                <span className={styles.staffName}>{selectedStaff.name}</span>
+                <span className={styles.staffName}>{getDisplayName(selectedStaff)}</span>
                 <Badge variant={selectedStaff.status === 'active' ? 'success' : 'outline'}>
                   {selectedStaff.status === 'active' ? 'Активний' : 'Неактивний'}
                 </Badge>
@@ -523,7 +585,7 @@ export default function StaffSchedulePage() {
                       >
                         <span className={styles.shiftTime}>
                           {shift.startTime} - {shift.endTime}
-                          {shift.isManualEdit && <span style={{fontSize: "0.6rem", display:"block"}}>🛠️ Ручне ред.</span>}
+                          {shift.isManualEdit && <span style={{ fontSize: "0.6rem", display: "block" }}>🛠️ Ручне ред.</span>}
                         </span>
                         {(!scheduleType || scheduleType === 'planned' || isAdmin) && (
                           <button
@@ -569,7 +631,7 @@ export default function StaffSchedulePage() {
               >
                 <option value="">Оберіть співробітника</option>
                 {staff.map(s => (
-                  <option key={s._id} value={s._id}>{s.name} ({s.position || 'Без посади'})</option>
+                  <option key={s._id} value={s._id}>{getDisplayName(s)} ({s.position || 'Без посади'})</option>
                 ))}
               </select>
             </div>
@@ -637,6 +699,58 @@ export default function StaffSchedulePage() {
           </form>
         </Modal>
       )}
+      {/* Norms Modal */}
+      {showNormsModal && (
+        <Modal
+          isOpen={showNormsModal}
+          onClose={() => setShowNormsModal(false)}
+          title={`Управління нормами годин на ${normsYear} рік`}
+        >
+          <div className={styles.form}>
+            <div className={styles.formGroup}>
+              <label>Виберіть рік:</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {[2024, 2025, 2026, 2027].map(y => (
+                  <button
+                    key={y}
+                    onClick={() => setNormsYear(y)}
+                    className={`${styles.todayBtn} ${normsYear === y ? styles.active : ''}`}
+                    style={normsYear === y ? { background: 'var(--orange-500)', color: 'white', borderColor: 'var(--orange-500)' } : {}}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.monthsGrid}>
+              {['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'].map((m, i) => (
+                <div key={i} className={styles.monthInput}>
+                  <span>{m}</span>
+                  <input
+                    type="number"
+                    className={styles.input}
+                    value={monthlyNorms[(i + 1).toString()] || ''}
+                    onChange={(e) => setMonthlyNorms({ ...monthlyNorms, [(i + 1).toString()]: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className={styles.formActions} style={{ marginTop: '2rem' }}>
+              <button onClick={() => setShowNormsModal(false)} className={styles.btnCancel}>Скасувати</button>
+              <button
+                onClick={handleSaveNorms}
+                className={styles.btnSubmit}
+                disabled={savingNorms}
+              >
+                {savingNorms ? 'Збереження...' : 'Зберегти норми'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
+    // </div>
   );
 }

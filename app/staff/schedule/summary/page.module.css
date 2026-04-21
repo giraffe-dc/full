@@ -349,6 +349,14 @@
   font-size: 15px;
 }
 
+.positive {
+  color: var(--green-600);
+}
+
+.negative {
+  color: var(--red-600);
+}
+
 /* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */

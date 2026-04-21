@@ -139,7 +139,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({
             staff: {
                 id: staffMember._id.toString(),
+                lastName: staffMember.lastName,
                 name: staffMember.name,
+                patronymic: staffMember.patronymic,
                 position: staffMember.position,
                 phone: staffMember.phone,
                 email: staffMember.email,
