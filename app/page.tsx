@@ -29,11 +29,23 @@ interface DashboardStats {
     pendingTasks: number;
 }
 
+interface Activity {
+    id: string;
+    type: string;
+    icon: string;
+    color: string;
+    description: string;
+    timestamp: string;
+    href: string;
+}
+
 export default function Dashboard() {
     const router = useRouter();
     const [user, setUser] = useState<{ email: string; role: string } | null>(null);
     const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [activities, setActivities] = useState<Activity[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isActivitiesLoading, setIsActivitiesLoading] = useState(true);
 
     useEffect(() => {
         // Fetch user data
@@ -56,6 +68,17 @@ export default function Dashboard() {
                 setIsLoading(false);
             })
             .catch(() => setIsLoading(false));
+
+        // Fetch recent activities
+        fetch("/api/dashboard/activities")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success && data.data) {
+                    setActivities(data.data);
+                }
+                setIsActivitiesLoading(false);
+            })
+            .catch(() => setIsActivitiesLoading(false));
     }, []);
 
     const modules: Module[] = [
@@ -78,12 +101,26 @@ export default function Dashboard() {
         return true;
     });
 
+
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 6) return 'Доброї ночі';
         if (hour < 12) return 'Доброго ранку';
         if (hour < 18) return 'Доброго дня';
         return 'Доброго вечора';
+    };
+
+    const formatTime = (timestamp: string) => {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+
+        if (diffMins < 1) return 'щойно';
+        if (diffMins < 60) return `${diffMins} хв. тому`;
+        if (diffMins < 1440) return `${Math.floor(diffMins / 60)} год. тому`;
+        return date.toLocaleDateString('uk-UA', { day: '2-digit', month: 'short' });
     };
 
     if (isLoading) {
@@ -191,12 +228,41 @@ export default function Dashboard() {
 
             {/* Recent Activity Section */}
             <div className={styles.recentSection}>
-                <h2 className={styles.sectionTitle}>Остання активність</h2>
-                <Card padding="md" className={styles.recentCard}>
-                    <div className={styles.recentEmpty}>
-                        <span className={styles.recentIcon}>📊</span>
-                        <p>Тут буде відображатись остання активність</p>
-                    </div>
+                <div className={styles.recentHeader}>
+                    <h2 className={styles.sectionTitle}>Остання активність</h2>
+                </div>
+                <Card padding="lg" className={styles.recentCard}>
+                    {isActivitiesLoading ? (
+                        <div className={styles.recentLoading}>
+                            <div className={styles.loadingSpinnerMini}>⏳</div>
+                            <p>Оновлення...</p>
+                        </div>
+                    ) : activities.length > 0 ? (
+                        <div className={styles.activityList}>
+                            {activities.map((activity, index) => (
+                                <Link
+                                    key={activity.id + index}
+                                    href={activity.href}
+                                    className={styles.activityItem}
+                                >
+                                    <div className={`${styles.activityIcon} ${styles[activity.color]}`}>
+                                        {activity.icon}
+                                    </div>
+                                    <div className={styles.activityBody}>
+                                        <p className={styles.activityDescription}>{activity.description}</p>
+                                        <span className={styles.activityTime}>
+                                            {formatTime(activity.timestamp)}
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className={styles.recentEmpty}>
+                            <span className={styles.recentIcon}>📊</span>
+                            <p>Поки немає нових подій</p>
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>
