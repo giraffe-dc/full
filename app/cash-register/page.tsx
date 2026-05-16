@@ -505,7 +505,7 @@ export default function CashRegisterPage() {
     }
   };
 
-  const handleCheckout = async (method: 'cash' | 'card' | 'mixed', amounts: { cash: number, card: number }, amountGiven: string) => {
+  const handleCheckout = async (method: 'cash' | 'card' | 'mixed' | 'certificate', amounts: { cash: number, card: number, certificate?: number, certificateId?: string }, amountGiven: string) => {
     if (!activeCheck) return;
 
     try {
@@ -518,7 +518,7 @@ export default function CashRegisterPage() {
           checkId: activeCheck.id,
           paymentMethod: method,
           amountGiven: Number(amountGiven) || activeCheck.total,
-          paymentDetails: method === 'mixed' ? amounts : undefined,
+          paymentDetails: (method === 'mixed' || method === 'certificate') ? amounts : undefined,
           // Explicitly map some fields if needed by backend, though spread should cover most
           shiftId: currentShift.id,
           waiterId: activeCheck.waiterId,

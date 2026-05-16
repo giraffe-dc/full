@@ -3,6 +3,7 @@ import styles from "./ClientsSection.module.css";
 import { ClientFormModal } from "./ClientFormModal";
 import { useToast } from "../ui/ToastContext";
 import { Child } from "@/types/accounting";
+import { ClientCertificates } from "./ClientCertificates";
 
 export interface ClientRow {
   telegramOptOut: any;
@@ -291,6 +292,12 @@ export function ClientsSection({ rows, totals }: ClientsSectionProps) {
                   </div>
                 </div>
               </div>
+
+              {selectedClient.id && (
+                <div className={styles.detailsSection}>
+                  <ClientCertificates clientId={selectedClient.id} clientName={selectedClient.name} />
+                </div>
+              )}
 
               <div className={styles.detailsActions}>
                 <button

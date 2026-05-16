@@ -91,6 +91,93 @@ export async function POST(request: Request) {
                 receiptId = receiptResult.insertedId;
                 createdReceipt = receipt;
 
+                    // Process Certificate logic
+                    if ((paymentMethod === 'certificate' || paymentMethod === 'mixed') && paymentDetails?.certificateId) {
+                        const certId = paymentDetails.certificateId;
+                        const certAmount = paymentDetails.certificate || (paymentMethod === 'certificate' ? total : 0);
+
+                        const certificate = await db.collection("certificates").findOne({ _id: new ObjectId(certId) }, { session });
+                        if (!certificate) throw new Error("Certificate not found");
+                        if (certificate.status !== 'active') throw new Error("Certificate is not active");
+                        if (certificate.expiresAt && new Date(certificate.expiresAt) < new Date()) throw new Error("Certificate expired");
+
+                        // Fetch Global Settings
+                        const certSettings = await db.collection('settings').findOne({ type: 'certificates' }, { session });
+
+                        // Fetch Certificate Type settings
+                        let typeSettings: any = null;
+                        if (certificate.typeId) {
+                            const typeDef = await db.collection('certificate_types').findOne({ _id: new ObjectId(certificate.typeId) }, { session });
+                            if (typeDef) typeSettings = typeDef.settings;
+                        }
+
+                        // Enforce canBeMixed restriction
+                        if (paymentMethod === 'mixed' && typeSettings?.canBeMixed === false) {
+                            throw new Error(`This type of certificate ("${certificate.code}") does not allow mixed payments.`);
+                        }
+
+                        // Check if the service is present in the check for service/visits certificates
+                        let certCoverage = 0;
+                        if (certificate.type === 'service' || (certificate.type === 'visits' && certificate.serviceId)) {
+                            const serviceItem = items.find((i: any) => i.productId === certificate.serviceId);
+                            if (!serviceItem) throw new Error(`Certificate requires service "${certificate.serviceName}" which is not in the check`);
+                            certCoverage = serviceItem.price;
+                        } else if (certificate.type === 'amount') {
+                            // Category filtering
+                            const allowedCats = (certificate.applicableCategories && certificate.applicableCategories.length > 0)
+                                ? certificate.applicableCategories
+                                : (certSettings?.allowedCategories || []);
+                            
+                            let applicableTotal = total;
+                            if (allowedCats.length > 0) {
+                                applicableTotal = items
+                                    .filter((i: any) => allowedCats.includes(i.category))
+                                    .reduce((sum: number, i: any) => sum + (i.subtotal || 0), 0);
+                            }
+
+                            certCoverage = Math.min(certificate.balance || 0, applicableTotal);
+
+                            // Per visit limit
+                            if (certificate.maxCoveragePerVisit && certificate.maxCoveragePerVisit > 0) {
+                                certCoverage = Math.min(certCoverage, certificate.maxCoveragePerVisit);
+                            }
+                        } else {
+                            certCoverage = total; // generic visits cover the check
+                        }
+
+                        if (certAmount > certCoverage + 0.01) {
+                            throw new Error(`The certificate coverage limit is ${certCoverage.toFixed(2)}, but attempted to spend ${certAmount.toFixed(2)}.`);
+                        }
+                    
+                    if (certificate.type === 'amount') {
+                        if ((certificate.balance || 0) < certAmount && certAmount > 0) throw new Error("Insufficient certificate balance");
+                        
+                        const newBalance = (certificate.balance || 0) - certAmount;
+                        const newStatus = newBalance <= 0.01 ? 'used' : 'active'; // 0.01 for floating point safety
+                        
+                        await db.collection("certificates").updateOne(
+                            { _id: new ObjectId(certId) },
+                            { $set: { balance: newBalance, status: newStatus } },
+                            { session }
+                        );
+                    } else if (certificate.type === 'visits') {
+                        const newVisits = (certificate.visitsUsed || 0) + 1;
+                        const newStatus = newVisits >= (certificate.visitsTotal || 1) ? 'used' : 'active';
+                        
+                        await db.collection("certificates").updateOne(
+                            { _id: new ObjectId(certId) },
+                            { $set: { visitsUsed: newVisits, status: newStatus } },
+                            { session }
+                        );
+                    } else if (certificate.type === 'service') {
+                        await db.collection("certificates").updateOne(
+                            { _id: new ObjectId(certId) },
+                            { $set: { status: 'used' } },
+                            { session }
+                        );
+                    }
+                }
+
                 // Match Accounts based on Settings
                 const settings = await db.collection("settings").findOne({ type: "global" }, { session });
                 const financeSettings = settings?.finance || {};
@@ -135,7 +222,8 @@ export async function POST(request: Request) {
                 if (paymentMethod === 'mixed' && paymentDetails) {
                     await processPaymentPart('cash', paymentDetails.cash || 0, financeSettings.cashAccountId);
                     await processPaymentPart('card', paymentDetails.card || 0, financeSettings.cardAccountId);
-                } else {
+                    // certificate part doesn't add to cash/card money accounts
+                } else if (paymentMethod !== 'certificate') {
                     const accId = paymentMethod === 'cash' ? financeSettings.cashAccountId : financeSettings.cardAccountId;
                     await processPaymentPart(paymentMethod, total, accId);
                 }

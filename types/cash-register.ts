@@ -59,7 +59,7 @@ export interface Receipt {
   subtotal: number;
   tax: number;
   total: number;
-  paymentMethod: 'cash' | 'card' | 'mixed';
+  paymentMethod: 'cash' | 'card' | 'mixed' | 'certificate';
   createdAt: string;
   updatedAt?: string;
   openedAt?: string;
@@ -78,7 +78,76 @@ export interface Receipt {
     cash?: number;
     card?: number;
     certificate?: number;
+    certificateId?: string;
   };
+}
+
+// Подарункові сертифікати
+export type CertificateType = 'service' | 'visits' | 'amount';
+export type CertificateStatus = 'active' | 'used' | 'expired';
+
+export interface Certificate {
+  _id?: string;
+  id?: string;
+  clientId: string;
+  clientName?: string;
+  type: CertificateType;
+  serviceId?: string; // ID послуги, якщо type === 'service' або 'visits'
+  serviceName?: string;
+  visitsTotal?: number; // Загальна кількість відвідувань, якщо type === 'visits'
+  visitsUsed?: number; // Використана кількість відвідувань
+  amount?: number; // Початкова сума, якщо type === 'amount'
+  balance?: number; // Залишок суми, якщо type === 'amount'
+  status: CertificateStatus;
+  code?: string; // Унікальний код сертифікату
+  createdAt: string;
+  expiresAt?: string;
+  pricePaid?: number; // Вартість продажу
+  receiptId?: string; // ID чеку, по якому була оплата за цей сертифікат
+  typeId?: string; // Посилання на динамічний тип сертифіката
+  templateId?: string; // ID шаблону, за яким видано
+  applicableCategories?: string[]; // Обмеження за категоріями товарів
+  maxCoveragePerVisit?: number; // Максимальна сума списання за один візит
+}
+
+export interface CertificateTypeDefinition {
+  _id?: string;
+  id?: string;
+  name: string;
+  baseLogic: CertificateType; // 'amount' | 'visits' | 'service'
+  description?: string;
+  color?: string;
+  settings: {
+    canBeMixed?: boolean;
+    requireClient?: boolean;
+    transferable?: boolean;
+    allowTopUp?: boolean;
+  };
+  status: 'active' | 'inactive';
+  createdAt?: string;
+}
+
+export interface CertificateTemplate {
+  id?: string;
+  _id?: string;
+  name: string;
+  typeId: string; // Посилання на CertificateTypeDefinition
+  type: CertificateType; // Дублюємо базову логіку для зручності
+  amount?: number;
+  visitsTotal?: number;
+  serviceId?: string;
+  serviceName?: string;
+  pricePaid: number;
+  expirationDays?: number; // Кількість днів дії з моменту видачі
+  applicableCategories?: string[];
+  maxCoveragePerVisit?: number;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+}
+
+export interface CertificateSettings {
+  _id?: string;
+  allowedCategories: string[]; // Глобальний список категорій для сертифікатів
 }
 
 export type CashTransactionType = 'income' | 'expense' | 'incasation';

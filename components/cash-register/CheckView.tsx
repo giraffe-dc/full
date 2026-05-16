@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Service, Check, CartItem, ServiceCategory } from '../../types/cash-register';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Service, Check, CartItem, ServiceCategory, Certificate } from '../../types/cash-register';
 import styles from './CheckView.module.css';
 import { ClientSelectorModal } from './ClientSelectorModal';
 
@@ -18,6 +18,22 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [showClientModal, setShowClientModal] = useState(false);
+    const [activeCertificates, setActiveCertificates] = useState<Certificate[]>([]);
+
+    useEffect(() => {
+        if (check.customerId) {
+            fetch(`/api/certificates/client/${check.customerId}?status=active`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setActiveCertificates(data.data);
+                    }
+                })
+                .catch(console.error);
+        } else {
+            setActiveCertificates([]);
+        }
+    }, [check.customerId]);
 
     // --- Logic ---
     // console.log(products);
@@ -252,6 +268,12 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                             <>+ Клієнт</>
                         )}
                     </button>
+                    {activeCertificates.length > 0 && (
+                        <div style={{ marginTop: '8px', padding: '6px 10px', background: '#dcfce7', color: '#166534', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>🎁</span>
+                            <span>Активні сертифікати ({activeCertificates.length})</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className={styles.orderList}>

@@ -41,7 +41,8 @@ export type AccountingSection =
   | "menuProductCategories"
   | "menuIngredientCategories"
   | "expenseCategories"
-  | "pnl";
+  | "pnl"
+  | "certificates";
 
 interface AccordionSection {
   id: string;
@@ -70,12 +71,14 @@ export function AccountingSidebar() {
 
   const isActive = (id: string) => {
     if (id === 'receipts' && pathname.includes('/accounting/checks')) return true;
-    if (id !== 'receipts' && !pathname.includes('/accounting/checks') && currentSection === id) return true;
+    if (id === 'certificates' && pathname.includes('/accounting/certificates')) return true;
+    if (id !== 'receipts' && id !== 'certificates' && !pathname.includes('/accounting/checks') && !pathname.includes('/accounting/certificates') && currentSection === id) return true;
     return false;
   };
 
   const getLink = (id: string) => {
     if (id === 'receipts') return '/accounting/checks';
+    if (id === 'certificates') return '/accounting/certificates';
     return `/accounting?section=${id}`;
   };
 
@@ -149,6 +152,7 @@ export function AccountingSidebar() {
       icon: Icons.Ops,
       items: [
         { id: 'marketing', label: 'Маркетинг' },
+        { id: 'certificates', label: 'Сертифікати' },
       ],
     },
     {
