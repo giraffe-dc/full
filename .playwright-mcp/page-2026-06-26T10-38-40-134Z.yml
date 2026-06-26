@@ -1,0 +1,113 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "🦒 Giraffe" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: 🦒
+        - generic [ref=e6]: Giraffe
+      - button "Scroll left" [ref=e22] [cursor=pointer]: ‹
+      - navigation [ref=e23]:
+        - link "💰 Каса" [ref=e24] [cursor=pointer]:
+          - /url: /cash-register
+          - generic [ref=e25]: 💰
+          - generic [ref=e26]: Каса
+        - link "📊 Бухгалтерія" [ref=e27] [cursor=pointer]:
+          - /url: /accounting
+          - generic [ref=e28]: 📊
+          - generic [ref=e29]: Бухгалтерія
+        - link "🕒 Відвідування" [ref=e30] [cursor=pointer]:
+          - /url: /visits
+          - generic [ref=e31]: 🕒
+          - generic [ref=e32]: Відвідування
+        - link "🎉 Бронювання" [ref=e33] [cursor=pointer]:
+          - /url: /events
+          - generic [ref=e34]: 🎉
+          - generic [ref=e35]: Бронювання
+        - link "📱 Telegram" [ref=e36] [cursor=pointer]:
+          - /url: /telegram
+          - generic [ref=e37]: 📱
+          - generic [ref=e38]: Telegram
+        - link "📅 Соцмережі" [ref=e39] [cursor=pointer]:
+          - /url: /social-planner
+          - generic [ref=e40]: 📅
+          - generic [ref=e41]: Соцмережі
+      - button "Scroll right" [ref=e42] [cursor=pointer]: ›
+      - generic [ref=e7]:
+        - button "Chat Support" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: 💬
+        - button "Notifications" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: 🔔
+        - generic [ref=e50]: 👤
+        - button "Вийти" [ref=e51] [cursor=pointer]
+  - main [ref=e9]:
+    - generic [ref=e52]:
+      - navigation [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - link "📊 Звіти" [ref=e56] [cursor=pointer]:
+              - /url: /cash-register/reports
+              - text: 📊
+              - generic [ref=e57]: Звіти
+            - button "➕ Прихід" [ref=e58] [cursor=pointer]:
+              - text: ➕
+              - generic [ref=e59]: Прихід
+            - button "➖ Витрати" [ref=e60] [cursor=pointer]:
+              - text: ➖
+              - generic [ref=e61]: Витрати
+            - button "🏦 Інкасація" [ref=e62] [cursor=pointer]:
+              - text: 🏦
+              - generic [ref=e63]: Інкасація
+            - button "🛑 Закрити зміну" [ref=e64] [cursor=pointer]:
+              - text: 🛑
+              - generic [ref=e65]: Закрити зміну
+          - generic [ref=e66]:
+            - button "🏷️ Акції" [ref=e67] [cursor=pointer]:
+              - text: 🏷️
+              - generic [ref=e68]: Акції
+            - 'button "👥 Зміна: 1" [ref=e69] [cursor=pointer]':
+              - text: 👥
+              - generic [ref=e70]: "Зміна: 1"
+      - main [ref=e71]:
+        - generic [ref=e72]:
+          - heading "Оберіть зал" [level=2] [ref=e73]
+          - generic [ref=e74]:
+            - button "🍽️ Основний зал 9" [ref=e75] [cursor=pointer]:
+              - generic [ref=e76]: 🍽️
+              - generic [ref=e77]: Основний зал
+              - generic [ref=e78]: "9"
+            - button "🌳 Тераса 5" [ref=e79] [cursor=pointer]:
+              - generic [ref=e80]: 🌳
+              - generic [ref=e81]: Тераса
+              - generic [ref=e82]: "5"
+            - button "👑 VIP кімната 1" [ref=e83] [cursor=pointer]:
+              - generic [ref=e84]: 👑
+              - generic [ref=e85]: VIP кімната
+              - generic [ref=e86]: "1"
+            - button "🍽️ Ігрова 1" [ref=e87] [cursor=pointer]:
+              - generic [ref=e88]: 🍽️
+              - generic [ref=e89]: Ігрова
+              - generic [ref=e90]: "1"
+            - button "🍽️ День народження 1" [ref=e91] [cursor=pointer]:
+              - generic [ref=e92]: 🍽️
+              - generic [ref=e93]: День народження
+              - generic [ref=e94]: "1"
+            - button "+ Додати зал" [ref=e95] [cursor=pointer]:
+              - generic [ref=e96]: +
+              - generic [ref=e97]: Додати зал
+      - dialog "🏦 Інкасація" [ref=e100]:
+        - generic [ref=e101]:
+          - heading "🏦 Інкасація" [level=2] [ref=e102]
+          - button "Close modal" [ref=e103] [cursor=pointer]: ✕
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic [ref=e107]: Сума
+            - spinbutton [active] [ref=e108]
+          - generic [ref=e109]:
+            - generic [ref=e110]: Коментар
+            - textbox "Примітка..." [ref=e111]
+          - generic [ref=e112]:
+            - button "Скасувати" [ref=e113] [cursor=pointer]
+            - button "Зберегти" [ref=e114] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e18] [cursor=pointer]:
+    - img [ref=e19]
+  - alert [ref=e98]

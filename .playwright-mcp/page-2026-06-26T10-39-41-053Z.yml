@@ -1,0 +1,1172 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "🦒 Giraffe" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: 🦒
+        - generic [ref=e6]: Giraffe
+      - button "Scroll left" [ref=e22] [cursor=pointer]: ‹
+      - navigation [ref=e23]:
+        - link "💰 Каса" [ref=e24] [cursor=pointer]:
+          - /url: /cash-register
+          - generic [ref=e25]: 💰
+          - generic [ref=e26]: Каса
+        - link "📊 Бухгалтерія" [ref=e27] [cursor=pointer]:
+          - /url: /accounting
+          - generic [ref=e28]: 📊
+          - generic [ref=e29]: Бухгалтерія
+        - link "🕒 Відвідування" [ref=e30] [cursor=pointer]:
+          - /url: /visits
+          - generic [ref=e31]: 🕒
+          - generic [ref=e32]: Відвідування
+        - link "🎉 Бронювання" [ref=e33] [cursor=pointer]:
+          - /url: /events
+          - generic [ref=e34]: 🎉
+          - generic [ref=e35]: Бронювання
+        - link "📱 Telegram" [ref=e36] [cursor=pointer]:
+          - /url: /telegram
+          - generic [ref=e37]: 📱
+          - generic [ref=e38]: Telegram
+        - link "📅 Соцмережі" [ref=e39] [cursor=pointer]:
+          - /url: /social-planner
+          - generic [ref=e40]: 📅
+          - generic [ref=e41]: Соцмережі
+      - button "Scroll right" [ref=e42] [cursor=pointer]: ›
+      - generic [ref=e7]:
+        - button "Chat Support" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: 💬
+        - button "Notifications" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: 🔔
+        - generic [ref=e50]: 👤
+        - button "Вийти" [ref=e51] [cursor=pointer]
+  - main [ref=e9]:
+    - generic [ref=e115]:
+      - navigation [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e118]:
+            - link "📊 Звіти" [ref=e119] [cursor=pointer]:
+              - /url: /cash-register/reports
+              - text: 📊
+              - generic [ref=e120]: Звіти
+            - button "➕ Прихід" [ref=e121] [cursor=pointer]:
+              - text: ➕
+              - generic [ref=e122]: Прихід
+            - button "➖ Витрати" [ref=e123] [cursor=pointer]:
+              - text: ➖
+              - generic [ref=e124]: Витрати
+            - button "🏦 Інкасація" [ref=e125] [cursor=pointer]:
+              - text: 🏦
+              - generic [ref=e126]: Інкасація
+            - button "🛑 Закрити зміну" [ref=e127] [cursor=pointer]:
+              - text: 🛑
+              - generic [ref=e128]: Закрити зміну
+          - generic [ref=e129]:
+            - button "🏷️ Акції" [ref=e130] [cursor=pointer]:
+              - text: 🏷️
+              - generic [ref=e131]: Акції
+            - 'button "👥 Зміна: 1" [ref=e132] [cursor=pointer]':
+              - text: 👥
+              - generic [ref=e133]: "Зміна: 1"
+      - main [ref=e134]:
+        - generic [ref=e201]:
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - button "←" [ref=e204] [cursor=pointer]
+              - generic [ref=e205]:
+                - 'heading "Чек #892a" [level=2] [ref=e206]'
+                - generic [ref=e207]:
+                  - generic [ref=e208]: Стіл 3
+                  - generic [ref=e209]: 🤵 Оля
+              - button "+ Клієнт" [ref=e210] [cursor=pointer]
+            - generic [ref=e212]:
+              - generic [ref=e214]: Гість 1
+              - generic [ref=e215]: Пусто
+            - generic [ref=e216]:
+              - generic [ref=e219]:
+                - generic [ref=e220]: "До сплати:"
+                - generic [ref=e221]:
+                  - generic [ref=e222]: 0.00 ₴
+                  - button "⋮" [ref=e224] [cursor=pointer]
+              - button "Закрити (Помилковий)" [ref=e225] [cursor=pointer]
+          - generic [ref=e226]:
+            - textbox "🔍 Пошук..." [ref=e228]
+            - generic [ref=e229]:
+              - generic [ref=e230] [cursor=pointer]:
+                - generic [ref=e232]: Б
+                - generic [ref=e233]: Батьківський релакс (30 хв)
+                - generic [ref=e234]: 120 ₴
+              - generic [ref=e235] [cursor=pointer]:
+                - generic [ref=e237]: Л
+                - generic [ref=e238]: Лабіринт+ігрова безлім (з батьками)
+                - generic [ref=e239]: 400 ₴
+              - generic [ref=e240] [cursor=pointer]:
+                - generic [ref=e242]: Б
+                - generic [ref=e243]: Батьківський релакс (1година)
+                - generic [ref=e244]: 200 ₴
+              - generic [ref=e245] [cursor=pointer]:
+                - generic [ref=e247]: Л
+                - generic [ref=e248]: Лабіринт+ігрова (30 хв)
+                - generic [ref=e249]: 90 ₴
+              - generic [ref=e250] [cursor=pointer]:
+                - generic [ref=e252]: С
+                - generic [ref=e253]: Соус порціний в асортименті
+                - generic [ref=e254]: 13 ₴
+              - generic [ref=e255] [cursor=pointer]:
+                - generic [ref=e257]: В
+                - generic [ref=e258]: Вода слабогазована Моршинська 0.5л
+                - generic [ref=e259]: 25 ₴
+              - generic [ref=e260] [cursor=pointer]:
+                - generic [ref=e262]: Н
+                - generic [ref=e263]: Напій безалкогольний сильногазований Кока Кола 1,75л
+                - generic [ref=e264]: 90 ₴
+              - generic [ref=e265] [cursor=pointer]:
+                - generic [ref=e267]: П
+                - generic [ref=e268]: Пюре Чудо чадо в асортименті
+                - generic [ref=e269]: 40 ₴
+              - generic [ref=e270] [cursor=pointer]:
+                - generic [ref=e272]: Ж
+                - generic [ref=e273]: Жувальна гумка Love is пластина
+                - generic [ref=e274]: 15 ₴
+              - generic [ref=e275] [cursor=pointer]:
+                - generic [ref=e277]: С
+                - generic [ref=e278]: Сік ОКЗД 1.93л в асортименті
+                - generic [ref=e279]: 120 ₴
+              - generic [ref=e280] [cursor=pointer]:
+                - generic [ref=e282]: С
+                - generic [ref=e283]: Сік ОКЗД 0.95л в асортименті
+                - generic [ref=e284]: 60 ₴
+              - generic [ref=e285] [cursor=pointer]:
+                - generic [ref=e287]: Л
+                - generic [ref=e288]: Лабіринт+ігрова ( 1 година )
+                - generic [ref=e289]: 150 ₴
+              - generic [ref=e290] [cursor=pointer]:
+                - generic [ref=e292]: С
+                - generic [ref=e293]: Серветка столова
+                - generic [ref=e294]: 0.14 ₴
+              - generic [ref=e295] [cursor=pointer]:
+                - generic [ref=e297]: В
+                - generic [ref=e298]: Вода Караван артезіанська 1.5л
+                - generic [ref=e299]: 15 ₴
+              - generic [ref=e300] [cursor=pointer]:
+                - generic [ref=e302]: В
+                - generic [ref=e303]: Вогнегасник спрей
+                - generic [ref=e304]: 15 ₴
+              - generic [ref=e305] [cursor=pointer]:
+                - generic [ref=e307]: с
+                - generic [ref=e308]: стакан пластик 500 мл
+                - generic [ref=e309]: 1 ₴
+              - generic [ref=e310] [cursor=pointer]:
+                - generic [ref=e312]: М
+                - generic [ref=e313]: Малинка
+                - generic [ref=e314]: 3 ₴
+              - generic [ref=e315] [cursor=pointer]:
+                - generic [ref=e317]: В
+                - generic [ref=e318]: Вода негазована Спортик Моршинська 0.33
+                - generic [ref=e319]: 25 ₴
+              - generic [ref=e320] [cursor=pointer]:
+                - generic [ref=e322]: Н
+                - generic [ref=e323]: Напій безалкогольний сильногазований "Кока-Кола" 0.33 ж/б
+                - generic [ref=e324]: 45 ₴
+              - generic [ref=e325] [cursor=pointer]:
+                - generic [ref=e327]: Н
+                - generic [ref=e328]: Напій безалкогольний сильногазований "Пепсі" 0.33 ж/б
+                - generic [ref=e329]: 40 ₴
+              - generic [ref=e330] [cursor=pointer]:
+                - generic [ref=e332]: Н
+                - generic [ref=e333]: Напій безалкогольний сильногазований "Фанта"апельсин 0.33 ж/б
+                - generic [ref=e334]: 40 ₴
+              - generic [ref=e335] [cursor=pointer]:
+                - generic [ref=e337]: с
+                - generic [ref=e338]: сік Капрізон
+                - generic [ref=e339]: 30 ₴
+              - generic [ref=e340] [cursor=pointer]:
+                - generic [ref=e342]: С
+                - generic [ref=e343]: Сік Наш сік 0.2 в асортименті
+                - generic [ref=e344]: 20 ₴
+              - generic [ref=e345] [cursor=pointer]:
+                - generic [ref=e347]: С
+                - generic [ref=e348]: Сік Paw Patrol 0.2 в асортименті
+                - generic [ref=e349]: 20 ₴
+              - generic [ref=e350] [cursor=pointer]:
+                - generic [ref=e352]: В
+                - generic [ref=e353]: Вода негазована Моршинська 0.5л
+                - generic [ref=e354]: 25 ₴
+              - generic [ref=e355] [cursor=pointer]:
+                - generic [ref=e357]: С
+                - generic [ref=e358]: Сік Чудо Чадо 0.2 в асортименті
+                - generic [ref=e359]: 25 ₴
+              - generic [ref=e360] [cursor=pointer]:
+                - generic [ref=e362]: С
+                - generic [ref=e363]: Сік некрат Садочок 0.2 в асортименті
+                - generic [ref=e364]: 20 ₴
+              - generic [ref=e365] [cursor=pointer]:
+                - generic [ref=e367]: Ч
+                - generic [ref=e368]: Чупа чупс
+                - generic [ref=e369]: 10 ₴
+              - generic [ref=e370] [cursor=pointer]:
+                - generic [ref=e372]: С
+                - generic [ref=e373]: Свічка набір з різнокольоровими вогниками 5 шт
+                - generic [ref=e374]: 55 ₴
+              - generic [ref=e375] [cursor=pointer]:
+                - generic [ref=e377]: Д
+                - generic [ref=e378]: День народження
+                - generic [ref=e379]: 50 ₴
+              - generic [ref=e380] [cursor=pointer]:
+                - generic [ref=e382]: Ц
+                - generic [ref=e383]: Цукерка Тофік
+                - generic [ref=e384]: 1 ₴
+              - generic [ref=e385] [cursor=pointer]:
+                - generic [ref=e387]: С
+                - generic [ref=e388]: Свічка набір з різнокольоровими вогниками 12 шт
+                - generic [ref=e389]: 85 ₴
+              - generic [ref=e390] [cursor=pointer]:
+                - generic [ref=e392]: С
+                - generic [ref=e393]: Свічка "коктельні", макарун 12 шт
+                - generic [ref=e394]: 40 ₴
+              - generic [ref=e395] [cursor=pointer]:
+                - generic [ref=e397]: С
+                - generic [ref=e398]: Свічка для торта виті веселка ,6 шт
+                - generic [ref=e399]: 33 ₴
+              - generic [ref=e400] [cursor=pointer]:
+                - generic [ref=e402]: С
+                - generic [ref=e403]: Свічка "коктельні", металік, в коробці ,6 шт
+                - generic [ref=e404]: 40 ₴
+              - generic [ref=e405] [cursor=pointer]:
+                - generic [ref=e407]: С
+                - generic [ref=e408]: Свічка Цифра на торт біла з золотом в асортименті
+                - generic [ref=e409]: 13 ₴
+              - generic [ref=e410] [cursor=pointer]:
+                - generic [ref=e412]: С
+                - generic [ref=e413]: Свічка для торта чорні з золотою смугою ,12 шт
+                - generic [ref=e414]: 30 ₴
+              - generic [ref=e415] [cursor=pointer]:
+                - generic [ref=e417]: С
+                - generic [ref=e418]: Свічка для торта хром мікс на планшетці ,6 шт
+                - generic [ref=e419]: 25 ₴
+              - generic [ref=e420] [cursor=pointer]:
+                - generic [ref=e422]: С
+                - generic [ref=e423]: Свічка для торта неон веселка ,8 шт
+                - generic [ref=e424]: 20 ₴
+              - generic [ref=e425] [cursor=pointer]:
+                - generic [ref=e427]: С
+                - generic [ref=e428]: Свічка для торта білі з підставкою ,10 шт
+                - generic [ref=e429]: 15 ₴
+              - generic [ref=e430] [cursor=pointer]:
+                - generic [ref=e432]: С
+                - generic [ref=e433]: Свічка для торта тонкі без підставки ,24 шт
+                - generic [ref=e434]: 15 ₴
+              - generic [ref=e435] [cursor=pointer]:
+                - generic [ref=e437]: С
+                - generic [ref=e438]: Свічка для торта неонові в асортименті ,10 шт
+                - generic [ref=e439]: 15 ₴
+              - generic [ref=e440] [cursor=pointer]:
+                - generic [ref=e442]: К
+                - generic [ref=e443]: Крекер ТМ Клим 160 г в асортименті
+                - generic [ref=e444]: 35 ₴
+              - generic [ref=e445] [cursor=pointer]:
+                - generic [ref=e447]: П
+                - generic [ref=e448]: Паперове диско- шоу 30хв
+                - generic [ref=e449]: 300 ₴
+              - generic [ref=e450] [cursor=pointer]:
+                - generic [ref=e452]: Ж
+                - generic [ref=e453]: Желешки Юммі Гуммі
+                - generic [ref=e454]: 40 ₴
+              - generic [ref=e455] [cursor=pointer]:
+                - generic [ref=e457]: П
+                - generic [ref=e458]: Подарунковий сертифікат
+                - generic [ref=e459]: 150 ₴
+              - generic [ref=e460] [cursor=pointer]:
+                - generic [ref=e462]: З
+                - generic [ref=e463]: Зубна щітка Mr Браш
+                - generic [ref=e464]: 30 ₴
+              - generic [ref=e465] [cursor=pointer]:
+                - generic [ref=e467]: Ж
+                - generic [ref=e468]: Желейки Haribo
+                - generic [ref=e469]: 20 ₴
+              - generic [ref=e470] [cursor=pointer]:
+                - generic [ref=e472]: П
+                - generic [ref=e473]: Пепсі 1.75л
+                - generic [ref=e474]: 90 ₴
+              - generic [ref=e475] [cursor=pointer]:
+                - generic [ref=e477]: Д
+                - generic [ref=e478]: Драже Ліхтарик
+                - generic [ref=e479]: 30 ₴
+              - generic [ref=e480] [cursor=pointer]:
+                - generic [ref=e482]: Ч
+                - generic [ref=e483]: Чай Пуер витриманий 30р Гурман з рисом
+                - generic [ref=e484]: 25 ₴
+              - generic [ref=e485] [cursor=pointer]:
+                - generic [ref=e487]: С
+                - generic [ref=e488]: Свічки бризки золота, 6 шт
+                - generic [ref=e489]: 50 ₴
+              - generic [ref=e490] [cursor=pointer]:
+                - generic [ref=e492]: С
+                - generic [ref=e493]: Свічки З днем народження
+                - generic [ref=e494]: 35 ₴
+              - generic [ref=e495] [cursor=pointer]:
+                - generic [ref=e497]: К
+                - generic [ref=e498]: Комісійні
+                - generic [ref=e499]: 10 ₴
+              - generic [ref=e500] [cursor=pointer]:
+                - generic [ref=e502]: С
+                - generic [ref=e503]: Свічки неон з підставкою 10 шт carnival
+                - generic [ref=e504]: 35 ₴
+              - generic [ref=e505] [cursor=pointer]:
+                - generic [ref=e507]: К
+                - generic [ref=e508]: Крекер в асортименті 80 г
+                - generic [ref=e509]: 30 ₴
+              - generic [ref=e510] [cursor=pointer]:
+                - generic [ref=e512]: Б
+                - generic [ref=e513]: Бульбашкове шоу
+                - generic [ref=e514]: 900 ₴
+              - generic [ref=e515] [cursor=pointer]:
+                - generic [ref=e517]: П
+                - generic [ref=e518]: Паперове шоу Акція
+                - generic [ref=e519]: 150 ₴
+              - generic [ref=e520] [cursor=pointer]:
+                - generic [ref=e522]: С
+                - generic [ref=e523]: Соус порціний в асортименті 45 г
+                - generic [ref=e524]: 16 ₴
+              - generic [ref=e525] [cursor=pointer]:
+                - generic [ref=e527]: Н
+                - generic [ref=e528]: Неонове шоу
+                - generic [ref=e529]: 500 ₴
+              - generic [ref=e530] [cursor=pointer]:
+                - generic [ref=e532]: К
+                - generic [ref=e533]: Ключниця в мішечку
+                - generic [ref=e534]: 100 ₴
+              - generic [ref=e535] [cursor=pointer]:
+                - generic [ref=e537]: З
+                - generic [ref=e538]: Значок в асортименті
+                - generic [ref=e539]: 35 ₴
+              - generic [ref=e540] [cursor=pointer]:
+                - generic [ref=e542]: Г
+                - generic [ref=e543]: Гра головоломка
+                - generic [ref=e544]: 70 ₴
+              - generic [ref=e545] [cursor=pointer]:
+                - generic [ref=e547]: Б
+                - generic [ref=e548]: Брелок Україна
+                - generic [ref=e549]: 45 ₴
+              - generic [ref=e550] [cursor=pointer]:
+                - generic [ref=e552]: М
+                - generic [ref=e553]: Магніт Вініл в асортименті
+                - generic [ref=e554]: 30 ₴
+              - generic [ref=e555] [cursor=pointer]:
+                - generic [ref=e557]: Б
+                - generic [ref=e558]: Блиск тату
+                - generic [ref=e559]: 50 ₴
+              - generic [ref=e560] [cursor=pointer]:
+                - generic [ref=e562]: Г
+                - generic [ref=e563]: Гра -вікторина в коробці в асортименті
+                - generic [ref=e564]: 60 ₴
+              - generic [ref=e565] [cursor=pointer]:
+                - generic [ref=e567]: Б
+                - generic [ref=e568]: Брелок в асортименті
+                - generic [ref=e569]: 35 ₴
+              - generic [ref=e570] [cursor=pointer]:
+                - generic [ref=e572]: к
+                - generic [ref=e573]: кулька латексна 21см
+                - generic [ref=e574]: 3 ₴
+              - generic [ref=e575] [cursor=pointer]:
+                - generic [ref=e577]: В
+                - generic [ref=e578]: Вітамінка С
+                - generic [ref=e579]: 15 ₴
+              - generic [ref=e580] [cursor=pointer]:
+                - generic [ref=e582]: Г
+                - generic [ref=e583]: Гра в коробці в асортименті
+                - generic [ref=e584]: 80 ₴
+              - generic [ref=e585] [cursor=pointer]:
+                - generic [ref=e587]: Г
+                - generic [ref=e588]: Гра логічна 1-15
+                - generic [ref=e589]: 60 ₴
+              - generic [ref=e590] [cursor=pointer]:
+                - generic [ref=e592]: М
+                - generic [ref=e593]: Мяч гумовий 10"
+                - generic [ref=e594]: 35 ₴
+              - generic [ref=e595] [cursor=pointer]:
+                - generic [ref=e597]: А
+                - generic [ref=e598]: Аніматор 1 год
+                - generic [ref=e599]: 1000 ₴
+              - generic [ref=e600] [cursor=pointer]:
+                - generic [ref=e602]: А
+                - generic [ref=e603]: Аніматор виніс торта+фото
+                - generic [ref=e604]: 250 ₴
+              - generic [ref=e605] [cursor=pointer]:
+                - generic [ref=e607]: V
+                - generic [ref=e608]: VR 30 хв
+                - generic [ref=e609]: 100 ₴
+              - generic [ref=e610] [cursor=pointer]:
+                - generic [ref=e612]: к
+                - generic [ref=e613]: кулька латексна 8см
+                - generic [ref=e614]: 1 ₴
+              - generic [ref=e615] [cursor=pointer]:
+                - generic [ref=e617]: С
+                - generic [ref=e618]: Стрічка в асортименті
+                - generic [ref=e619]: 0.5 ₴
+              - generic [ref=e620] [cursor=pointer]:
+                - generic [ref=e622]: Д
+                - generic [ref=e623]: Декор в асортименті
+                - generic [ref=e624]: 30 ₴
+              - generic [ref=e625] [cursor=pointer]:
+                - generic [ref=e627]: К
+                - generic [ref=e628]: Куля прозора 75 см
+                - generic [ref=e629]: 70 ₴
+              - generic [ref=e630] [cursor=pointer]:
+                - generic [ref=e632]: К
+                - generic [ref=e633]: Куля прозора 90 см
+                - generic [ref=e634]: 75 ₴
+              - generic [ref=e635] [cursor=pointer]:
+                - generic [ref=e637]: К
+                - generic [ref=e638]: Куля прозора 55 см
+                - generic [ref=e639]: 50 ₴
+              - generic [ref=e640] [cursor=pointer]:
+                - generic [ref=e642]: P
+                - generic [ref=e643]: Playstation 1 геймпад /1 год
+                - generic [ref=e644]: 100 ₴
+              - generic [ref=e645] [cursor=pointer]:
+                - generic [ref=e647]: І
+                - generic [ref=e648]: Інші аніматори (30 хв)
+                - generic [ref=e649]: 50 ₴
+              - generic [ref=e650] [cursor=pointer]:
+                - generic [ref=e652]: А
+                - generic [ref=e653]: Аквагрим 1 дитина
+                - generic [ref=e654]: 80 ₴
+              - generic [ref=e655] [cursor=pointer]:
+                - generic [ref=e657]: Б
+                - generic [ref=e658]: Бронювання залу "GamesPortal" (2 год)
+                - generic [ref=e659]: 1500 ₴
+              - generic [ref=e660] [cursor=pointer]:
+                - generic [ref=e662]: Б
+                - generic [ref=e663]: Бронювання залу "GamesPortal" (наступна)
+                - generic [ref=e664]: 700 ₴
+              - generic [ref=e665] [cursor=pointer]:
+                - generic [ref=e667]: Б
+                - generic [ref=e668]: Бронювання всіх залів до 12дітей (2 год)
+                - generic [ref=e669]: 3000 ₴
+              - generic [ref=e670] [cursor=pointer]:
+                - generic [ref=e672]: Б
+                - generic [ref=e673]: Бронювання всіх залів (наступна)
+                - generic [ref=e674]: 1000 ₴
+              - generic [ref=e675] [cursor=pointer]:
+                - generic [ref=e677]: Б
+                - generic [ref=e678]: Безпрограшний дартс (проведення)
+                - generic [ref=e679]: 100 ₴
+              - generic [ref=e680] [cursor=pointer]:
+                - generic [ref=e682]: Р
+                - generic [ref=e683]: Ростова + виніс торта+ фото
+                - generic [ref=e684]: 400 ₴
+              - generic [ref=e685] [cursor=pointer]:
+                - generic [ref=e687]: В
+                - generic [ref=e688]: Вода негазована Спортик Моршинська 0.75
+                - generic [ref=e689]: 40 ₴
+              - generic [ref=e690] [cursor=pointer]:
+                - generic [ref=e692]: Ж
+                - generic [ref=e693]: Желе звірі
+                - generic [ref=e694]: 8 ₴
+              - generic [ref=e695] [cursor=pointer]:
+                - generic [ref=e697]: С
+                - generic [ref=e698]: Спрей великий в асортименті
+                - generic [ref=e699]: 40 ₴
+              - generic [ref=e700] [cursor=pointer]:
+                - generic [ref=e702]: Ш
+                - generic [ref=e703]: Шок жувальна гумка з наповнювачем
+                - generic [ref=e704]: 5 ₴
+              - generic [ref=e705] [cursor=pointer]:
+                - generic [ref=e707]: К
+                - generic [ref=e708]: Кислинка
+                - generic [ref=e709]: 2 ₴
+              - generic [ref=e710] [cursor=pointer]:
+                - generic [ref=e712]: Н
+                - generic [ref=e713]: Напій безалкогольний сильногазований "Спрайт" 0.33 ж/б
+                - generic [ref=e714]: 40 ₴
+              - generic [ref=e715] [cursor=pointer]:
+                - generic [ref=e717]: Т
+                - generic [ref=e718]: Топер на торт
+                - generic [ref=e719]: 30 ₴
+              - generic [ref=e720] [cursor=pointer]:
+                - generic [ref=e722]: Ж
+                - generic [ref=e723]: Желе Бургер
+                - generic [ref=e724]: 12 ₴
+              - generic [ref=e725] [cursor=pointer]:
+                - generic [ref=e727]: Т
+                - generic [ref=e728]: Тік так
+                - generic [ref=e729]: 10 ₴
+              - generic [ref=e730] [cursor=pointer]:
+                - generic [ref=e732]: м
+                - generic [ref=e733]: музична шкатулка
+                - generic [ref=e734]: 150 ₴
+              - generic [ref=e735] [cursor=pointer]:
+                - generic [ref=e737]: М
+                - generic [ref=e738]: Монетка шоколадна
+                - generic [ref=e739]: 3 ₴
+              - generic [ref=e740] [cursor=pointer]:
+                - generic [ref=e742]: К
+                - generic [ref=e743]: Крекер в асортименті 180 г Яричів
+                - generic [ref=e744]: 35 ₴
+              - generic [ref=e745] [cursor=pointer]:
+                - generic [ref=e747]: Р
+                - generic [ref=e748]: Рулетка жувальна гумка Love is
+                - generic [ref=e749]: 45 ₴
+              - generic [ref=e750] [cursor=pointer]:
+                - generic [ref=e752]: О
+                - generic [ref=e753]: Оренда костюма
+                - generic [ref=e754]: 300 ₴
+              - generic [ref=e755] [cursor=pointer]:
+                - generic [ref=e757]: У
+                - generic [ref=e758]: Уколи Джем
+                - generic [ref=e759]: 15 ₴
+              - generic [ref=e760] [cursor=pointer]:
+                - generic [ref=e762]: к
+                - generic [ref=e763]: куля баблс 45 см
+                - generic [ref=e764]: 25 ₴
+              - generic [ref=e765] [cursor=pointer]:
+                - generic [ref=e767]: P
+                - generic [ref=e768]: Playstation 1 геймпад /30хв
+                - generic [ref=e769]: 50 ₴
+              - generic [ref=e770] [cursor=pointer]:
+                - generic [ref=e772]: О
+                - generic [ref=e773]: Олівець -жуйка
+                - generic [ref=e774]: 15 ₴
+              - generic [ref=e775] [cursor=pointer]:
+                - generic [ref=e777]: П
+                - generic [ref=e778]: Пудинг зубна паста
+                - generic [ref=e779]: 25 ₴
+              - generic [ref=e780] [cursor=pointer]:
+                - generic [ref=e782]: К
+                - generic [ref=e783]: Кріо шоу
+                - generic [ref=e784]: 2500 ₴
+              - generic [ref=e785] [cursor=pointer]:
+                - generic [ref=e787]: С
+                - generic [ref=e788]: Спрей ліхтарик
+                - generic [ref=e789]: 20 ₴
+              - generic [ref=e790] [cursor=pointer]:
+                - generic [ref=e792]: С
+                - generic [ref=e793]: Супер контік 90 гр
+                - generic [ref=e794]: 40 ₴
+              - generic [ref=e795] [cursor=pointer]:
+                - generic [ref=e797]: Д
+                - generic [ref=e798]: Досліди
+                - generic [ref=e799]: 1500 ₴
+              - generic [ref=e800] [cursor=pointer]:
+                - generic [ref=e802]: Ж
+                - generic [ref=e803]: Жуйки в банці
+                - generic [ref=e804]: 5 ₴
+              - generic [ref=e805] [cursor=pointer]:
+                - generic [ref=e807]: К
+                - generic [ref=e808]: Календар
+                - generic [ref=e809]: 100 ₴
+              - generic [ref=e810] [cursor=pointer]:
+                - generic [ref=e812]: Ч
+                - generic [ref=e813]: Чупа чупс міні
+                - generic [ref=e814]: 7 ₴
+              - generic [ref=e815] [cursor=pointer]:
+                - generic [ref=e817]: Д
+                - generic [ref=e818]: Драже (тік так)
+                - generic [ref=e819]: 18 ₴
+              - generic [ref=e820] [cursor=pointer]:
+                - generic [ref=e822]: С
+                - generic [ref=e823]: Свічка макарун в коробці 8 шт
+                - generic [ref=e824]: 35 ₴
+              - generic [ref=e825] [cursor=pointer]:
+                - generic [ref=e827]: С
+                - generic [ref=e828]: Спрей зубна щітка
+                - generic [ref=e829]: 13 ₴
+              - generic [ref=e830] [cursor=pointer]:
+                - generic [ref=e832]: С
+                - generic [ref=e833]: Свічка хром шампань спіраль, 10 шт
+                - generic [ref=e834]: 40 ₴
+              - generic [ref=e835] [cursor=pointer]:
+                - generic [ref=e837]: А
+                - generic [ref=e838]: Аскорбінка вітамінка
+                - generic [ref=e839]: 23 ₴
+              - generic [ref=e840] [cursor=pointer]:
+                - generic [ref=e842]: М
+                - generic [ref=e843]: Маршмелоу 30г
+                - generic [ref=e844]: 35 ₴
+              - generic [ref=e845] [cursor=pointer]:
+                - generic [ref=e847]: К
+                - generic [ref=e848]: Крекер Диканське 190гр
+                - generic [ref=e849]: 40 ₴
+              - generic [ref=e850] [cursor=pointer]:
+                - generic [ref=e852]: Ц
+                - generic [ref=e853]: Цукровий рибалка
+                - generic [ref=e854]: 13 ₴
+              - generic [ref=e855] [cursor=pointer]:
+                - generic [ref=e857]: О
+                - generic [ref=e858]: Олівець драже
+                - generic [ref=e859]: 15 ₴
+              - generic [ref=e860] [cursor=pointer]:
+                - generic [ref=e862]: С
+                - generic [ref=e863]: Спрей запальничка
+                - generic [ref=e864]: 15 ₴
+              - generic [ref=e865] [cursor=pointer]:
+                - generic [ref=e867]: Ю
+                - generic [ref=e868]: Юмі стік жувальна цукерка
+                - generic [ref=e869]: 4 ₴
+              - generic [ref=e870] [cursor=pointer]:
+                - generic [ref=e872]: Ж
+                - generic [ref=e873]: Жувальна цукерка Маша і Дракон
+                - generic [ref=e874]: 15 ₴
+              - generic [ref=e875] [cursor=pointer]:
+                - generic [ref=e877]: С
+                - generic [ref=e878]: Свічка Жовто -блакитна 6 шт
+                - generic [ref=e879]: 25 ₴
+              - generic [ref=e880] [cursor=pointer]:
+                - generic [ref=e882]: С
+                - generic [ref=e883]: Свічка в торт (1 шт)
+                - generic [ref=e884]: 2 ₴
+              - generic [ref=e885] [cursor=pointer]:
+                - generic [ref=e887]: V
+                - generic [ref=e888]: VR виїзна (1 год)
+                - generic [ref=e889]: 1000 ₴
+              - generic [ref=e890] [cursor=pointer]:
+                - generic [ref=e892]: Д
+                - generic [ref=e893]: Драже Іграшка
+                - generic [ref=e894]: 13 ₴
+              - generic [ref=e895] [cursor=pointer]:
+                - generic [ref=e897]: Л
+                - generic [ref=e898]: Льодяник Миша
+                - generic [ref=e899]: 15 ₴
+              - generic [ref=e900] [cursor=pointer]:
+                - generic [ref=e902]: В
+                - generic [ref=e903]: ВІтамінка рол
+                - generic [ref=e904]: 12 ₴
+              - generic [ref=e905] [cursor=pointer]:
+                - generic [ref=e907]: Л
+                - generic [ref=e908]: Лов іс, стік, желе
+                - generic [ref=e909]: 10 ₴
+              - generic [ref=e910] [cursor=pointer]:
+                - generic [ref=e912]: Б
+                - generic [ref=e913]: Бронювання залу ДН 1 дитина/1година
+                - generic [ref=e914]: 100 ₴
+              - generic [ref=e915] [cursor=pointer]:
+                - generic [ref=e917]: К
+                - generic [ref=e918]: Контейнер 230*130*90
+                - generic [ref=e919]: 8 ₴
+              - generic [ref=e920] [cursor=pointer]:
+                - generic [ref=e922]: Р
+                - generic [ref=e923]: Рулетка жувальна гумка Love is (мала)
+                - generic [ref=e924]: 15 ₴
+              - generic [ref=e925] [cursor=pointer]:
+                - generic [ref=e927]: н
+                - generic [ref=e928]: набір повітряних куль
+                - generic [ref=e929]: 190 ₴
+              - generic [ref=e930] [cursor=pointer]:
+                - generic [ref=e932]: К
+                - generic [ref=e933]: Кисла пятка
+                - generic [ref=e934]: 13 ₴
+              - generic [ref=e935] [cursor=pointer]:
+                - generic [ref=e937]: В
+                - generic [ref=e938]: Вата солодка у відрі
+                - generic [ref=e939]: 45 ₴
+              - generic [ref=e940] [cursor=pointer]:
+                - generic [ref=e942]: Л
+                - generic [ref=e943]: Лабубу маленькі
+                - generic [ref=e944]: 30 ₴
+              - generic [ref=e945] [cursor=pointer]:
+                - generic [ref=e947]: Т
+                - generic [ref=e948]: Тигреня
+                - generic [ref=e949]: 50 ₴
+              - generic [ref=e950] [cursor=pointer]:
+                - generic [ref=e952]: Д
+                - generic [ref=e953]: Динозавр конструктор
+                - generic [ref=e954]: 50 ₴
+              - generic [ref=e955] [cursor=pointer]:
+                - generic [ref=e957]: С
+                - generic [ref=e958]: Скорпіон
+                - generic [ref=e959]: 60 ₴
+              - generic [ref=e960] [cursor=pointer]:
+                - generic [ref=e962]: Л
+                - generic [ref=e963]: Лабубу 20
+                - generic [ref=e964]: 70 ₴
+              - generic [ref=e965] [cursor=pointer]:
+                - generic [ref=e967]: С
+                - generic [ref=e968]: Слоник 20
+                - generic [ref=e969]: 50 ₴
+              - generic [ref=e970] [cursor=pointer]:
+                - generic [ref=e972]: К
+                - generic [ref=e973]: Кіт пружинка, 45
+                - generic [ref=e974]: 100 ₴
+              - generic [ref=e975] [cursor=pointer]:
+                - generic [ref=e977]: С
+                - generic [ref=e978]: Спіраль фіджет, 40
+                - generic [ref=e979]: 90 ₴
+              - generic [ref=e980] [cursor=pointer]:
+                - generic [ref=e982]: Б
+                - generic [ref=e983]: Брелок котики, 5
+                - generic [ref=e984]: 30 ₴
+              - generic [ref=e985] [cursor=pointer]:
+                - generic [ref=e987]: В
+                - generic [ref=e988]: Ведмедик, 22
+                - generic [ref=e989]: 55 ₴
+              - generic [ref=e990] [cursor=pointer]:
+                - generic [ref=e992]: В
+                - generic [ref=e993]: Восьминіг,40
+                - generic [ref=e994]: 125 ₴
+              - generic [ref=e995] [cursor=pointer]:
+                - generic [ref=e997]: Б
+                - generic [ref=e998]: Білка , 40
+                - generic [ref=e999]: 120 ₴
+              - generic [ref=e1000] [cursor=pointer]:
+                - generic [ref=e1002]: В
+                - generic [ref=e1003]: Вовк 40
+                - generic [ref=e1004]: 100 ₴
+              - generic [ref=e1005] [cursor=pointer]:
+                - generic [ref=e1007]: Д
+                - generic [ref=e1008]: Дракон, 35
+                - generic [ref=e1009]: 110 ₴
+              - generic [ref=e1010] [cursor=pointer]:
+                - generic [ref=e1012]: К
+                - generic [ref=e1013]: Крокодил 35
+                - generic [ref=e1014]: 90 ₴
+              - generic [ref=e1015] [cursor=pointer]:
+                - generic [ref=e1017]: Я
+                - generic [ref=e1018]: Яйце 30
+                - generic [ref=e1019]: 60 ₴
+              - generic [ref=e1020] [cursor=pointer]:
+                - generic [ref=e1022]: А
+                - generic [ref=e1023]: Акула 40
+                - generic [ref=e1024]: 110 ₴
+              - generic [ref=e1025] [cursor=pointer]:
+                - generic [ref=e1027]: О
+                - generic [ref=e1028]: Оптична ілюзія
+                - generic [ref=e1029]: 130 ₴
+              - generic [ref=e1030] [cursor=pointer]:
+                - generic [ref=e1032]: С
+                - generic [ref=e1033]: Стіч 33
+                - generic [ref=e1034]: 110 ₴
+              - generic [ref=e1035] [cursor=pointer]:
+                - generic [ref=e1037]: Л
+                - generic [ref=e1038]: Лабубу 59
+                - generic [ref=e1039]: 200 ₴
+              - generic [ref=e1040] [cursor=pointer]:
+                - generic [ref=e1042]: К
+                - generic [ref=e1043]: Кіт 53
+                - generic [ref=e1044]: 80 ₴
+              - generic [ref=e1045] [cursor=pointer]:
+                - generic [ref=e1047]: А
+                - generic [ref=e1048]: Антистрес
+                - generic [ref=e1049]: 100 ₴
+              - generic [ref=e1050] [cursor=pointer]:
+                - generic [ref=e1052]: Т
+                - generic [ref=e1053]: Трояндя 41
+                - generic [ref=e1054]: 130 ₴
+              - generic [ref=e1055] [cursor=pointer]:
+                - generic [ref=e1057]: М
+                - generic [ref=e1058]: Метелик 15
+                - generic [ref=e1059]: 70 ₴
+              - generic [ref=e1060] [cursor=pointer]:
+                - generic [ref=e1062]: Б
+                - generic [ref=e1063]: Брелок малий
+                - generic [ref=e1064]: 40 ₴
+              - generic [ref=e1065] [cursor=pointer]:
+                - generic [ref=e1067]: Б
+                - generic [ref=e1068]: Брелок середній
+                - generic [ref=e1069]: 55 ₴
+              - generic [ref=e1070] [cursor=pointer]:
+                - generic [ref=e1072]: Б
+                - generic [ref=e1073]: Бюст Шевченко
+                - generic [ref=e1074]: 150 ₴
+              - generic [ref=e1075] [cursor=pointer]:
+                - generic [ref=e1077]: Ф
+                - generic [ref=e1078]: Фігурки малі
+                - generic [ref=e1079]: 50 ₴
+              - generic [ref=e1080] [cursor=pointer]:
+                - generic [ref=e1082]: П
+                - generic [ref=e1083]: Підставка
+                - generic [ref=e1084]: 25 ₴
+              - generic [ref=e1085] [cursor=pointer]:
+                - generic [ref=e1087]: П
+                - generic [ref=e1088]: Підставка велика
+                - generic [ref=e1089]: 80 ₴
+              - generic [ref=e1090] [cursor=pointer]:
+                - generic [ref=e1092]: К
+                - generic [ref=e1093]: Комплект Хеловін
+                - generic [ref=e1094]: 300 ₴
+              - generic [ref=e1095] [cursor=pointer]:
+                - generic [ref=e1097]: С
+                - generic [ref=e1098]: Спінер
+                - generic [ref=e1099]: 90 ₴
+              - generic [ref=e1100] [cursor=pointer]:
+                - generic [ref=e1102]: М
+                - generic [ref=e1103]: Метелик
+                - generic [ref=e1104]: 130 ₴
+              - generic [ref=e1105] [cursor=pointer]:
+                - generic [ref=e1107]: Р
+                - generic [ref=e1108]: Рука
+                - generic [ref=e1109]: 80 ₴
+              - generic [ref=e1110] [cursor=pointer]:
+                - generic [ref=e1112]: С
+                - generic [ref=e1113]: Самурай
+                - generic [ref=e1114]: 350 ₴
+              - generic [ref=e1115] [cursor=pointer]:
+                - generic [ref=e1117]: С
+                - generic [ref=e1118]: Стіч
+                - generic [ref=e1119]: 100 ₴
+              - generic [ref=e1120] [cursor=pointer]:
+                - generic [ref=e1122]: С
+                - generic [ref=e1123]: Світильник
+                - generic [ref=e1124]: 90 ₴
+              - generic [ref=e1125] [cursor=pointer]:
+                - generic [ref=e1127]: Д
+                - generic [ref=e1128]: Драже Супер шоколад
+                - generic [ref=e1129]: 15 ₴
+              - generic [ref=e1130] [cursor=pointer]:
+                - generic [ref=e1132]: З
+                - generic [ref=e1133]: Зубна щітка з джемом
+                - generic [ref=e1134]: 15 ₴
+              - generic [ref=e1135] [cursor=pointer]:
+                - generic [ref=e1137]: Д
+                - generic [ref=e1138]: Дракон 54
+                - generic [ref=e1139]: 230 ₴
+              - generic [ref=e1140] [cursor=pointer]:
+                - generic [ref=e1142]: М
+                - generic [ref=e1143]: Мікі маус 26
+                - generic [ref=e1144]: 120 ₴
+              - generic [ref=e1145] [cursor=pointer]:
+                - generic [ref=e1147]: К
+                - generic [ref=e1148]: Контейнер 131*131*78
+                - generic [ref=e1149]: 5 ₴
+              - generic [ref=e1150] [cursor=pointer]:
+                - generic [ref=e1152]: К
+                - generic [ref=e1153]: Киця біла 14
+                - generic [ref=e1154]: 50 ₴
+              - generic [ref=e1155] [cursor=pointer]:
+                - generic [ref=e1157]: В
+                - generic [ref=e1158]: Виїзд Аніматор 30 хв
+                - generic [ref=e1159]: 1500 ₴
+              - generic [ref=e1160] [cursor=pointer]:
+                - generic [ref=e1162]: К
+                - generic [ref=e1163]: Кінь
+                - generic [ref=e1164]: 75 ₴
+              - generic [ref=e1165] [cursor=pointer]:
+                - generic [ref=e1167]: С
+                - generic [ref=e1168]: Сніговик світильник
+                - generic [ref=e1169]: 300 ₴
+              - generic [ref=e1170] [cursor=pointer]:
+                - generic [ref=e1172]: М
+                - generic [ref=e1173]: Міні тістечко
+                - generic [ref=e1174]: 80 ₴
+              - generic [ref=e1175] [cursor=pointer]:
+                - generic [ref=e1177]: П
+                - generic [ref=e1178]: Привид світло
+                - generic [ref=e1179]: 150 ₴
+              - generic [ref=e1180] [cursor=pointer]:
+                - generic [ref=e1182]: Я
+                - generic [ref=e1183]: Яйце 7
+                - generic [ref=e1184]: 40 ₴
+              - generic [ref=e1185] [cursor=pointer]:
+                - generic [ref=e1187]: м
+                - generic [ref=e1188]: майстер клас
+                - generic [ref=e1189]: 100 ₴
+              - generic [ref=e1190] [cursor=pointer]:
+                - generic [ref=e1192]: І
+                - generic [ref=e1193]: Іграшка 3д
+                - generic [ref=e1194]: 60 ₴
+              - generic [ref=e1195] [cursor=pointer]:
+                - generic [ref=e1197]: Х
+                - generic [ref=e1198]: Хот-дог Ковбаска "Братвуртська
+                - generic [ref=e1199]: 60 ₴
+              - generic [ref=e1200] [cursor=pointer]:
+                - generic [ref=e1202]: К
+                - generic [ref=e1203]: Картопля Фрі соломка
+                - generic [ref=e1204]: 60 ₴
+              - generic [ref=e1205] [cursor=pointer]:
+                - generic [ref=e1207]: Л
+                - generic [ref=e1208]: Лимонад
+                - generic [ref=e1209]: 50 ₴
+              - generic [ref=e1210] [cursor=pointer]:
+                - generic [ref=e1212]: П
+                - generic [ref=e1213]: Палички з моцарелою
+                - generic [ref=e1214]: 100 ₴
+              - generic [ref=e1215] [cursor=pointer]:
+                - generic [ref=e1217]: Б
+                - generic [ref=e1218]: Бокс ЧікенФріС
+                - generic [ref=e1219]: 100 ₴
+              - generic [ref=e1220] [cursor=pointer]:
+                - generic [ref=e1222]: М
+                - generic [ref=e1223]: Молочний коктейль
+                - generic [ref=e1224]: 80 ₴
+              - generic [ref=e1225] [cursor=pointer]:
+                - generic [ref=e1227]: Ц
+                - generic [ref=e1228]: Цибулеві кільця
+                - generic [ref=e1229]: 50 ₴
+              - generic [ref=e1230] [cursor=pointer]:
+                - generic [ref=e1232]: С
+                - generic [ref=e1233]: Сироп в асортименті
+                - generic [ref=e1234]: 3 ₴
+              - generic [ref=e1235] [cursor=pointer]:
+                - generic [ref=e1237]: В
+                - generic [ref=e1238]: Вечірка
+                - generic [ref=e1239]: 350 ₴
+              - generic [ref=e1240] [cursor=pointer]:
+                - generic [ref=e1242]: В
+                - generic [ref=e1243]: Вечірка 12
+                - generic [ref=e1244]: 450 ₴
+              - generic [ref=e1245] [cursor=pointer]:
+                - generic [ref=e1247]: М
+                - generic [ref=e1248]: Міні бургер ( свинина)
+                - generic [ref=e1249]: 70 ₴
+              - generic [ref=e1250] [cursor=pointer]:
+                - generic [ref=e1252]: К
+                - generic [ref=e1253]: Картопля Фрі Кульки
+                - generic [ref=e1254]: 65 ₴
+              - generic [ref=e1255] [cursor=pointer]:
+                - generic [ref=e1257]: Б
+                - generic [ref=e1258]: Бокс ЧікенФріК
+                - generic [ref=e1259]: 100 ₴
+              - generic [ref=e1260] [cursor=pointer]:
+                - generic [ref=e1262]: М
+                - generic [ref=e1263]: Міні бургер (курка)
+                - generic [ref=e1264]: 70 ₴
+              - generic [ref=e1265] [cursor=pointer]:
+                - generic [ref=e1267]: Х
+                - generic [ref=e1268]: Хот-дог Сосиска "Премєра
+                - generic [ref=e1269]: 60 ₴
+              - generic [ref=e1270] [cursor=pointer]:
+                - generic [ref=e1272]: К
+                - generic [ref=e1273]: Корн-дог
+                - generic [ref=e1274]: 60 ₴
+              - generic [ref=e1275] [cursor=pointer]:
+                - generic [ref=e1277]: М
+                - generic [ref=e1278]: Міні бургер (яловичина)
+                - generic [ref=e1279]: 70 ₴
+              - generic [ref=e1280] [cursor=pointer]:
+                - generic [ref=e1282]: Н
+                - generic [ref=e1283]: Нагетси з курячим філе
+                - generic [ref=e1284]: 100 ₴
+              - generic [ref=e1285] [cursor=pointer]:
+                - generic [ref=e1287]: С
+                - generic [ref=e1288]: Сніжний краб в паніровці
+                - generic [ref=e1289]: 120 ₴
+              - generic [ref=e1290] [cursor=pointer]:
+                - generic [ref=e1292]: М
+                - generic [ref=e1293]: МК "Свічка своїми руками"
+                - generic [ref=e1294]: 80 ₴
+              - generic [ref=e1295] [cursor=pointer]:
+                - generic [ref=e1297]: М
+                - generic [ref=e1298]: Мідії в хрусткій паніровці
+                - generic [ref=e1299]: 120 ₴
+              - generic [ref=e1300] [cursor=pointer]:
+                - generic [ref=e1302]: М
+                - generic [ref=e1303]: Морозиво Ківі стакан
+                - generic [ref=e1304]: 70 ₴
+              - generic [ref=e1305] [cursor=pointer]:
+                - generic [ref=e1307]: М
+                - generic [ref=e1308]: МК "Скринька мрій"
+                - generic [ref=e1309]: 150 ₴
+              - generic [ref=e1310] [cursor=pointer]:
+                - generic [ref=e1312]: М
+                - generic [ref=e1313]: МК "Магнітний сувенір"
+                - generic [ref=e1314]: 50 ₴
+              - generic [ref=e1315] [cursor=pointer]:
+                - generic [ref=e1317]: М
+                - generic [ref=e1318]: МК "Фантазійні фігурки" великі
+                - generic [ref=e1319]: 150 ₴
+              - generic [ref=e1320] [cursor=pointer]:
+                - generic [ref=e1322]: М
+                - generic [ref=e1323]: МК "Баночка бажань"
+                - generic [ref=e1324]: 80 ₴
+              - generic [ref=e1325] [cursor=pointer]:
+                - generic [ref=e1327]: М
+                - generic [ref=e1328]: МК "Насипна Свічка"
+                - generic [ref=e1329]: 150 ₴
+              - generic [ref=e1330] [cursor=pointer]:
+                - generic [ref=e1332]: К
+                - generic [ref=e1333]: Куля сюрприз
+                - generic [ref=e1334]: 500 ₴
+              - generic [ref=e1335] [cursor=pointer]:
+                - generic [ref=e1337]: М
+                - generic [ref=e1338]: МК "Маска-Сонько"
+                - generic [ref=e1339]: 120 ₴
+              - generic [ref=e1340] [cursor=pointer]:
+                - generic [ref=e1342]: М
+                - generic [ref=e1343]: Морозиво Бабл Гам стакан
+                - generic [ref=e1344]: 70 ₴
+              - generic [ref=e1345] [cursor=pointer]:
+                - generic [ref=e1347]: М
+                - generic [ref=e1348]: Морозиво Солона карамель стакан
+                - generic [ref=e1349]: 70 ₴
+              - generic [ref=e1350] [cursor=pointer]:
+                - generic [ref=e1352]: В
+                - generic [ref=e1353]: Виїзд Ростова 15 хв
+                - generic [ref=e1354]: 1000 ₴
+              - generic [ref=e1355] [cursor=pointer]:
+                - generic [ref=e1357]: М
+                - generic [ref=e1358]: Морозиво Полуниця стакан
+                - generic [ref=e1359]: 70 ₴
+              - generic [ref=e1360] [cursor=pointer]:
+                - generic [ref=e1362]: М
+                - generic [ref=e1363]: Морозиво Ванільне стакан
+                - generic [ref=e1364]: 70 ₴
+              - generic [ref=e1365] [cursor=pointer]:
+                - generic [ref=e1367]: М
+                - generic [ref=e1368]: Морозиво Ванільно-полуничне стакан
+                - generic [ref=e1369]: 70 ₴
+              - generic [ref=e1370] [cursor=pointer]:
+                - generic [ref=e1372]: М
+                - generic [ref=e1373]: Морозиво Ванільне ріжок
+                - generic [ref=e1374]: 55 ₴
+              - generic [ref=e1375] [cursor=pointer]:
+                - generic [ref=e1377]: М
+                - generic [ref=e1378]: Морозиво Полуниця ріжок
+                - generic [ref=e1379]: 55 ₴
+              - generic [ref=e1380] [cursor=pointer]:
+                - generic [ref=e1382]: М
+                - generic [ref=e1383]: Морозиво Ванільно-полуничне ріжок
+                - generic [ref=e1384]: 55 ₴
+              - generic [ref=e1385] [cursor=pointer]:
+                - generic [ref=e1387]: М
+                - generic [ref=e1388]: Морозиво Бабл Гам ріжок
+                - generic [ref=e1389]: 55 ₴
+              - generic [ref=e1390] [cursor=pointer]:
+                - generic [ref=e1392]: М
+                - generic [ref=e1393]: Морозиво Вершково Бабл Гам ріжок
+                - generic [ref=e1394]: 55 ₴
+              - generic [ref=e1395] [cursor=pointer]:
+                - generic [ref=e1397]: М
+                - generic [ref=e1398]: Морозиво Вершкове - Бабл Гам стакан
+                - generic [ref=e1399]: 70 ₴
+              - generic [ref=e1400] [cursor=pointer]:
+                - generic [ref=e1402]: М
+                - generic [ref=e1403]: Морозиво Вершково - шоколадне ріжок
+                - generic [ref=e1404]: 55 ₴
+              - generic [ref=e1405] [cursor=pointer]:
+                - generic [ref=e1407]: М
+                - generic [ref=e1408]: Морозиво Шоколад стакан
+                - generic [ref=e1409]: 70 ₴
+              - generic [ref=e1410] [cursor=pointer]:
+                - generic [ref=e1412]: М
+                - generic [ref=e1413]: Морозиво Шоколад ріжок
+                - generic [ref=e1414]: 55 ₴
+              - generic [ref=e1415] [cursor=pointer]:
+                - generic [ref=e1417]: М
+                - generic [ref=e1418]: Морозиво Ванільно-шоколадне стакан
+                - generic [ref=e1419]: 70 ₴
+              - generic [ref=e1420] [cursor=pointer]:
+                - generic [ref=e1422]: М
+                - generic [ref=e1423]: Морозиво Ваніль- Солона карамель стакан
+                - generic [ref=e1424]: 70 ₴
+              - generic [ref=e1425] [cursor=pointer]:
+                - generic [ref=e1427]: М
+                - generic [ref=e1428]: Морозиво Солона карамель ріжок
+                - generic [ref=e1429]: 55 ₴
+              - generic [ref=e1430] [cursor=pointer]:
+                - generic [ref=e1432]: М
+                - generic [ref=e1433]: МК Гіпсові магнітики
+                - generic [ref=e1434]: 80 ₴
+              - generic [ref=e1435] [cursor=pointer]:
+                - generic [ref=e1437]: М
+                - generic [ref=e1438]: Морозиво Вершкове -Солона карамель ріжок
+                - generic [ref=e1439]: 55 ₴
+              - generic [ref=e1440] [cursor=pointer]:
+                - generic [ref=e1442]: М
+                - generic [ref=e1443]: Морозиво Лимонне ріжок
+                - generic [ref=e1444]: 55 ₴
+              - generic [ref=e1445] [cursor=pointer]:
+                - generic [ref=e1447]: М
+                - generic [ref=e1448]: Морозиво Ванільно-лимонне ріжок
+                - generic [ref=e1449]: 55 ₴
+              - generic [ref=e1450] [cursor=pointer]:
+                - generic [ref=e1452]: М
+                - generic [ref=e1453]: Морозиво Ванільно-лимонне стакан
+                - generic [ref=e1454]: 70 ₴
+              - generic [ref=e1455] [cursor=pointer]:
+                - generic [ref=e1457]: М
+                - generic [ref=e1458]: Морозиво Лимонне стакан
+                - generic [ref=e1459]: 70 ₴
+              - generic [ref=e1460] [cursor=pointer]:
+                - generic [ref=e1462]: М
+                - generic [ref=e1463]: Морозиво Ванільно-малинове ріжок
+                - generic [ref=e1464]: 55 ₴
+              - generic [ref=e1465] [cursor=pointer]:
+                - generic [ref=e1467]: М
+                - generic [ref=e1468]: Морозиво Ванільно-малинове стакан
+                - generic [ref=e1469]: 70 ₴
+              - generic [ref=e1470] [cursor=pointer]:
+                - generic [ref=e1472]: М
+                - generic [ref=e1473]: Морозиво Малинове ріжок
+                - generic [ref=e1474]: 55 ₴
+              - generic [ref=e1475] [cursor=pointer]:
+                - generic [ref=e1477]: М
+                - generic [ref=e1478]: Морозиво Малинове стакан
+                - generic [ref=e1479]: 70 ₴
+              - generic [ref=e1480] [cursor=pointer]:
+                - generic [ref=e1482]: М
+                - generic [ref=e1483]: Морозиво Вершково-Лісова ягода ріжок
+                - generic [ref=e1484]: 55 ₴
+              - generic [ref=e1485] [cursor=pointer]:
+                - generic [ref=e1487]: М
+                - generic [ref=e1488]: Морозиво Лісова ягода ріжок
+                - generic [ref=e1489]: 55 ₴
+              - generic [ref=e1490] [cursor=pointer]:
+                - generic [ref=e1492]: М
+                - generic [ref=e1493]: Морозиво Вершково-Лісова ягода стакан
+                - generic [ref=e1494]: 70 ₴
+              - generic [ref=e1495] [cursor=pointer]:
+                - generic [ref=e1497]: М
+                - generic [ref=e1498]: Морозиво Лісова ягода стакан
+                - generic [ref=e1499]: 70 ₴
+              - generic [ref=e1500] [cursor=pointer]:
+                - generic [ref=e1502]: М
+                - generic [ref=e1503]: МК Картина (кольоровий пісок)
+                - generic [ref=e1504]: 80 ₴
+              - generic [ref=e1505] [cursor=pointer]:
+                - generic [ref=e1507]: М
+                - generic [ref=e1508]: Морозово Патріотичне ріжок
+                - generic [ref=e1509]: 55 ₴
+              - generic [ref=e1510] [cursor=pointer]:
+                - generic [ref=e1512]: М
+                - generic [ref=e1513]: Морозиво Патріотичне стакан
+                - generic [ref=e1514]: 70 ₴
+              - generic [ref=e1515] [cursor=pointer]:
+                - generic [ref=e1517]: М
+                - generic [ref=e1518]: Морозиво Шоколад-лимон стакан
+                - generic [ref=e1519]: 70 ₴
+              - generic [ref=e1520] [cursor=pointer]:
+                - generic [ref=e1522]: М
+                - generic [ref=e1523]: Морозиво Шоколад-лимон ріжок
+                - generic [ref=e1524]: 55 ₴
+              - generic [ref=e1525] [cursor=pointer]:
+                - generic [ref=e1527]: М
+                - generic [ref=e1528]: Морозиво Банан ріжок
+                - generic [ref=e1529]: 55 ₴
+              - generic [ref=e1530] [cursor=pointer]:
+                - generic [ref=e1532]: М
+                - generic [ref=e1533]: Морозиво Шоколад-Банан стакан
+                - generic [ref=e1534]: 70 ₴
+              - generic [ref=e1535] [cursor=pointer]:
+                - generic [ref=e1537]: М
+                - generic [ref=e1538]: Морозиво Шоколад - Банан ріжок
+                - generic [ref=e1539]: 55 ₴
+              - generic [ref=e1540] [cursor=pointer]:
+                - generic [ref=e1542]: М
+                - generic [ref=e1543]: Морозиво Банан стакан
+                - generic [ref=e1544]: 70 ₴
+              - generic [ref=e1545] [cursor=pointer]:
+                - generic [ref=e1547]: М
+                - generic [ref=e1548]: Морозиво Вершково-Бананове стакан
+                - generic [ref=e1549]: 70 ₴
+              - generic [ref=e1550] [cursor=pointer]:
+                - generic [ref=e1552]: М
+                - generic [ref=e1553]: Морозиво Ванільно-бананове ріжок
+                - generic [ref=e1554]: 55 ₴
+              - generic [ref=e1555] [cursor=pointer]:
+                - generic [ref=e1557]: П
+                - generic [ref=e1558]: Піца трикутник в асортименті, 125 г
+                - generic [ref=e1559]: 70 ₴
+              - generic [ref=e1560] [cursor=pointer]:
+                - generic [ref=e1562]: М
+                - generic [ref=e1563]: МК Картна а6 (пісок кольоровий)
+                - generic [ref=e1564]: 50 ₴
+              - generic [ref=e1565] [cursor=pointer]:
+                - generic [ref=e1567]: Ч
+                - generic [ref=e1568]: Чай концентрований
+                - generic [ref=e1569]: 50 ₴
+              - generic [ref=e1570] [cursor=pointer]:
+                - generic [ref=e1572]: Р
+                - generic [ref=e1573]: Ростова лялька (зал)
+                - generic [ref=e1574]: 800 ₴
+  - button "Open Next.js Dev Tools" [ref=e18] [cursor=pointer]:
+    - img [ref=e19]
+  - alert [ref=e98]

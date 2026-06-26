@@ -339,6 +339,56 @@
    RESPONSIVE
    ============================================ */
 
+@media (max-height: 800px) {
+  .amountDisplay {
+    font-size: 32px;
+    margin: var(--space-3) 0;
+    padding: var(--space-3);
+  }
+
+  .paymentMethods {
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .paymentMethodBtn {
+    padding: var(--space-3);
+  }
+
+  .changeAmount {
+    font-size: 22px;
+  }
+
+  .denominationsGrid {
+    gap: var(--space-1);
+  }
+
+  .mixedSection {
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .actionButtons {
+    margin-top: var(--space-3);
+  }
+}
+
+@media (max-height: 700px) {
+  .amountDisplay {
+    font-size: 28px;
+    margin: var(--space-2) 0;
+    padding: var(--space-2);
+  }
+
+  .paymentMethodBtn .icon {
+    font-size: 20px;
+  }
+
+  .paymentMethodBtn .label {
+    font-size: 12px;
+  }
+}
+
 @media (max-width: 640px) {
   .paymentMethods {
     grid-template-columns: 1fr;

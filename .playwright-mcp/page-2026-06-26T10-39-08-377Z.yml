@@ -1,0 +1,137 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "🦒 Giraffe" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: 🦒
+        - generic [ref=e6]: Giraffe
+      - button "Scroll left" [ref=e22] [cursor=pointer]: ‹
+      - navigation [ref=e23]:
+        - link "💰 Каса" [ref=e24] [cursor=pointer]:
+          - /url: /cash-register
+          - generic [ref=e25]: 💰
+          - generic [ref=e26]: Каса
+        - link "📊 Бухгалтерія" [ref=e27] [cursor=pointer]:
+          - /url: /accounting
+          - generic [ref=e28]: 📊
+          - generic [ref=e29]: Бухгалтерія
+        - link "🕒 Відвідування" [ref=e30] [cursor=pointer]:
+          - /url: /visits
+          - generic [ref=e31]: 🕒
+          - generic [ref=e32]: Відвідування
+        - link "🎉 Бронювання" [ref=e33] [cursor=pointer]:
+          - /url: /events
+          - generic [ref=e34]: 🎉
+          - generic [ref=e35]: Бронювання
+        - link "📱 Telegram" [ref=e36] [cursor=pointer]:
+          - /url: /telegram
+          - generic [ref=e37]: 📱
+          - generic [ref=e38]: Telegram
+        - link "📅 Соцмережі" [ref=e39] [cursor=pointer]:
+          - /url: /social-planner
+          - generic [ref=e40]: 📅
+          - generic [ref=e41]: Соцмережі
+      - button "Scroll right" [ref=e42] [cursor=pointer]: ›
+      - generic [ref=e7]:
+        - button "Chat Support" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: 💬
+        - button "Notifications" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: 🔔
+        - generic [ref=e50]: 👤
+        - button "Вийти" [ref=e51] [cursor=pointer]
+  - main [ref=e9]:
+    - generic [ref=e115]:
+      - navigation [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e118]:
+            - link "📊 Звіти" [ref=e119] [cursor=pointer]:
+              - /url: /cash-register/reports
+              - text: 📊
+              - generic [ref=e120]: Звіти
+            - button "➕ Прихід" [ref=e121] [cursor=pointer]:
+              - text: ➕
+              - generic [ref=e122]: Прихід
+            - button "➖ Витрати" [ref=e123] [cursor=pointer]:
+              - text: ➖
+              - generic [ref=e124]: Витрати
+            - button "🏦 Інкасація" [ref=e125] [cursor=pointer]:
+              - text: 🏦
+              - generic [ref=e126]: Інкасація
+            - button "🛑 Закрити зміну" [ref=e127] [cursor=pointer]:
+              - text: 🛑
+              - generic [ref=e128]: Закрити зміну
+          - generic [ref=e129]:
+            - button "🏷️ Акції" [ref=e130] [cursor=pointer]:
+              - text: 🏷️
+              - generic [ref=e131]: Акції
+            - 'button "👥 Зміна: 1" [ref=e132] [cursor=pointer]':
+              - text: 👥
+              - generic [ref=e133]: "Зміна: 1"
+      - main [ref=e134]:
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - button "← Назад" [ref=e137] [cursor=pointer]
+            - heading "Основний зал" [level=2] [ref=e138]
+          - generic [ref=e139]:
+            - button "Стіл 1 💰 👥 1 Зайнятий" [ref=e140] [cursor=pointer]:
+              - generic [ref=e141]:
+                - generic [ref=e142]: Стіл 1
+                - generic "Є передплата" [ref=e143]: 💰
+              - generic [ref=e144]: 👥 1
+              - generic [ref=e145]: Зайнятий
+            - button "Стіл 2 💰 👥 0 Зайнятий" [ref=e146] [cursor=pointer]:
+              - generic [ref=e147]:
+                - generic [ref=e148]: Стіл 2
+                - generic "Є передплата" [ref=e149]: 💰
+              - generic [ref=e150]: 👥 0
+              - generic [ref=e151]: Зайнятий
+            - button "Стіл 3 👥 5 Зайнятий" [ref=e152] [cursor=pointer]:
+              - generic [ref=e154]: Стіл 3
+              - generic [ref=e155]: 👥 5
+              - generic [ref=e156]: Зайнятий
+            - button "Стіл 4 💰 👥 5 Зайнятий" [ref=e157] [cursor=pointer]:
+              - generic [ref=e158]:
+                - generic [ref=e159]: Стіл 4
+                - generic "Є передплата" [ref=e160]: 💰
+              - generic [ref=e161]: 👥 5
+              - generic [ref=e162]: Зайнятий
+            - button "Стіл 5 💰 👥 6 Зайнятий" [ref=e163] [cursor=pointer]:
+              - generic [ref=e164]:
+                - generic [ref=e165]: Стіл 5
+                - generic "Є передплата" [ref=e166]: 💰
+              - generic [ref=e167]: 👥 6
+              - generic [ref=e168]: Зайнятий
+            - button "Стіл 6 💰 👥 1 Зайнятий" [ref=e169] [cursor=pointer]:
+              - generic [ref=e170]:
+                - generic [ref=e171]: Стіл 6
+                - generic "Є передплата" [ref=e172]: 💰
+              - generic [ref=e173]: 👥 1
+              - generic [ref=e174]: Зайнятий
+            - button "Стіл 7 💰 👥 1 Зайнятий" [ref=e175] [cursor=pointer]:
+              - generic [ref=e176]:
+                - generic [ref=e177]: Стіл 7
+                - generic "Є передплата" [ref=e178]: 💰
+              - generic [ref=e179]: 👥 1
+              - generic [ref=e180]: Зайнятий
+            - button "Стіл 8 💰 👥 1 Зайнятий" [ref=e181] [cursor=pointer]:
+              - generic [ref=e182]:
+                - generic [ref=e183]: Стіл 8
+                - generic "Є передплата" [ref=e184]: 💰
+              - generic [ref=e185]: 👥 1
+              - generic [ref=e186]: Зайнятий
+            - button "Стіл 9 💰 👥 6 Зайнятий" [ref=e187] [cursor=pointer]:
+              - generic [ref=e188]:
+                - generic [ref=e189]: Стіл 9
+                - generic "Є передплата" [ref=e190]: 💰
+              - generic [ref=e191]: 👥 6
+              - generic [ref=e192]: Зайнятий
+            - button "Стіл 10 👥 4 Вільний" [ref=e193] [cursor=pointer]:
+              - generic [ref=e195]: Стіл 10
+              - generic [ref=e196]: 👥 4
+              - generic [ref=e197]: Вільний
+            - button "+ Додати стіл" [ref=e198] [cursor=pointer]:
+              - generic [ref=e199]: +
+              - generic [ref=e200]: Додати стіл
+  - button "Open Next.js Dev Tools" [ref=e18] [cursor=pointer]:
+    - img [ref=e19]
+  - alert [ref=e98]

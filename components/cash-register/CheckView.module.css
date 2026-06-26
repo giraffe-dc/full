@@ -18,7 +18,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    overflow: hidden;
+    overflow-y: auto;
     min-width: 0;
 }
 
@@ -46,6 +46,7 @@
     margin-bottom: 20px;
     flex-wrap: wrap;
     justify-content: space-between;
+    flex-shrink: 0;
 }
 
 .backButton {
@@ -129,7 +130,7 @@
     padding: 20px;
     box-shadow: var(--shadow-md);
     border: 2px solid var(--yellow-100);
-    min-height: 300px;
+    min-height: 200px;
 }
 
 /* Guest Section */
@@ -335,6 +336,7 @@
     padding: 20px;
     box-shadow: var(--shadow-md);
     border: 2px solid var(--gray-100);
+    flex-shrink: 0;
 }
 
 .commentSection {
@@ -888,6 +890,251 @@
     .payButton {
         padding: 14px;
         font-size: 16px;
+    }
+}
+
+/* ============================================
+   LOW HEIGHT SCREENS (Laptops 1366x768, etc.)
+   ============================================ */
+
+@media (max-height: 800px) {
+    .container {
+        padding: 12px;
+        gap: 12px;
+        min-height: calc(100vh - 100px);
+        max-height: calc(100vh - 100px);
+    }
+
+    .headerRow {
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+
+    .checkTitle {
+        font-size: 1.3rem;
+    }
+
+    .tableName {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    .backButton {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .orderList {
+        padding: 12px;
+        min-height: 120px;
+    }
+
+    .guestHeader {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .emptyGuest {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .orderItem {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .itemName {
+        font-size: 13px;
+        min-width: 100px;
+    }
+
+    .itemQuantity button {
+        width: 28px;
+        height: 28px;
+        font-size: 15px;
+    }
+
+    .itemQuantity span {
+        font-size: 14px;
+        min-width: 20px;
+    }
+
+    .itemPrice {
+        font-size: 15px;
+        min-width: 70px;
+    }
+
+    .commentSection {
+        margin-bottom: 8px;
+    }
+
+    .totalSection {
+        padding: 10px 12px;
+    }
+
+    .breakdownRow {
+        font-size: 13px;
+        padding: 0;
+    }
+
+    .breakdownRowTotal {
+        margin-top: 4px;
+        padding-top: 8px;
+    }
+
+    .totalAmount {
+        font-size: 1.4rem;
+    }
+
+    .payButton {
+        padding: 12px;
+        font-size: 15px;
+        min-width: 140px;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+    }
+
+    .burgerButton {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .rightPanel {
+        width: 340px;
+        min-width: 340px;
+        padding: 14px;
+        gap: 10px;
+        max-height: calc(100vh - 80px);
+    }
+
+    .leftPanel {
+        gap: 12px;
+    }
+
+    .searchInput {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .productGrid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 10px;
+        max-height: calc(100vh - 220px);
+    }
+
+    .productCard {
+        padding: 10px;
+    }
+
+    .productImage {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 8px;
+    }
+
+    .productName {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .productPrice {
+        font-size: 15px;
+    }
+
+    .quantityButton {
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+    }
+
+    .quantityDisplay {
+        min-width: 40px;
+        font-size: 16px;
+    }
+}
+
+@media (max-height: 700px) {
+    .container {
+        padding: 8px;
+        gap: 8px;
+        min-height: calc(100vh - 80px);
+        max-height: calc(100vh - 80px);
+    }
+
+    .headerRow {
+        margin-bottom: 6px;
+        gap: 6px;
+    }
+
+    .checkTitle {
+        font-size: 1.1rem;
+    }
+
+    .backButton {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+
+    .orderList {
+        padding: 8px;
+        min-height: 120px;
+    }
+
+    .guestHeader {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .orderItem {
+        padding: 8px;
+    }
+
+    .totalSection {
+        padding: 8px;
+    }
+
+    .totalAmount {
+        font-size: 1.3rem;
+    }
+
+    .payButton {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .rightPanel {
+        width: 300px;
+        min-width: 300px;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .productGrid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 8px;
+        max-height: calc(100vh - 180px);
+    }
+
+    .productCard {
+        padding: 8px;
+    }
+
+    .productImage {
+        width: 50px;
+        height: 50px;
+    }
+
+    .productName {
+        font-size: 11px;
+    }
+
+    .productPrice {
+        font-size: 13px;
     }
 }
 

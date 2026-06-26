@@ -167,6 +167,78 @@
     }
 }
 
+/* Low height screens (laptops 1366x768) */
+@media (max-height: 800px) {
+    .container {
+        padding: 12px;
+    }
+
+    .header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .card {
+        padding: 14px;
+    }
+
+    .tableNumber {
+        font-size: 1.8rem;
+    }
+
+    .seats {
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+}
+
+@media (max-height: 700px) {
+    .container {
+        padding: 8px;
+    }
+
+    .header {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+
+    .title {
+        font-size: 1.3rem;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    .card {
+        padding: 10px;
+    }
+
+    .tableNumber {
+        font-size: 1.5rem;
+    }
+
+    .seats {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+    }
+
+    .statusLabel {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {

@@ -193,6 +193,53 @@
    RESPONSIVE
    ============================================ */
 
+@media (max-height: 800px) {
+  .modalContent {
+    padding: var(--space-4);
+  }
+
+  .formGroup {
+    margin-bottom: var(--space-4);
+  }
+
+  .balanceInput {
+    font-size: 1.2rem;
+    padding: var(--space-3);
+  }
+
+  .staffGrid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-2);
+  }
+
+  .staffMember {
+    padding: var(--space-2);
+    font-size: 13px;
+  }
+
+  .summaryCard {
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .summaryRow {
+    font-size: 13px;
+    padding: var(--space-1) 0;
+  }
+
+  .summaryRow.total {
+    font-size: 15px;
+  }
+
+  .summaryRow.total .value {
+    font-size: 17px;
+  }
+
+  .actionButtons {
+    margin-top: var(--space-4);
+  }
+}
+
 @media (max-width: 640px) {
   .modalContent {
     padding: var(--space-4);

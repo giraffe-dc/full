@@ -322,6 +322,7 @@ export interface CheckDeposit {
 }
 
 export interface Check {
+  [x: string]: any;
   id: string; // MongoDB _id
   tableId: string;
   tableName: string;

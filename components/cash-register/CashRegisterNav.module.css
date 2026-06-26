@@ -122,6 +122,33 @@
   background: rgba(139, 92, 246, 0.4);
 }
 
+/* Low height screens (laptops 1366x768) */
+@media (max-height: 800px) {
+  .nav {
+    padding: 8px 16px;
+  }
+
+  .navButton {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-height: 700px) {
+  .nav {
+    padding: 6px 12px;
+  }
+
+  .navButton {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .navButton span {
+    display: none;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .nav {

@@ -7,7 +7,7 @@
    ============================================ */
 
 .container {
-  min-height: calc(100vh - var(--header-height, 80px));
+  min-height: calc(100vh - var(--header-height, 48px));
   width: 100%;
   background: var(--bg-app);
 }
@@ -17,7 +17,7 @@
    ============================================ */
 
 .main {
-  min-height: calc(100vh - var(--header-height, 80px));
+  min-height: calc(100vh - var(--header-height, 48px));
   overflow-y: auto;
   padding: var(--space-6);
 }
@@ -502,6 +502,52 @@
 /* ============================================
    RESPONSIVE
    ============================================ */
+
+@media (max-height: 800px) {
+  .main {
+    padding: var(--space-4);
+  }
+
+  .header {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .headerTitle {
+    font-size: 20px;
+  }
+
+  .selectorSection {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+}
+
+@media (max-height: 700px) {
+  .main {
+    padding: var(--space-3);
+  }
+
+  .header {
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-lg);
+  }
+
+  .headerTitle {
+    font-size: 18px;
+  }
+
+  .headerSubtitle {
+    font-size: 12px;
+  }
+
+  .selectorSection {
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-lg);
+  }
+}
 
 @media (max-width: 768px) {
   .main {
