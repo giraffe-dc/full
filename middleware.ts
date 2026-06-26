@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { RESTRICTED_PATHS, type Role } from './lib/roles';
+import { RESTRICTED_PATHS, RESTRICTED_API_PATHS, type Role } from './lib/roles';
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
@@ -13,8 +13,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
     pathname === '/favicon.ico' ||
-    pathname.includes('.') || // matches assets like audio, images, etc.
-    pathname.startsWith('/api/auth/') // allow login, register, me, logout
+    pathname.includes('.') ||
+    pathname.startsWith('/api/auth/')
   ) {
     return NextResponse.next();
   }
@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 3. Check authentication for all other pages and API endpoints
+  // 3. Check authentication
   if (!token) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -53,7 +53,6 @@ export async function middleware(req: NextRequest) {
     const role = (payload.role as string) as Role;
 
     // 4. Role-Based Access Control (RBAC)
-    // admin — повний доступ, client — тільки client routes
     if (role !== 'admin') {
       // client — тільки client routes
       if (role === 'client') {
@@ -68,24 +67,30 @@ export async function middleware(req: NextRequest) {
         }
       }
 
-      // user, staff — заборонено admin/accounting
+      // user, staff — перевіряємо обмеження
       if (role === 'user' || role === 'staff') {
-        const isRestricted = RESTRICTED_PATHS.some(p =>
+        // Перевірка сторінок (/admin, /accounting)
+        const isRestrictedPage = RESTRICTED_PATHS.some(p =>
           pathname === p || pathname.startsWith(`${p}/`)
         );
-
-        if (isRestricted) {
-          if (pathname.startsWith('/api/')) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-          }
+        if (isRestrictedPage) {
           const url = req.nextUrl.clone();
           url.pathname = '/';
           return NextResponse.redirect(url);
         }
+
+        // Перевірка API маршрутів
+        if (pathname.startsWith('/api/')) {
+          const isRestrictedApi = RESTRICTED_API_PATHS.some(p =>
+            pathname.startsWith(p)
+          );
+          if (isRestrictedApi) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+        }
       }
     }
   } catch (err) {
-    // Verification failed / token invalid
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
