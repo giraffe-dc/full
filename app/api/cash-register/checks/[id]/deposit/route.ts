@@ -211,12 +211,14 @@ export async function DELETE(
                 const refundAmount = deposit.amount;
                 const now = new Date().toISOString();
 
-                // 2. Очистити депозит у чеку
+                // 2. Оновити статус депозиту (зберігаємо інформацію для історії)
                 await db.collection("checks").updateOne(
                     { _id: new ObjectId(id) },
                     {
                         $set: {
-                            deposit: null,
+                            'deposit.refunded': true,
+                            'deposit.refundedAt': now,
+                            'deposit.refundedBy': authorName,
                             paidAmount: 0,
                             paymentStatus: 'unpaid',
                             updatedAt: now
@@ -233,21 +235,8 @@ export async function DELETE(
                     { session }
                 );
 
-                // 3. Позначити касову транзакцію як видалену (зберігаємо аудит-доріжку)
-                if (deposit.transactionId) {
-                    await db.collection("cash_transactions").updateOne(
-                        { _id: new ObjectId(deposit.transactionId) },
-                        {
-                            $set: {
-                                isDeleted: true,
-                                deletedAt: new Date(),
-                                deletedBy: authorName,
-                                deleteReason: 'deposit_refunded'
-                            }
-                        },
-                        { session }
-                    );
-                }
+                // Не видаляємо оригінальний deposit — він лишається для коректного розрахунку
+                // deposit_refund окремо віднімається від deposit в totalSalesCash
 
                 // 4. Знайти налаштування фінансів та створити бухгалтерську транзакцію повернення
                 const settings = await db.collection("settings").findOne({ type: "global" }, { session });
@@ -315,7 +304,7 @@ export async function DELETE(
                 updatedCheck = {
                     ...check,
                     id: check._id.toString(),
-                    deposit: null,
+                    deposit: { ...check.deposit, refunded: true, refundedAt: now, refundedBy: authorName },
                     paidAmount: 0,
                     paymentStatus: 'unpaid'
                 };

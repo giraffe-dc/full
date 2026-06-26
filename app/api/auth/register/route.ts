@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, role = "staff" } = body;
+    const { name, email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -21,7 +21,8 @@ export async function POST(req: Request) {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const result = await users.insertOne({ name, email, password: hashed, role, createdAt: new Date() });
+    // Роль завжди 'staff' — змінюється тільки через admin/users
+    const result = await users.insertOne({ name, email, password: hashed, role: 'staff', createdAt: new Date() });
 
     return NextResponse.json({ ok: true, id: result.insertedId }, { status: 201 });
   } catch (err) {

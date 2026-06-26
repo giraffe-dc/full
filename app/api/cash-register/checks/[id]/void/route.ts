@@ -65,19 +65,8 @@ export async function POST(
                 createdAt: new Date()
             });
 
-            if (deposit.transactionId) {
-                await db.collection("cash_transactions").updateOne(
-                    { _id: new ObjectId(deposit.transactionId) },
-                    {
-                        $set: {
-                            isDeleted: true,
-                            deletedAt: new Date(),
-                            deletedBy: check.waiterName || 'System',
-                            deleteReason: 'void_deposit_refunded'
-                        }
-                    }
-                );
-            }
+            // Не видаляємо оригінальний deposit — він лишається для коректного розрахунку
+            // deposit_refund окремо віднімається від deposit в totalSalesCash
         }
 
         // 2. Позначити чек як анульований

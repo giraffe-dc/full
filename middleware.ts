@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { RESTRICTED_PATHS, type Role } from './lib/roles';
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
@@ -26,12 +27,10 @@ export async function middleware(req: NextRequest) {
       try {
         const secret = new TextEncoder().encode(JWT_SECRET);
         await jwtVerify(token, secret);
-        // Valid token, redirect to home page
         const url = req.nextUrl.clone();
         url.pathname = '/';
         return NextResponse.redirect(url);
       } catch (err) {
-        // Invalid token, allow access to login page
         return NextResponse.next();
       }
     }
@@ -51,23 +50,38 @@ export async function middleware(req: NextRequest) {
   try {
     const secret = new TextEncoder().encode(JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    const role = payload.role as string;
+    const role = (payload.role as string) as Role;
 
     // 4. Role-Based Access Control (RBAC)
-    if (role === 'user') {
-      // User is forbidden from entering admin/accounting areas
-      const restrictedPaths = ['/admin', '/accounting', '/api/admin', '/api/accounting'];
-      const isRestricted = restrictedPaths.some(p => 
-        pathname === p || pathname.startsWith(`${p}/`)
-      );
-
-      if (isRestricted) {
-        if (pathname.startsWith('/api/')) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // admin — повний доступ, client — тільки client routes
+    if (role !== 'admin') {
+      // client — тільки client routes
+      if (role === 'client') {
+        const isClientRoute = pathname.startsWith('/api/client') || pathname.startsWith('/client');
+        if (!isClientRoute) {
+          if (pathname.startsWith('/api/')) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+          const url = req.nextUrl.clone();
+          url.pathname = '/';
+          return NextResponse.redirect(url);
         }
-        const url = req.nextUrl.clone();
-        url.pathname = '/';
-        return NextResponse.redirect(url);
+      }
+
+      // user, staff — заборонено admin/accounting
+      if (role === 'user' || role === 'staff') {
+        const isRestricted = RESTRICTED_PATHS.some(p =>
+          pathname === p || pathname.startsWith(`${p}/`)
+        );
+
+        if (isRestricted) {
+          if (pathname.startsWith('/api/')) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+          const url = req.nextUrl.clone();
+          url.pathname = '/';
+          return NextResponse.redirect(url);
+        }
       }
     }
   } catch (err) {
