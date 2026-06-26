@@ -15,8 +15,9 @@ export const RESTRICTED_PATHS = [
 
 // API routes, закриті для user та staff
 // Виключаємо ті маршрути, які потрібні для каси (products, recipes, clients, categories)
+// Також виключаємо /api/admin/chat-proxy — потрібен для каси
 export const RESTRICTED_API_PATHS = [
-  '/api/admin',
+  '/api/admin/users',
   '/api/accounting/accounts',
   '/api/accounting/budgets',
   '/api/accounting/cash-shifts',
