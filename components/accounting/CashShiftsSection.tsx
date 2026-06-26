@@ -153,7 +153,7 @@ export function CashShiftsSection({ rows, onAddShift, onCloseShift, onOpenShift,
                               )}</div>
                             </div>
                             <div>
-                              <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Приходи:</div>
+                              <div style={{ fontSize: '0.85em', color: '#6b7280', marginBottom: '4px' }}>Ручні доходи:</div>
                               <div style={{ fontWeight: '600', color: '#059669' }}>{formatMoney(shift.totalIncome)}</div>
                             </div>
                             <div>

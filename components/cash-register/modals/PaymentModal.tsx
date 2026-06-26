@@ -12,9 +12,11 @@ interface PaymentModalProps {
     check: Check | null;
     onClose: () => void;
     onPay: (method: 'cash' | 'card' | 'mixed' | 'certificate', amounts: { cash: number, card: number, certificate?: number, certificateId?: string }, amountGiven: string) => Promise<void>;
+    onDeposit?: (amount: number, method: 'cash' | 'card') => Promise<void>;
     receipt: Receipt | null;
     showReceiptModal: boolean;
     onCloseReceipt: () => void;
+    mode?: 'full' | 'deposit'; // full = повна оплата, deposit = прийняти передплату
 }
 
 // Cash denominations for quick selection
@@ -25,28 +27,40 @@ export const PaymentModal = ({
     check,
     onClose,
     onPay,
+    onDeposit,
     receipt,
     showReceiptModal,
-    onCloseReceipt
+    onCloseReceipt,
+    mode = 'full'
 }: PaymentModalProps) => {
     const toast = useToast();
 
-    // Calculate total first (before hooks)
-    const total = check ? check.total : 0;
+    // При deposit-режимі: сума до оплати = total - paidAmount
+    const paidAmount = check?.paidAmount || 0;
+    const fullTotal = check ? check.total : 0;
+    const total = mode === 'full'
+        ? Math.max(0, fullTotal - paidAmount)  // залишок після депозиту
+        : fullTotal; // при депозиті показуємо повний total для контексту
 
     // Payment State
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed' | 'certificate'>('cash');
     const [paymentAmounts, setPaymentAmounts] = useState({ cash: 0, card: 0, certificate: 0, certificateId: '' });
     const [amountGiven, setAmountGiven] = useState("");
+    const [depositAmount, setDepositAmount] = useState(""); // для режиму deposit
     const [isProcessing, setIsProcessing] = useState(false);
     const [certificates, setCertificates] = useState<Certificate[]>([]);
     const [certSettings, setCertSettings] = useState<any>(null);
+    const [depositMethod, setDepositMethod] = useState<'cash' | 'card'>('cash');
+    const [showDepositReceipt, setShowDepositReceipt] = useState(false);
+    const [depositReceiptData, setDepositReceiptData] = useState<any>(null);
 
     useEffect(() => {
         if (isOpen && check) {
             setPaymentMethod('cash');
             setPaymentAmounts({ cash: 0, card: 0, certificate: 0, certificateId: '' });
             setAmountGiven("");
+            setDepositAmount("");
+            setDepositMethod('cash');
             if (check.customerId) {
                 fetch(`/api/certificates/client/${check.customerId}?status=active`)
                     .then(res => res.json())
@@ -79,18 +93,48 @@ export const PaymentModal = ({
 
     if (!check && !receipt) return null;
 
+    // === ОБРОБНИК ПЕРЕДПЛАТИ ===
+    const handleConfirmDeposit = async () => {
+        if (isProcessing) return;
+        const amount = parseFloat(depositAmount);
+        if (!amount || amount <= 0) {
+            toast.error("Введіть суму передплати");
+            return;
+        }
+        const remaining = fullTotal - paidAmount;
+        if (amount > remaining + 0.01) {
+            toast.error(`Сума передплати (${amount.toFixed(2)} ₴) перевищує залишок до сплати (${remaining.toFixed(2)} ₴)`);
+            return;
+        }
+        setIsProcessing(true);
+        try {
+            await onDeposit?.(amount, depositMethod);
+            toast.success(`Передплату ${amount.toFixed(2)} ₴ прийнято!`);
+            setDepositReceiptData({
+                amount,
+                method: depositMethod,
+                checkTotal: fullTotal,
+                remaining: fullTotal - paidAmount - amount,
+                checkId: check?.id?.slice(-4),
+                tableName: check?.tableName,
+                date: new Date()
+            });
+            setShowDepositReceipt(true);
+        } catch (error) {
+            toast.error("Помилка при внесенні передплати");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // === ОБРОБНИК ПОВНОЇ ОПЛАТИ ===
     const handleConfirmPay = async () => {
         if (isProcessing) return;
-
-        console.log("💳 Payment Initiated for Check:", check?.id);
-        console.log("Method:", paymentMethod, "Amounts:", paymentAmounts, "Given:", amountGiven);
 
         setIsProcessing(true);
         try {
             await onPay(paymentMethod, paymentAmounts, amountGiven);
-            console.log("✅ Payment Success");
         } catch (error) {
-            console.error("❌ Payment Failed", error);
             toast.error("Помилка оплати. Спробуйте ще раз.");
         } finally {
             setIsProcessing(false);
@@ -103,6 +147,9 @@ export const PaymentModal = ({
     };
 
     const change = (Number(amountGiven) || 0) - total;
+
+    // При повній оплаті: відображаємо суму залишку (total - paidAmount)
+    const displayTotal = mode === 'full' ? total : fullTotal;
 
     // Check if payment is exactly equal to total (for mixed) or sufficient (for cash)
     const selectedCert = certificates.find(c => c.id === paymentAmounts.certificateId);
@@ -159,16 +206,119 @@ export const PaymentModal = ({
             {isOpen && check && (
                 <Modal
                     isOpen={true}
-                    title={`💰 Оплата чеку #${check.id.slice(-4)}`}
+                    title={mode === 'deposit'
+                        ? `💰 Передплата по чеку #${check.id.slice(-4)}`
+                        : `💰 Оплата чеку #${check.id.slice(-4)}`}
                     onClose={() => !isProcessing && onClose()}
                     size="lg"
                 >
                     <div className={styles.modalContent}>
+                        {/* Інфо про передплату якщо є */}
+                        {paidAmount > 0 && mode === 'full' && (
+                            <div style={{
+                                background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                                border: '1px solid #86efac',
+                                borderRadius: '10px',
+                                padding: '10px 16px',
+                                marginBottom: '12px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '0.9rem'
+                            }}>
+                                <span>💰 Передплата:</span>
+                                <span style={{ fontWeight: 700, color: '#16a34a' }}>-{formatCurrency(paidAmount)}</span>
+                            </div>
+                        )}
+
                         {/* Total Amount Display */}
                         <div className={styles.amountDisplay}>
-                            {formatCurrency(total)}
+                            {mode === 'deposit' ? (
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>Загальна сума чеку</div>
+                                    <div>{formatCurrency(fullTotal)}</div>
+                                </div>
+                            ) : (
+                                formatCurrency(total)
+                            )}
                         </div>
 
+                        {/* === РЕЖИМ ПЕРЕДПЛАТИ (DEPOSIT) === */}
+                        {mode === 'deposit' && (
+                            <div className={styles.cashSection}>
+                                <div style={{ marginBottom: '16px', textAlign: 'center', color: '#374151', fontSize: '0.95rem' }}>
+                                    Введіть суму та спосіб оплати передплати
+                                </div>
+
+                                {/* Метод передплати */}
+                                <div className={styles.paymentMethods} style={{ marginBottom: '16px' }}>
+                                    <button
+                                        className={`${styles.paymentMethodBtn} ${depositMethod === 'cash' ? styles.active : ''}`}
+                                        onClick={() => setDepositMethod('cash')}
+                                        disabled={isProcessing}
+                                    >
+                                        <span className={styles.icon}>💵</span>
+                                        <span className={styles.label}>Готівка</span>
+                                    </button>
+                                    <button
+                                        className={`${styles.paymentMethodBtn} ${depositMethod === 'card' ? styles.active : ''}`}
+                                        onClick={() => setDepositMethod('card')}
+                                        disabled={isProcessing}
+                                    >
+                                        <span className={styles.icon}>💳</span>
+                                        <span className={styles.label}>Картка</span>
+                                    </button>
+                                </div>
+
+                                {/* Сума передплати */}
+                                <div className={styles.inputWrapper}>
+                                    <Input
+                                        label="Сума передплати (₴)"
+                                        type="number"
+                                        value={depositAmount}
+                                        onChange={(e) => setDepositAmount(e.target.value)}
+                                        placeholder={`Макс: ${(fullTotal - paidAmount).toFixed(2)}`}
+                                        size="lg"
+                                        autoFocus
+                                        disabled={isProcessing}
+                                    />
+                                </div>
+
+                                {/* Швидкий вибір номіналів */}
+                                <div className={styles.denominationsGrid}>
+                                    {DENOMINATIONS.map((denom) => (
+                                        <button
+                                            key={denom}
+                                            className={styles.denomBtn}
+                                            onClick={() => setDepositAmount(denom.toString())}
+                                            disabled={isProcessing}
+                                        >
+                                            {denom}₴
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Кнопки дій */}
+                                <div className={styles.actionButtons} style={{ marginTop: '20px' }}>
+                                    <Button variant="outline" onClick={() => !isProcessing && onClose()} disabled={isProcessing}>
+                                        Скасувати
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleConfirmDeposit}
+                                        disabled={isProcessing || !depositAmount || parseFloat(depositAmount) <= 0}
+                                        fullWidth
+                                        style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                                    >
+                                        {isProcessing ? 'Обробка...' : `✅ Прийняти ${depositAmount ? formatCurrency(parseFloat(depositAmount)) : ''}`}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* === РЕЖИМ ПОВНОЇ ОПЛАТИ (FULL) === */}
+                        {mode === 'full' && (
+                        <>
                         {/* Method Selection */}
                         <div className={styles.paymentMethods}>
                             <button
@@ -419,6 +569,7 @@ export const PaymentModal = ({
                         )}
 
                         {/* Action Buttons */}
+                        {mode === 'full' && (
                         <div className={styles.actionButtons}>
                             <Button
                                 variant="outline"
@@ -436,6 +587,9 @@ export const PaymentModal = ({
                                 {isProcessing ? 'Обробка...' : `Сплатити ${formatCurrency(total)}`}
                             </Button>
                         </div>
+                        )}
+                        </> /* end mode === 'full' */
+                        )}
                     </div>
                 </Modal>
             )}
@@ -471,6 +625,48 @@ export const PaymentModal = ({
                                     🖨️ Друк
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Deposit Receipt Modal */}
+            {showDepositReceipt && depositReceiptData && (
+                <Modal
+                    isOpen={true}
+                    title="Передплата прийнята"
+                    onClose={() => { setShowDepositReceipt(false); onClose(); }}
+                    size="sm"
+                >
+                    <div style={{ padding: '16px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                            <div style={{ fontSize: '2rem' }}>✅</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 600, marginTop: '8px' }}>
+                                {formatCurrency(depositReceiptData.amount)}
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '0.9rem', color: '#374151' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span>Спосіб:</span>
+                                <span>{depositReceiptData.method === 'cash' ? 'Готівка' : 'Картка'}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span>Чек:</span>
+                                <span>#{depositReceiptData.checkId} ({depositReceiptData.tableName})</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span>Повна сума:</span>
+                                <span>{formatCurrency(depositReceiptData.checkTotal)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626', fontWeight: 600 }}>
+                                <span>Залишок до сплати:</span>
+                                <span>{formatCurrency(depositReceiptData.remaining)}</span>
+                            </div>
+                        </div>
+                        <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                            <Button variant="primary" fullWidth onClick={() => { setShowDepositReceipt(false); onClose(); }}>
+                                Закрити
+                            </Button>
                         </div>
                     </div>
                 </Modal>

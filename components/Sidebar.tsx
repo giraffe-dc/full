@@ -26,7 +26,7 @@ export function Sidebar({ items, userRole }: SidebarProps) {
     // Filter items by role
     const filteredItems = items.filter(item => {
         if (!item.roles || item.roles.length === 0) return true;
-        if (!userRole) return true;
+        if (!userRole) return false; // Do not show role-restricted items while role is loading
         return item.roles.includes(userRole);
     });
 

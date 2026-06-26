@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../lib/mongodb";
+import { calculateSalesCash, calculateSalesCard } from "@/lib/deposit-utils";
 import type {
     PnLData,
     PnLComparison,
@@ -134,7 +135,8 @@ async function aggregateRevenue(
     dateFilter: Record<string, any>,
     receiptsRaw: any[],
     shiftsRaw: any[],
-    cashTxRaw: any[]
+    cashTxRaw: any[],
+    depositsRaw: any[]
 ): Promise<{ total: number; categories: CategoryItem[] }> {
     const revenueByCategory: Record<string, number> = {};
 
@@ -154,24 +156,10 @@ async function aggregateRevenue(
             );
             totalSalesCash = shiftReceipts
                 .filter((r: any) => r.paymentMethod === "cash" || r.paymentMethod === "mixed")
-                .reduce(
-                    (acc: number, r: any) =>
-                        acc +
-                        (r.paymentMethod === "mixed"
-                            ? r.paymentDetails?.cash || 0
-                            : r.total),
-                    0
-                );
+                .reduce((acc: number, r: any) => acc + calculateSalesCash(r), 0);
             totalSalesCard = shiftReceipts
                 .filter((r: any) => r.paymentMethod === "card" || r.paymentMethod === "mixed")
-                .reduce(
-                    (acc: number, r: any) =>
-                        acc +
-                        (r.paymentMethod === "mixed"
-                            ? r.paymentDetails?.card || 0
-                            : r.total),
-                    0
-                );
+                .reduce((acc: number, r: any) => acc + calculateSalesCard(r), 0);
         }
 
         const salesTotal = (totalSalesCash || 0) + (totalSalesCard || 0);
@@ -219,12 +207,22 @@ async function aggregateRevenue(
     }
 
     // ============================================
-    // 4. CASH REGISTER INCOME (deposits, not sales)
+    // 4. CASH REGISTER INCOME (manual income only, deposits excluded)
     // ============================================
     for (const ct of cashTxRaw) {
         if (ct.type === "income" && ct.category !== "incasation") {
             revenueByCategory["Внесення (каса)"] =
                 (revenueByCategory["Внесення (каса)"] || 0) + (Number(ct.amount) || 0);
+        }
+    }
+
+    // ============================================
+    // 5. DEPOSITS → Продажі (каса)
+    // ============================================
+    for (const d of depositsRaw) {
+        if (d.type === "income") {
+            revenueByCategory["Продажі (каса)"] =
+                (revenueByCategory["Продажі (каса)"] || 0) + (Number(d.amount) || 0);
         }
     }
 
@@ -605,15 +603,16 @@ async function fetchPnLData(
     const dateFilter = buildDateFilter(startDate, endDate);
 
     // Fetch raw data in parallel
-    const [receiptsRaw, shiftsRaw, cashTxRaw] = await Promise.all([
+    const [receiptsRaw, shiftsRaw, cashTxRaw, depositsRaw] = await Promise.all([
         db.collection("receipts").find({ ...buildDateFilter(startDate, endDate, "createdAt") }).toArray(),
         db.collection("cash_shifts").find({ status: "closed", ...buildDateFilter(startDate, endDate, "endTime") }).toArray(),
-        db.collection("cash_transactions").find({ ...buildDateFilter(startDate, endDate, "createdAt") }).toArray(),
+        db.collection("cash_transactions").find({ ...buildDateFilter(startDate, endDate, "createdAt"), isDeleted: { $ne: true }, category: { $nin: ['deposit', 'deposit_refund', 'deposit_audit'] } }).toArray(),
+        db.collection("cash_transactions").find({ ...buildDateFilter(startDate, endDate, "createdAt"), isDeleted: { $ne: true }, category: 'deposit' }).toArray(),
     ]);
 
     // Aggregate components
     const [revenue, cogsResult, opex, dailyStats] = await Promise.all([
-        aggregateRevenue(db, dateFilter, receiptsRaw, shiftsRaw, cashTxRaw),
+        aggregateRevenue(db, dateFilter, receiptsRaw, shiftsRaw, cashTxRaw, depositsRaw),
         aggregateCOGS(db, startDate, endDate),
         aggregateOPEX(db, dateFilter, cashTxRaw),
         calculateDailyStats(db, dateFilter, receiptsRaw, shiftsRaw),

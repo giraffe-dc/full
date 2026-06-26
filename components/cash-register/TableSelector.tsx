@@ -21,6 +21,12 @@ export function TableSelector({ tables, onSelect, onBack, departmentName, onAdd,
         return null;
     };
 
+    // Перевірити чи є передплата по столу
+    const hasDeposit = (tableId: string) => {
+        const check = orders.find(order => order.tableId === tableId);
+        return check && (check.paidAmount || 0) > 0;
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -37,7 +43,12 @@ export function TableSelector({ tables, onSelect, onBack, departmentName, onAdd,
                             className={`${styles.card} ${styles[table.status]}`}
                             onClick={() => onSelect(table)}
                         >
-                            <div className={styles.tableNumber}>{table.name}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 8px' }}>
+                                <div className={styles.tableNumber}>{table.name}</div>
+                                {hasDeposit(table.id) && (
+                                    <div style={{ fontSize: '1.2rem', marginTop: '2px' }} title="Є передплата">💰</div>
+                                )}
+                            </div>
                             <div className={styles.seats}>👥 {table.seats}</div>
                             {comment && (
                                 <div style={{

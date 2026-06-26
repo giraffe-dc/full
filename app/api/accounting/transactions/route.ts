@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../lib/mongodb";
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
+import { calculateSalesCash, calculateSalesCard } from "@/lib/deposit-utils";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
@@ -50,6 +51,15 @@ export async function GET(req: NextRequest) {
       })
       .toArray();
 
+    // 1.5 Fetch Cash Register Deposit Transactions
+    const depositTxPromise = includeCashTx || moneyAccountId
+      ? db.collection("transactions").find({
+          ...matchDate("date"),
+          source: "cash-register",
+          category: "deposit"
+        }).toArray()
+      : Promise.resolve([]);
+
     // 2. Fetch Stock Supplies (Expenses)
     const suppliesPromise = db.collection("stock_movements")
       .find({
@@ -73,8 +83,9 @@ export async function GET(req: NextRequest) {
       : Promise.resolve([]);
 
     // 4. Fetch Cash Transactions (Income/Expense/Incasation)
+    //    Exclude category 'deposit' — already fetched via depositTxPromise from 'transactions' collection
     const cashTxPromise = includeCashTx || moneyAccountId
-      ? db.collection("cash_transactions").find({ ...matchDate("createdAt") }).toArray()
+      ? db.collection("cash_transactions").find({ ...matchDate("createdAt"), isDeleted: { $ne: true }, category: { $ne: 'deposit' } }).toArray()
       : Promise.resolve([]);
 
     // 5. Fetch Settings for Account Resolution
@@ -85,11 +96,12 @@ export async function GET(req: NextRequest) {
       ? db.collection("money_accounts").findOne({ _id: new ObjectId(moneyAccountId) })
       : Promise.resolve(null);
 
-    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, settings, accountDoc, shiftsRaw] = await Promise.all([
+    const [txRaw, suppliesRaw, receiptsRaw, cashTxRaw, depositTxRaw, settings, accountDoc, shiftsRaw] = await Promise.all([
       txPromise,
       suppliesPromise,
       receiptsPromise,
       cashTxPromise,
+      depositTxPromise,
       settingsPromise,
       accountPromise,
       shiftsPromise
@@ -116,6 +128,20 @@ export async function GET(req: NextRequest) {
         toMoneyAccountId: t.toMoneyAccountId
       })),
 
+      // Cash Register Deposit Transactions (categorized as sales)
+      ...depositTxRaw.map((dt: any) => ({
+        ...dt,
+        _id: dt._id.toString(),
+        date: dt.date,
+        description: dt.description || (dt.paymentMethod === 'card' ? 'Передплата (Картка)' : 'Передплата (Готівка)'),
+        amount: dt.amount || 0,
+        type: dt.type || "income",
+        category: "sales",
+        paymentMethod: dt.paymentMethod || "cash",
+        source: dt.source || "cash-register",
+        moneyAccountId: dt.moneyAccountId || (dt.paymentMethod === 'cash' ? cashAccountId : cardAccountId)
+      })),
+
       // Shift Summaries (Income)
       ...shiftsRaw.flatMap((s: any) => {
         const items = [];
@@ -134,11 +160,11 @@ export async function GET(req: NextRequest) {
 
           totalSalesCash = shiftReceipts
             .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-            .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
+            .reduce((acc: number, r: any) => acc + calculateSalesCash(r), 0);
 
           totalSalesCard = shiftReceipts
             .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
-            .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+            .reduce((acc: number, r: any) => acc + calculateSalesCard(r), 0);
 
           totalGuests = shiftReceipts.reduce((acc: number, r: any) => acc + (Number(r.guestsCount) || 1), 0);
         }
@@ -182,6 +208,8 @@ export async function GET(req: NextRequest) {
       // Receipts -> Income (Fallback for open shifts or standalone checks)
       ...receiptsRaw.filter((r: any) => !r.shiftId).flatMap((r: any) => {
         const items = [];
+        const depAmt = Number(r.depositAmount) || 0;
+        const depM = r.depositMethod || r.depositInfo?.method;
         if (r.paymentMethod === 'mixed') {
           if (r.paymentDetails?.cash) {
             items.push({
@@ -214,11 +242,16 @@ export async function GET(req: NextRequest) {
             });
           }
         } else {
+          const salesAmount = r.paymentMethod === 'cash'
+            ? calculateSalesCash(r)
+            : r.paymentMethod === 'card'
+              ? calculateSalesCard(r)
+              : r.total;
           items.push({
             _id: r._id.toString(),
             date: r.createdAt,
             description: `Чек #${r.receiptNumber}`,
-            amount: r.total,
+            amount: salesAmount,
             type: 'income',
             category: 'sales',
             paymentMethod: r.paymentMethod,
@@ -234,20 +267,21 @@ export async function GET(req: NextRequest) {
       ...cashTxRaw.flatMap((ct: any) => {
         const items = [];
         const amt = Number(ct.amount) || 0;
+        const ctPaymentMethod = ct.paymentMethod || 'cash';
+        const ctMoneyAccountId = ctPaymentMethod === 'card' ? cardAccountId : cashAccountId;
 
-        // Impact on Cash Account
-        if (cashAccountId) {
+        if (ctMoneyAccountId) {
           items.push({
             _id: ct._id.toString(),
             date: ct.createdAt,
             description: ct.comment || (ct.type === 'incasation' ? 'Інкасація (вилучення)' : (ct.type === 'income' ? 'Внесення' : 'Витрата')),
             amount: amt,
-            type: ct.type === 'incasation' ? 'expense' : ct.type, // Treatment for balance
+            type: ct.type === 'incasation' ? 'expense' : ct.type,
             category: ct.category || (ct.type === 'incasation' ? 'incasation' : 'other'),
-            paymentMethod: 'cash',
+            paymentMethod: ctPaymentMethod,
             source: 'cash-register',
             createdAt: ct.createdAt,
-            moneyAccountId: cashAccountId,
+            moneyAccountId: ctMoneyAccountId,
             toMoneyAccountId: ct.type === 'incasation' ? safeAccountId : undefined
           });
         }

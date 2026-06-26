@@ -69,6 +69,7 @@ export default function CashRegisterPage() {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactionType, setTransactionType] = useState<'income' | 'expense' | 'incasation'>('expense');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentModalMode, setPaymentModalMode] = useState<'full' | 'deposit'>('full');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showPromotionsModal, setShowPromotionsModal] = useState(false);
@@ -505,6 +506,53 @@ export default function CashRegisterPage() {
     }
   };
 
+  const handleDeposit = async (amount: number, method: 'cash' | 'card') => {
+    if (!activeCheck) return;
+    try {
+      const res = await fetch(`/api/cash-register/checks/${activeCheck.id}/deposit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          method,
+          shiftId: currentShift?.id,
+          authorName: activeCheck.waiterName || 'Касир'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        updateCheckState(data.data);
+      } else {
+        toast.error("Помилка внесення передплати: " + data.error);
+        throw new Error(data.error);
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+  const handleRefundDeposit = async () => {
+    if (!activeCheck || !activeCheck.deposit) return;
+    if (!confirm(`Ви впевнені, що хочете повернути передплату (${activeCheck.deposit.amount} ₴)?`)) return;
+
+    try {
+      const res = await fetch(`/api/cash-register/checks/${activeCheck.id}/deposit?authorName=${encodeURIComponent(activeCheck.waiterName || 'Касир')}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Передплату повернуто");
+        updateCheckState(data.data);
+      } else {
+        toast.error("Помилка повернення: " + data.error);
+      }
+    } catch (e) {
+      toast.error("Помилка мережі");
+      console.error(e);
+    }
+  };
+
   const handleCheckout = async (method: 'cash' | 'card' | 'mixed' | 'certificate', amounts: { cash: number, card: number, certificate?: number, certificateId?: string }, amountGiven: string) => {
     if (!activeCheck) return;
 
@@ -635,7 +683,9 @@ export default function CashRegisterPage() {
             products={products}
             onBack={handleBackToTables}
             onAddItem={handleAddItem}
-            onPay={() => setShowPaymentModal(true)}
+            onPay={() => { setPaymentModalMode('full'); setShowPaymentModal(true); }}
+            onDepositClick={() => { setPaymentModalMode('deposit'); setShowPaymentModal(true); }}
+            onRefundDepositClick={handleRefundDeposit}
             onVoid={() => handleVoidCheck(activeCheck!.id)}
             onUpdateCheck={updateCheckState}
           />
@@ -670,9 +720,11 @@ export default function CashRegisterPage() {
         check={activeCheck}
         onClose={() => setShowPaymentModal(false)}
         onPay={handleCheckout}
+        onDeposit={handleDeposit}
         receipt={lastReceipt}
         showReceiptModal={showReceiptModal}
         onCloseReceipt={handleFinishReceipt}
+        mode={paymentModalMode}
       />
 
       {showStaffModal && (

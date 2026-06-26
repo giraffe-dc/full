@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { calculateSalesCash, calculateSalesCard } from "@/lib/deposit-utils";
 
 export const dynamic = 'force-dynamic';
 
@@ -89,18 +90,19 @@ export async function GET(request: Request) {
                 ]
             }).toArray();
 
-            const totalSalesCash = shiftReceipts
+            // Продажі з чеків: універсальна формула з deposit-utils
+            let totalSalesCash = shiftReceipts
                 .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-                .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
+                .reduce((acc: number, r: any) => acc + calculateSalesCash(r), 0);
 
-            const totalSalesCard = shiftReceipts
+            let totalSalesCard = shiftReceipts
                 .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
-                .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+                .reduce((acc: number, r: any) => acc + calculateSalesCard(r), 0);
 
             // 2. Fetch Cash Transactions
-            let cashTxs = await db.collection("cash_transactions").find({ shiftId: shift._id }).toArray();
+            let cashTxs = await db.collection("cash_transactions").find({ shiftId: shift._id, isDeleted: { $ne: true } }).toArray();
             if (cashTxs.length === 0) {
-                cashTxs = await db.collection("cash_transactions").find({ createdAt: { $gte: start, $lte: end } }).toArray();
+                cashTxs = await db.collection("cash_transactions").find({ createdAt: { $gte: start, $lte: end }, isDeleted: { $ne: true } }).toArray();
             }
 
             // 3. General Transactions (Manual)
@@ -181,21 +183,81 @@ export async function GET(request: Request) {
             }
 
             // Process Cash Transactions
+            // ========================================
+            // 'deposit' - внесення коштів (передплати, поповнення)
+            // 'sales' - пропускаємо, вони вже в receipts
+            // ========================================
+            let totalDepositsCash = 0;
+            let totalDepositsCard = 0;
+            let totalRefundsCash = 0;
+            let totalRefundsCard = 0;
+
             cashTxs.forEach((ct: any) => {
                 const amt = Number(ct.amount) || 0;
-                if (ct.type === 'income') income += amt;
-                if (ct.type === 'expense') expenses += amt;
+
+                // Рахуємо депозити (передплати, поповнення касси) розділено за методом
+                if (ct.category === 'deposit') {
+                    if (ct.paymentMethod === 'card') {
+                        totalDepositsCard += amt;
+                    } else {
+                        totalDepositsCash += amt;
+                    }
+                }
+
+                // Рахуємо повернення депозитів
+                if (ct.category === 'deposit_refund') {
+                    if (ct.paymentMethod === 'card') {
+                        totalRefundsCard += amt;
+                    } else {
+                        totalRefundsCash += amt;
+                    }
+                }
+
+                // Пропускаємо касові продажи - вони вже в receipts
+                if (ct.category === 'sales') {
+                    return;
+                }
+
+                // Пропускаємо касові аудит операції
+                if (ct.category === 'deposit_audit') {
+                    return;
+                }
+
+                if (ct.type === 'income' && ct.category !== 'deposit' && ct.category !== 'deposit_refund') income += amt;
+                if (ct.type === 'expense' && ct.category !== 'deposit_refund') expenses += amt;
                 if (ct.type === 'incasation') incasation += amt;
+
+                // Deposit → відображаємо як "Продажі" в детальному списку
+                let txType = ct.type === 'incasation' ? 'Інкасація' : (ct.category || (ct.type === 'income' ? 'Прихід' : 'Витрата'));
+                if (ct.category === 'deposit') txType = ct.paymentMethod === 'card' ? 'Продажі (Картка)' : 'Продажі (Готівка)';
+                if (ct.category === 'deposit_refund') txType = ct.paymentMethod === 'card' ? 'Повернення (Картка)' : 'Повернення (Готівка)';
 
                 detailedTransactions.push({
                     id: ct._id.toString(),
-                    type: ct.type === 'incasation' ? 'Інкасація' : (ct.category || (ct.type === 'income' ? 'Прихід' : 'Витрата')),
+                    type: txType,
                     createdAt: new Date(ct.createdAt).toISOString(),
                     amount: ct.type === 'expense' || ct.type === 'incasation' ? -amt : amt,
                     authorName: ct.authorName || shift.cashierName,
                     comment: ct.comment,
                     editedBy: '—'
                 });
+            });
+
+            // Додати чеки з передоплатою в детальний список (тільки доплата, депозит вже в "Внесення коштів")
+            shiftReceipts.filter((r: any) => (Number(r.depositAmount) || 0) > 0).forEach((r: any) => {
+                const depositAmt = Number(r.depositAmount) || 0;
+                const remainder = Math.max(0, (r.total || 0) - depositAmt);
+                if (remainder > 0) {
+                    detailedTransactions.push({
+                        id: `receipt-deposit-${r._id.toString()}`,
+                        type: 'Доплата по чеку',
+                        createdAt: new Date(r.createdAt).toISOString(),
+                        amount: remainder,
+                        authorName: r.waiter || shift.cashier || 'Касир',
+                        comment: `Чек #${r.receiptNumber} (повна: ${r.total}₴, передплата: ${depositAmt}₴)`,
+                        editedBy: '—'
+                    });
+                }
             });
 
             // Process General Transactions (Manual)
@@ -239,16 +301,20 @@ export async function GET(request: Request) {
                 });
             });
 
-            // Calculate Balances
-            // Use startBalance / endBalance from DB
-            const bookBalance = (shift.startBalance || 0) + totalSalesCash + income - expenses - incasation;
+            // Депозити додаємо до продажів, повернення віднімаємо
+            totalSalesCash += totalDepositsCash - totalRefundsCash;
+            totalSalesCard += totalDepositsCard - totalRefundsCard;
+
+            // Розрахунок bookBalance: sales (включає deposits) + income - expenses - incasation
+            const bookBalance = (shift.startBalance || 0)
+                + totalSalesCash
+                + income - expenses - incasation;
             const actualBalance = shift.endBalance !== undefined ? shift.endBalance : bookBalance;
 
             return {
                 ...shift,
                 id: shiftId,
                 shiftNumber: shift.shiftNumber ? String(shift.shiftNumber) : shiftId.slice(-4),
-                // Ensure frontend fields match
                 startTime: shift.startTime,
                 endTime: shift.endTime,
                 startBalance: shift.startBalance,
@@ -323,9 +389,22 @@ export async function POST(request: Request) {
             createdAt: new Date()
         });
 
+        // Перевірка застарілих передплат (>30 днів)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const staleDeposits = await db.collection("checks").find({
+            paymentStatus: 'deposit',
+            "deposit.createdAt": { $lt: thirtyDaysAgo }
+        }).toArray();
+
         return NextResponse.json({
             success: true,
-            data: { ...newShift, id: shiftId.toString() }
+            data: { ...newShift, id: shiftId.toString() },
+            warnings: staleDeposits.length > 0 ? [{
+                type: 'stale_deposits',
+                message: `Є ${staleDeposits.length} передплат старіших за 30 днів`,
+                count: staleDeposits.length,
+                checkIds: staleDeposits.map((c: any) => c._id.toString())
+            }] : []
         });
 
     } catch (error) {
@@ -386,11 +465,20 @@ export async function PUT(request: Request) {
         }
 
         // Calculate totals from receipts linked to this shift
-        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id), isDeleted: { $ne: true } }).toArray();
 
-        const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
-        const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalIncome = transactions.filter(t => t.type === 'income' && t.category !== 'deposit' && t.category !== 'sales').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalExpenses = transactions.filter(t => t.type === 'expense' && t.category !== 'deposit_refund').reduce((sum, t) => sum + (t.amount || 0), 0);
         const totalIncasation = transactions.filter(t => t.type === 'incasation').reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        // Рахуємо депозити окремо
+        const depositTransactions = transactions.filter(t => t.category === 'deposit');
+        const depositCash = depositTransactions
+            .filter(t => t.paymentMethod === 'cash' || !t.paymentMethod)
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const depositCard = depositTransactions
+            .filter(t => t.paymentMethod === 'card')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         const startTime = new Date(shift.startTime);
         const endTime = new Date();
@@ -402,16 +490,42 @@ export async function PUT(request: Request) {
             ]
         }).toArray();
 
-        const totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
-        const totalSalesCash = receipts
+        let totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
+        // Продажі з чеків: універсальна формула
+        // Віднімаємо депозит ПО МЕТОДУ (cash deposit тільки від cash portion, card deposit тільки від card portion)
+        let totalSalesCash = receipts
             .filter(r => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
-        const totalSalesCard = receipts
+            .reduce((sum, r) => {
+                const depAmt = Number(r.depositAmount) || 0;
+                const depM = r.depositMethod || r.depositInfo?.method;
+                const cashDep = depM === 'cash' ? depAmt : 0;
+                if (r.paymentMethod === 'mixed') {
+                    return sum + Math.max(0, (r.paymentDetails?.cash || 0) - cashDep);
+                }
+                return sum + Math.max(0, (r.total || 0) - cashDep);
+            }, 0);
+        let totalSalesCard = receipts
             .filter(r => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
-            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+            .reduce((sum, r) => {
+                const depAmt = Number(r.depositAmount) || 0;
+                const depM = r.depositMethod || r.depositInfo?.method;
+                const cardDep = depM === 'card' ? depAmt : 0;
+                if (r.paymentMethod === 'mixed') {
+                    return sum + Math.max(0, (r.paymentDetails?.card || 0) - cardDep);
+                }
+                return sum + Math.max(0, (r.total || 0) - cardDep);
+            }, 0);
 
-        // Expected Cash = Start + Cash Sales + Income - Expenses - Incasation
-        const expectedCash = (shift.startBalance || 0) + totalSalesCash + totalIncome - totalExpenses - totalIncasation;
+        // totalSalesCash/Card = чисті продажі (БЕЗ депозитів) для відображення
+        // Додаємо deposits до відповідних категорій продажів
+        totalSales = totalSalesCash + depositCash + totalSalesCard + depositCard;
+
+        // Депозити: готівкові → "Продажі (Готівка)", карткові → "Продажі (Карта)"
+        // displayIncome = тільки ручні доходи (без депозитів)
+        const displayIncome = totalIncome;
+
+        // Expected Cash = Start + Sales Cash (включаючи готівкові deposits) + Income - Expenses - Incasation
+        const expectedCash = (shift.startBalance || 0) + totalSalesCash + depositCash + totalIncome - totalExpenses - totalIncasation;
         const actualCash = Number(endBalance);
         const cashDifference = actualCash - expectedCash;
 
@@ -420,9 +534,9 @@ export async function PUT(request: Request) {
             endTime: new Date(),
             endBalance: actualCash,
             totalSales,
-            totalSalesCash,
-            totalSalesCard,
-            totalIncome,
+            totalSalesCash: totalSalesCash + depositCash,  // Готівкові депозити = "Продажі (Готівка)"
+            totalSalesCard: totalSalesCard + depositCard,  // Карткові депозити = "Продажі (Карта)"
+            totalIncome: displayIncome,
             totalExpenses,
             totalIncasation,
             receiptsCount: receipts.length,

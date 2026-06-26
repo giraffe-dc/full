@@ -10,10 +10,12 @@ interface CheckViewProps {
     onBack: () => void;
     onPay: () => void;
     onAddItem: (item: CartItem) => void;
+    onDepositClick?: () => void;
+    onRefundDepositClick?: () => void;
     onVoid: () => void;
 }
 
-export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAddItem, onVoid }: CheckViewProps) {
+export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAddItem, onDepositClick, onRefundDepositClick, onVoid }: CheckViewProps) {
     const [selectedGuestId, setSelectedGuestId] = useState<string>('guest-1');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -35,10 +37,7 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
         }
     }, [check.customerId]);
 
-    // --- Logic ---
-    // console.log(products);
     const guests = useMemo(() => {
-        // Extract unique guest IDs from items, plus "guest-1" default
         const uniqueGuests = new Set(check.items.map(i => i.guestId || 'guest-1'));
         uniqueGuests.add('guest-1');
         return Array.from(uniqueGuests).sort();
@@ -70,22 +69,9 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
 
         const subtotal = newItems.reduce((sum, item) => sum + item.subtotal, 0);
         const tax = 0;
-        // Basic recalculation: Total = Subtotal - Discount
-        // Note: Ideally, promotion eligibility should be re-evaluated when cart changes.
-        // For MVP, we preserve the discount AMOUNT (check.discount) or reset it?
-        // Let's preserve the existing global discount amount for now, 
-        // as re-calculating per-item discount without promotion context is hard.
-        // But if item.discount exists, we should probably re-sum it?
-
-        // Detect if we are using item-based discounts (Percent) or global (Fixed)
-        // If the *original* check had item discounts, we stick to item discount summation (even if it becomes 0).
-        // If original check had NO item discounts but had a global discount, we preserve global.
         const hadItemDiscounts = check.items.some(i => (i.discount || 0) > 0);
-
         const totalDiscount = newItems.reduce((sum, i) => sum + (i.discount || 0), 0);
-
         const effectiveDiscount = hadItemDiscounts ? totalDiscount : (check.discount || 0);
-
         const total = Math.max(0, subtotal + tax - effectiveDiscount);
 
         onUpdateCheck({
@@ -98,12 +84,6 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
         });
     };
 
-    // const addGuest = () => {
-    //     const nextGuestNum = guests.length + 1;
-    //     const newGuestId = `guest-${nextGuestNum}`;
-    //     setSelectedGuestId(newGuestId);
-    // };
-
     const handleSelectClient = (client: any) => {
         onUpdateCheck({
             ...check,
@@ -114,18 +94,12 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
     };
 
     const filteredProducts = useMemo(() => {
-        console.log("Filtering products", products.length, searchQuery, selectedCategory);
         if (!products) return [];
         let result = products;
-
-        // Debug check
-        // if (process.env.NODE_ENV === 'development') console.log("Filtering products", products.length, searchQuery, selectedCategory);
-
         if (searchQuery && searchQuery.trim()) {
             const query = searchQuery.toLowerCase().trim();
             result = result.filter(p => p.name.toLowerCase().includes(query));
         }
-
         if (selectedCategory && selectedCategory !== 'all') {
             result = result.filter(p => p.category === selectedCategory);
         }
@@ -142,7 +116,6 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
     const handlePrintCheck = () => {
         const printWindow = window.open('', '_blank', 'width=400,height=600');
         if (!printWindow) return;
-
         const dateStr = new Date().toLocaleString('uk-UA');
         const itemsHtml = check.items.map(item => `
             <div class="item">
@@ -163,13 +136,7 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
             <head>
                 <title>Чек #${check.id.slice(-4)}</title>
                 <style>
-                    body { 
-                        font-family: 'Courier New', Courier, monospace; 
-                        padding: 10px; 
-                        width: 300px;
-                        margin: 0 auto;
-                        color: #000;
-                    }
+                    body { font-family: 'Courier New', Courier, monospace; padding: 10px; width: 300px; margin: 0 auto; color: #000; }
                     .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
                     .brand { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
                     .context { font-size: 14px; margin-bottom: 5px; }
@@ -179,17 +146,8 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                     .item-discount { color: #000; font-weight: normal; margin-left: 5px; }
                     .totals { border-top: 2px dashed #000; padding-top: 10px; margin-top: 10px; }
                     .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; }
-                    .comment-box { 
-                        margin-top: 15px; 
-                        padding: 8px; 
-                        border: 1px solid #000; 
-                        font-size: 13px;
-                        font-style: italic;
-                    }
+                    .comment-box { margin-top: 15px; padding: 8px; border: 1px solid #000; font-size: 13px; font-style: italic; }
                     .footer { text-align: center; margin-top: 20px; font-size: 12px; border-top: 1px solid #eee; padding-top: 10px; }
-                    @media print {
-                        body { width: 90%; padding: 1rem; }
-                    }
                 </style>
             </head>
             <body>
@@ -200,40 +158,18 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                     ${check.waiterName ? `<div class="context">Офіціант: ${check.waiterName}</div>` : ''}
                     <div class="context">${dateStr}</div>
                 </div>
-
-                <div class="items">
-                    ${itemsHtml}
-                </div>
-
+                <div class="items">${itemsHtml}</div>
                 <div class="totals">
                     <div class="total-row">
                         <span>ВСЬОГО:</span>
                         <span>${check.total.toFixed(2)} ₴</span>
                     </div>
                 </div>
-
-                ${check.comment ? `
-                    <div class="comment-box">
-                        <strong>Коментар:</strong><br/>
-                        ${check.comment}
-                    </div>
-                ` : ''}
-
-                <div class="footer">
-                    Дякуємо за візит!<br/>
-                    giraffe.pos
-                </div>
-
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(() => { window.close(); }, 500);
-                    };
-                </script>
+                ${check.comment ? `<div class="comment-box"><strong>Коментар:</strong><br/>${check.comment}</div>` : ''}
+                <div class="footer">Дякуємо за візит!<br/>giraffe.pos</div>
             </body>
             </html>
         `;
-
         printWindow.document.write(html);
         printWindow.document.close();
     };
@@ -242,7 +178,6 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
 
     return (
         <div className={styles.container}>
-            {/* LEFT PANEL: ORDER DETAILS */}
             <div className={styles.leftPanel}>
                 <div className={styles.headerRow}>
                     <button onClick={onBack} className={styles.backButton}>←</button>
@@ -257,16 +192,11 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                             )}
                         </div>
                     </div>
-
                     <button
                         className={`${styles.clientButton} ${check.customerName ? styles.active : ''}`}
                         onClick={() => setShowClientModal(true)}
                     >
-                        {check.customerName ? (
-                            <>👤 {check.customerName}</>
-                        ) : (
-                            <>+ Клієнт</>
-                        )}
+                        {check.customerName ? <>👤 {check.customerName}</> : <>+ Клієнт</>}
                     </button>
                     {activeCertificates.length > 0 && (
                         <div style={{ marginTop: '8px', padding: '6px 10px', background: '#dcfce7', color: '#166534', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -280,56 +210,31 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                     {guests.map((guestId, index) => {
                         const guestItems = check.items.filter(i => (i.guestId || 'guest-1') === guestId);
                         const isSelected = selectedGuestId === guestId;
-
                         return (
-                            <div
-                                key={guestId}
-                                className={`${styles.guestSection} ${isSelected ? styles.activeGuest : ''}`}
-                                onClick={() => setSelectedGuestId(guestId)}
-                            >
-                                <div className={styles.guestHeader}>
-                                    <span>Гість {index + 1}</span>
-                                    {/* Delete Guest Logic could go here */}
-                                </div>
-
-                                {guestItems.length === 0 ? (
-                                    <div className={styles.emptyGuest}>Пусто</div>
-                                ) : (
-                                    guestItems.map(item => (
-                                        <div key={item.serviceId} className={styles.orderItem}>
-                                            <div className={styles.itemName}>{item.serviceName}</div>
-                                            <div className={styles.itemQuantity}>
-                                                <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, -1); }}>-</button>
-                                                <span>{item.quantity}</span>
-                                                <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, 1); }}>+</button>
-                                            </div>
-                                            <div className={styles.itemPrice}>
-                                                {item.discount ? (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                        <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem' }}>
-                                                            {item.subtotal.toFixed(2)}
-                                                        </span>
-                                                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
-                                                            {(item.subtotal - item.discount).toFixed(2)}
-                                                        </span>
-                                                        <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>
-                                                            (-{item.discount.toFixed(2)})
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    item.subtotal.toFixed(2)
-                                                )}
-                                            </div>
+                            <div key={guestId} className={`${styles.guestSection} ${isSelected ? styles.activeGuest : ''}`} onClick={() => setSelectedGuestId(guestId)}>
+                                <div className={styles.guestHeader}><span>Гість {index + 1}</span></div>
+                                {guestItems.length === 0 ? <div className={styles.emptyGuest}>Пусто</div> : guestItems.map(item => (
+                                    <div key={item.serviceId} className={styles.orderItem}>
+                                        <div className={styles.itemName}>{item.serviceName}</div>
+                                        <div className={styles.itemQuantity}>
+                                            <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, -1); }}>-</button>
+                                            <span>{item.quantity}</span>
+                                            <button onClick={(e) => { e.stopPropagation(); updateQuantity(item, 1); }}>+</button>
                                         </div>
-                                    ))
-                                )}
+                                        <div className={styles.itemPrice}>
+                                            {item.discount ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                    <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '0.85rem' }}>{item.subtotal.toFixed(2)}</span>
+                                                    <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{(item.subtotal - item.discount).toFixed(2)}</span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>(-{item.discount.toFixed(2)})</span>
+                                                </div>
+                                            ) : (item.subtotal.toFixed(2))}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         );
                     })}
-
-                    {/* <button className={styles.addGuestButton} onClick={addGuest}>
-                        + Додати гостя
-                    </button> */}
                 </div>
 
                 <div className={styles.totalSection}>
@@ -339,66 +244,104 @@ export function CheckView({ check, products, onUpdateCheck, onBack, onPay, onAdd
                             <div>{check.comment}</div>
                         </div>
                     )}
-
                     <div className={styles.totalRow}>
-                        <span>До сплати</span>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <span className={styles.totalAmount} style={{ marginRight: '10px' }}>{check.total.toFixed(2)} ₴</span>
-
-                            <div className={styles.optionsContainer}>
-                                <button className={styles.burgerButton} onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                                    ⋮
-                                </button>
-                                {isMenuOpen && (
-                                    <div className={styles.optionsMenu}>
-                                        <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handleAddComment(); }}>
-                                            📝 Коментар
-                                        </button>
-                                        <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handlePrintCheck(); }}>
-                                            🖨️ Друк чеку
-                                        </button>
-                                        {/* <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); (window as any).showPromotions?.(); }} style={{ color: '#d97706' }}>
-                                            🏷️ Акції
-                                        </button> */}
-                                        {Math.abs(check.total) < 0.01 && (
-                                            <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); onVoid(); }} style={{ color: '#ef4444' }}>
-                                                🗑️ Анулювати (Помилковий)
-                                            </button>
-                                        )}
+                        {check.paidAmount && check.paidAmount > 0 ? (
+                            <div className={styles.totalsBreakdown}>
+                                <div className={styles.breakdownRow}>
+                                    <span className={styles.breakdownLabel}>Повна вартість:</span>
+                                    <span className={styles.breakdownValue}>{check.total.toFixed(2)} ₴</span>
+                                </div>
+                                <div className={styles.breakdownRow}>
+                                    <span className={styles.breakdownLabel} style={{ color: '#10b981' }}>Внесено (Передплата):</span>
+                                    <span className={styles.breakdownValue} style={{ color: '#10b981' }}>-{check.paidAmount.toFixed(2)} ₴</span>
+                                </div>
+                                <div className={styles.breakdownRowTotal}>
+                                    <span className={styles.totalLabel}>Залишок до сплати:</span>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <span className={styles.totalAmount} style={{ marginRight: '10px' }}>
+                                            {Math.max(0, check.total - check.paidAmount).toFixed(2)} ₴
+                                        </span>
+                                        <div className={styles.optionsContainer}>
+                                            <button className={styles.burgerButton} onClick={() => setIsMenuOpen(!isMenuOpen)}>⋮</button>
+                                            {isMenuOpen && (
+                                                <div className={styles.optionsMenu}>
+                                                    <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handleAddComment(); }}>📝 Коментар</button>
+                                                    <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handlePrintCheck(); }}>🖨️ Друк чеку</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className={styles.totalsBreakdown}>
+                                <div className={styles.breakdownRowTotal} style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+                                    <span className={styles.totalLabel}>До сплати:</span>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <span className={styles.totalAmount} style={{ marginRight: '10px' }}>{check.total.toFixed(2)} ₴</span>
+                                        <div className={styles.optionsContainer}>
+                                            <button className={styles.burgerButton} onClick={() => setIsMenuOpen(!isMenuOpen)}>⋮</button>
+                                            {isMenuOpen && (
+                                                <div className={styles.optionsMenu}>
+                                                    <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handleAddComment(); }}>📝 Коментар</button>
+                                                    <button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); handlePrintCheck(); }}>🖨️ Друк чеку</button>
+                                                    {Math.abs(check.total) < 0.01 && (<button className={styles.menuItem} onClick={() => { setIsMenuOpen(false); onVoid(); }} style={{ color: '#ef4444' }}>🗑️ Анулювати</button>)}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     {Math.abs(check.total) < 0.01 ? (
-                        <button className={styles.payButton} onClick={onVoid} style={{ backgroundColor: '#ef4444' }}>
-                            Закрити (Помилковий)
-                        </button>
+                        <button className={styles.payButton} onClick={onVoid} style={{ backgroundColor: '#ef4444', marginTop: '12px' }}>Закрити (Помилковий)</button>
                     ) : (
-                        <button className={styles.payButton} onClick={onPay}>
-                            Оплатити
-                        </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: (!check.paidAmount || check.paidAmount === 0) ? '1fr 2fr' : '1fr 2fr', gap: '12px', marginTop: '12px' }}>
+                            {onDepositClick && onRefundDepositClick && (
+                                (!check.paidAmount || check.paidAmount === 0) ? (
+                                    <button 
+                                        className={styles.payButton} 
+                                        onClick={onDepositClick} 
+                                        style={{ 
+                                            background: '#fff', 
+                                            color: '#f59e0b', 
+                                            border: '2px solid #f59e0b',
+                                            boxShadow: 'none',
+                                            padding: '16px' 
+                                        }}>
+                                        + Передплата
+                                    </button>
+                                ) : (
+                                    <button 
+                                        className={styles.payButton} 
+                                        onClick={onRefundDepositClick} 
+                                        style={{ 
+                                            background: '#fff', 
+                                            color: '#ef4444', 
+                                            border: '2px solid #ef4444',
+                                            boxShadow: 'none',
+                                            padding: '16px' 
+                                        }}>
+                                        Повернути
+                                    </button>
+                                )
+                            )}
+                            <button className={styles.payButton} onClick={onPay} style={{ padding: '16px' }}>Оплатити</button>
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* RIGHT PANEL: MENU */}
             <div className={styles.rightPanel}>
                 <div className={styles.menuHeader}>
-                    <input
-                        className={styles.searchInput}
-                        placeholder="🔍 Пошук..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                    {/* Category Tabs could go here if needed */}
+                    <input className={styles.searchInput} placeholder="🔍 Пошук..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
-
                 <div className={styles.productGrid}>
                     {filteredProducts.map(product => (
                         <div key={product.id} className={styles.productCard} onClick={() => addToCart(product)}>
                             <div className={styles.productImage}>
-                                {product.imageUrl ? <img src={product.imageUrl} /> : <div className={styles.placeholderImg}>{product.name[0]}</div>}
+                                {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <div className={styles.placeholderImg}>{product.name[0]}</div>}
                             </div>
                             <div className={styles.productName}>{product.name}</div>
                             <div className={styles.productPrice}>{product.price} ₴</div>

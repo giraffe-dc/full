@@ -73,10 +73,22 @@ export function ZReportView({ report }: ZReportViewProps) {
           <span>Картка:</span>
           <span>{(report.totalSalesCard ?? 0).toFixed(2)} ₴</span>
         </div>
+        {((report as any).totalIncome ?? 0) > 0 && (
+          <div className={styles.balanceRow}>
+            <span>Ручні доходи:</span>
+            <span style={{ color: '#16a34a' }}>+ {((report as any).totalIncome ?? 0).toFixed(2)} ₴</span>
+          </div>
+        )}
         <div className={styles.balanceRow}>
           <span>Витрати:</span>
-          <span>-{(report.totalExpenses ?? 0).toFixed(2)} ₴</span>
+          <span style={{ color: '#dc2626' }}>-{(report.totalExpenses ?? 0).toFixed(2)} ₴</span>
         </div>
+        {((report as any).totalIncasation ?? 0) > 0 && (
+          <div className={styles.balanceRow}>
+            <span>Інкасація:</span>
+            <span style={{ color: '#9333ea' }}>- {((report as any).totalIncasation ?? 0).toFixed(2)} ₴</span>
+          </div>
+        )}
         <div className={`${styles.balanceRow} ${styles.balanceRowTotal}`}>
           <span>Кінцевий баланс:</span>
           <span>{(report.endBalance ?? 0).toFixed(2)} ₴</span>

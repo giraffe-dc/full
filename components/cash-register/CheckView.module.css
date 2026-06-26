@@ -376,6 +376,41 @@
     flex-wrap: wrap;
 }
 
+.totalsBreakdown {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.breakdownRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    color: var(--gray-600);
+    padding: 0 4px;
+}
+
+.breakdownLabel {
+    font-weight: 600;
+}
+
+.breakdownValue {
+    font-weight: 700;
+    font-family: var(--font-display);
+}
+
+.breakdownRowTotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 2px dashed var(--gray-200);
+}
+
 .totalLabel {
     font-size: 14px;
     color: var(--gray-600);

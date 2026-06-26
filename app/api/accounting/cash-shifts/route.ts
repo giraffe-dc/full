@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { calculateSalesCash, calculateSalesCard } from "@/lib/deposit-utils";
 
 export const dynamic = 'force-dynamic';
 
@@ -33,13 +34,13 @@ export async function GET(request: NextRequest) {
         }).toArray();
       }
 
-      const cashRevenue = shiftReceipts
+      let cashRevenue = shiftReceipts
         .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-        .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
+        .reduce((acc: number, r: any) => acc + calculateSalesCash(r), 0);
 
-      const cashlessRevenue = shiftReceipts
+      let cashlessRevenue = shiftReceipts
         .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
-        .reduce((acc: number, r: any) => acc + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+        .reduce((acc: number, r: any) => acc + calculateSalesCard(r), 0);
 
       // 2. Fetch Manual Cash Transactions (Income/Expense/Incasation)
       // Use shiftId if possible, else date range
@@ -97,17 +98,36 @@ export async function GET(request: NextRequest) {
       }
 
       // Process Cash Transactions (The main ones for the shift)
+      // Deposits added to cashRevenue/cashlessRevenue, excluded from income
       cashTxs.forEach((ct: any) => {
         const amt = Number(ct.amount) || 0;
-        if (ct.type === 'income') income += amt;
-        if (ct.type === 'expense') expenses += amt;
+
+        // Add deposits to revenue (they're sales, not income)
+        if (ct.category === 'deposit' && ct.type === 'income') {
+          if (ct.paymentMethod === 'card') cashlessRevenue += amt;
+          else cashRevenue += amt;
+        }
+
+        // Subtract deposit refunds from revenue
+        if (ct.category === 'deposit_refund') {
+          if (ct.paymentMethod === 'card') cashlessRevenue -= amt;
+          else cashRevenue -= amt;
+        }
+
+        if (ct.type === 'income' && ct.category !== 'deposit' && ct.category !== 'deposit_refund' && ct.category !== 'sales') income += amt;
+        if (ct.type === 'expense' && ct.category !== 'deposit_refund') expenses += amt;
         if (ct.type === 'incasation') incasation += amt;
+
+        // Rename deposits to sales in transaction list
+        let txType = ct.type === 'incasation' ? 'Інкасація' : (ct.category || (ct.type === 'income' ? 'Прихід' : 'Витрата'));
+        if (ct.category === 'deposit') txType = ct.paymentMethod === 'card' ? 'Продажі (Картка)' : 'Продажі (Готівка)';
+        if (ct.category === 'deposit_refund') txType = ct.paymentMethod === 'card' ? 'Повернення (Картка)' : 'Повернення (Готівка)';
 
         detailedTransactions.push({
           id: ct._id.toString(),
-          type: ct.type === 'incasation' ? 'Інкасація' : (ct.category || (ct.type === 'income' ? 'Прихід' : 'Витрата')), // Map type/category to display name
-          createdAt: ct.createdAt, // Ensure date string compatibility
-          amount: ct.type === 'expense' || ct.type === 'incasation' ? -amt : amt, // Visual negative for expense
+          type: txType,
+          createdAt: ct.createdAt,
+          amount: ct.type === 'expense' || ct.type === 'incasation' ? -amt : amt,
           authorName: ct.authorName || shift.cashier,
           comment: ct.comment,
           editedBy: '—'

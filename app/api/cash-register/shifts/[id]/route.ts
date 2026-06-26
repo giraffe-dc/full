@@ -21,7 +21,7 @@ export async function GET(
 
         // Fetch receipts for this shift
         const receipts = await db.collection("receipts").find({ shiftId: new ObjectId(id) }).toArray();
-        const cashTransactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+        const cashTransactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id), isDeleted: { $ne: true } }).toArray();
 
         // 3. General Transactions (External Manual)
         const settings = await db.collection("settings").findOne({ type: "global" });

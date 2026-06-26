@@ -25,7 +25,10 @@ export async function POST(request: Request) {
             customerName,
             guestsCount,
             departmentId,
-            comment
+            comment,
+            // Передплата (deposit)
+            paidAmount: bodyPaidAmount,
+            deposit: bodyDeposit
         } = body;
 
         // Validate input
@@ -42,24 +45,65 @@ export async function POST(request: Request) {
 
         // Ensure we have a shiftId (find open shift if not provided)
         let activeShiftId = shiftId;
+        let openShift: any = null;
         if (!activeShiftId) {
-            const openShift = await db.collection("cash_shifts").findOne({ status: "open" });
+            openShift = await db.collection("cash_shifts").findOne({ status: "open" });
             if (openShift) {
                 activeShiftId = openShift._id.toString();
             }
+        } else if (shiftId) {
+            openShift = await db.collection("cash_shifts").findOne({ _id: new ObjectId(shiftId) });
         }
 
         try {
             await session.withTransaction(async () => {
                 // Prepare history
                 const history = Array.isArray(originalHistory) ? [...originalHistory] : [];
+                
+                // ========================================
+                // ВИПРАВКА: Визначити реальний метод оплати
+                const existingDepositAmount = bodyPaidAmount || 0;
+                const depositMethod = bodyDeposit?.method;
+                const remainingAmount = Math.max(0, total - existingDepositAmount);
+                const isActuallyMixed = existingDepositAmount > 0 && paymentMethod !== 'mixed' && paymentMethod !== 'certificate' && depositMethod && depositMethod !== paymentMethod;
+
+                let actualPaymentMethod: string;
+                let actualPaymentDetails: any;
+
+                if (remainingAmount === 0 && existingDepositAmount > 0) {
+                    // Депозит повністю покриває чек — метод оплати = метод депозиту
+                    actualPaymentMethod = depositMethod || 'cash';
+                    actualPaymentDetails = {};
+                    if (depositMethod === 'cash') actualPaymentDetails.cash = existingDepositAmount;
+                    if (depositMethod === 'card') actualPaymentDetails.card = existingDepositAmount;
+                } else {
+                    actualPaymentMethod = isActuallyMixed ? 'mixed' : paymentMethod;
+
+                    actualPaymentDetails = paymentDetails;
+                    if (isActuallyMixed && bodyDeposit) {
+                        // paymentDetails = лише залишок (deposit вже врахований окремо)
+                        actualPaymentDetails = {};
+                        if (paymentMethod === 'cash') actualPaymentDetails.cash = remainingAmount;
+                        if (paymentMethod === 'card') actualPaymentDetails.card = remainingAmount;
+                    } else if (existingDepositAmount > 0 && !isActuallyMixed) {
+                        if (paymentMethod === 'mixed') {
+                            actualPaymentDetails = paymentDetails;
+                        } else {
+                            actualPaymentDetails = {};
+                            if (paymentMethod === 'cash') actualPaymentDetails.cash = remainingAmount;
+                            if (paymentMethod === 'card') actualPaymentDetails.card = remainingAmount;
+                        }
+                    }
+                }
+                
                 history.push({
                     action: 'update_payment',
                     changedBy: waiterName || 'System',
                     date: new Date().toISOString(),
                     previousValue: 'unpaid',
-                    newValue: paymentMethod,
-                    paymentDetails
+                    newValue: actualPaymentMethod,
+                    paymentDetails: actualPaymentDetails,
+                    depositAmount: existingDepositAmount > 0 ? existingDepositAmount : undefined
                 });
 
                 // 1. Create Receipt
@@ -73,8 +117,10 @@ export async function POST(request: Request) {
                     subtotal,
                     tax,
                     total,
-                    paymentMethod,
-                    paymentDetails, // Added details
+                    paymentMethod: actualPaymentMethod, // ✅ Використовуємо реальний метод
+                    paymentDetails: actualPaymentDetails, // ✅ Використовуємо оновлені деталі
+                    depositAmount: existingDepositAmount, // ✅ Зберігаємо суму передплати
+                    depositMethod: depositMethod || null, // ✅ Зберігаємо метод депозиту (для reporting)
                     createdAt: new Date(),
                     openedAt: originalCreatedAt ? new Date(originalCreatedAt) : new Date(),
                     updatedAt: new Date(),
@@ -91,10 +137,123 @@ export async function POST(request: Request) {
                 receiptId = receiptResult.insertedId;
                 createdReceipt = receipt;
 
+                // ========================================
+                // ВИПРАВКА: Записати касову операцію
+                // ========================================
+                // Передплата вже записана як 'deposit' при deposit endpoint
+                // Тут записуємо тільки залишок як 'sales'
+                
+                if (remainingAmount > 0) {
+                    // Залишок після передплати
+                    if (actualPaymentMethod === 'mixed' && (actualPaymentDetails || paymentDetails)) {
+                        // Для змішаної оплати - розраховуємо тільки залишок по кожному методу
+                        let cashAmount = 0;
+                        let cardAmount = 0;
+
+                        if (isActuallyMixed && bodyDeposit) {
+                            // Передплата одним методом + залишок іншим методом
+                            const depositMethod = bodyDeposit.method;
+                            const remainderMethod = paymentMethod;
+
+                            // Залишок йде тільки в remainderMethod
+                            if (remainderMethod === 'cash') {
+                                cashAmount = remainingAmount;
+                                cardAmount = 0;
+                            } else if (remainderMethod === 'card') {
+                                cashAmount = 0;
+                                cardAmount = remainingAmount;
+                            }
+                        } else {
+                            // Звичайна змішана оплата без передплати
+                            cashAmount = actualPaymentDetails?.cash || paymentDetails?.cash || 0;
+                            cardAmount = actualPaymentDetails?.card || paymentDetails?.card || 0;
+                        }
+
+                        if (cashAmount > 0) {
+                            await db.collection("cash_transactions").insertOne({
+                                shiftId: openShift?._id || null,
+                                type: 'income',
+                                category: 'sales',
+                                amount: cashAmount,
+                                paymentMethod: 'cash',
+                                comment: `Залишок по чеку #${receipt.receiptNumber}`,
+                                checkId: body.checkId,
+                                createdAt: new Date()
+                            }, { session });
+                        }
+                        if (cardAmount > 0) {
+                            await db.collection("cash_transactions").insertOne({
+                                shiftId: openShift?._id || null,
+                                type: 'income',
+                                category: 'sales',
+                                amount: cardAmount,
+                                paymentMethod: 'card',
+                                comment: `Залишок по чеку #${receipt.receiptNumber}`,
+                                checkId: body.checkId,
+                                createdAt: new Date()
+                            }, { session });
+                        }
+                    } else if (actualPaymentMethod !== 'certificate') {
+                        // Для готівки або картки - одна касова операція (залишок)
+                        await db.collection("cash_transactions").insertOne({
+                            shiftId: openShift?._id || null,
+                            type: 'income',
+                            category: 'sales',
+                            amount: remainingAmount,
+                            paymentMethod: actualPaymentMethod,
+                            comment: `Залишок по чеку #${receipt.receiptNumber}`,
+                            checkId: body.checkId,
+                            createdAt: new Date()
+                        }, { session });
+                    }
+                } else if (existingDepositAmount === 0) {
+                    // БЕЗ передплати - весь платіж як 'sales'
+                    if (actualPaymentMethod === 'mixed' && (actualPaymentDetails || paymentDetails)) {
+                        const cashAmount = actualPaymentDetails?.cash || paymentDetails?.cash || 0;
+                        const cardAmount = actualPaymentDetails?.card || paymentDetails?.card || 0;
+                        
+                        if (cashAmount > 0) {
+                            await db.collection("cash_transactions").insertOne({
+                                shiftId: openShift?._id || null,
+                                type: 'income',
+                                category: 'sales',
+                                amount: cashAmount,
+                                paymentMethod: 'cash',
+                                comment: `Продаж по чеку #${receipt.receiptNumber}`,
+                                checkId: body.checkId,
+                                createdAt: new Date()
+                            }, { session });
+                        }
+                        if (cardAmount > 0) {
+                            await db.collection("cash_transactions").insertOne({
+                                shiftId: openShift?._id || null,
+                                type: 'income',
+                                category: 'sales',
+                                amount: cardAmount,
+                                paymentMethod: 'card',
+                                comment: `Продаж по чеку #${receipt.receiptNumber}`,
+                                checkId: body.checkId,
+                                createdAt: new Date()
+                            }, { session });
+                        }
+                    } else if (actualPaymentMethod !== 'certificate') {
+                        await db.collection("cash_transactions").insertOne({
+                            shiftId: openShift?._id || null,
+                            type: 'income',
+                            category: 'sales',
+                            amount: total,
+                            paymentMethod: actualPaymentMethod,
+                            comment: `Продаж по чеку #${receipt.receiptNumber}`,
+                            checkId: body.checkId,
+                            createdAt: new Date()
+                        }, { session });
+                    }
+                }
+
                     // Process Certificate logic
-                    if ((paymentMethod === 'certificate' || paymentMethod === 'mixed') && paymentDetails?.certificateId) {
-                        const certId = paymentDetails.certificateId;
-                        const certAmount = paymentDetails.certificate || (paymentMethod === 'certificate' ? total : 0);
+                    if ((actualPaymentMethod === 'certificate' || actualPaymentMethod === 'mixed') && actualPaymentDetails?.certificateId) {
+                        const certId = actualPaymentDetails.certificateId;
+                        const certAmount = actualPaymentDetails.certificate || (actualPaymentMethod === 'certificate' ? total : 0);
 
                         const certificate = await db.collection("certificates").findOne({ _id: new ObjectId(certId) }, { session });
                         if (!certificate) throw new Error("Certificate not found");
@@ -183,7 +342,7 @@ export async function POST(request: Request) {
                 const financeSettings = settings?.finance || {};
 
                 // Unified transaction processing helper
-                const processPaymentPart = async (method: string, amount: number, accountIdStr: string | null) => {
+                const processPaymentPart = async (method: string, amount: number, accountIdStr: string | null, transactionCategory: string = "sales") => {
                     if (amount <= 0) return;
 
                     let accountId: ObjectId | null = null;
@@ -196,7 +355,7 @@ export async function POST(request: Request) {
                         date: new Date(),
                         amount: amount,
                         type: "income",
-                        category: "sales",
+                        category: transactionCategory, // ✅ Дозволяємо змінювати категорію
                         description: `Чек #${receipt.receiptNumber} (${method})`,
                         source: "cash-register",
                         referenceId: receiptId,
@@ -219,22 +378,59 @@ export async function POST(request: Request) {
                     }
                 };
 
-                if (paymentMethod === 'mixed' && paymentDetails) {
-                    await processPaymentPart('cash', paymentDetails.cash || 0, financeSettings.cashAccountId);
-                    await processPaymentPart('card', paymentDetails.card || 0, financeSettings.cardAccountId);
-                    // certificate part doesn't add to cash/card money accounts
-                } else if (paymentMethod !== 'certificate') {
-                    const accId = paymentMethod === 'cash' ? financeSettings.cashAccountId : financeSettings.cardAccountId;
-                    await processPaymentPart(paymentMethod, total, accId);
+                // ========================================
+                // ВИПРАВКА: Обробити платежі окремо
+                // ========================================
+                // Передплата вже записана як 'deposit' при deposit endpoint
+                // Тут записуємо тільки залишок
+                
+                if (remainingAmount > 0) {
+                    // Залишок після передплати
+                    if (actualPaymentMethod === 'mixed' && (actualPaymentDetails || paymentDetails)) {
+                        // Для змішаної оплати - розраховуємо тільки залишок по кожному методу
+                        let cashAmount = 0;
+                        let cardAmount = 0;
+
+                        if (isActuallyMixed && bodyDeposit) {
+                            // Передплата одним методом + залишок іншим методом
+                            const depositMethod = bodyDeposit.method;
+                            const remainderMethod = paymentMethod;
+
+                            // Залишок йде тільки в remainderMethod
+                            if (remainderMethod === 'cash') {
+                                cashAmount = remainingAmount;
+                                cardAmount = 0;
+                            } else if (remainderMethod === 'card') {
+                                cashAmount = 0;
+                                cardAmount = remainingAmount;
+                            }
+                        } else {
+                            // Звичайна змішана оплата без передплати
+                            cashAmount = actualPaymentDetails?.cash || paymentDetails?.cash || 0;
+                            cardAmount = actualPaymentDetails?.card || paymentDetails?.card || 0;
+                        }
+
+                        await processPaymentPart('cash', cashAmount, financeSettings.cashAccountId, 'sales');
+                        await processPaymentPart('card', cardAmount, financeSettings.cardAccountId, 'sales');
+                    } else if (actualPaymentMethod !== 'certificate') {
+                        const accId = actualPaymentMethod === 'cash' ? financeSettings.cashAccountId : financeSettings.cardAccountId;
+                        await processPaymentPart(actualPaymentMethod, remainingAmount, accId, 'sales');
+                    }
+                } else if (existingDepositAmount === 0) {
+                    // БЕЗ передплати - весь платіж записуємо як 'sales'
+                    if (actualPaymentMethod === 'mixed' && (actualPaymentDetails || paymentDetails)) {
+                        await processPaymentPart('cash', (actualPaymentDetails?.cash || paymentDetails?.cash || 0), financeSettings.cashAccountId, 'sales');
+                        await processPaymentPart('card', (actualPaymentDetails?.card || paymentDetails?.card || 0), financeSettings.cardAccountId, 'sales');
+                    } else if (actualPaymentMethod !== 'certificate') {
+                        const accId = actualPaymentMethod === 'cash' ? financeSettings.cashAccountId : financeSettings.cardAccountId;
+                        await processPaymentPart(actualPaymentMethod, total, accId, 'sales');
+                    }
                 }
 
                 // 3. Stock Deduction (Complex: Product -> Recipe -> Ingredients)
                 const allWarehouses = await db.collection("warehouses").find({ status: { $ne: 'inactive' } }, { session }).toArray();
                 const ingredientsWarehouse = allWarehouses.find(w => w.name.toLowerCase().includes('інгредієнти')) || allWarehouses[0];
                 const productsWarehouse = allWarehouses.find(w => w.name.toLowerCase().includes('товари')) || allWarehouses[0];
-
-                console.log("[CHECKOUT DEBUG] warehouses:", allWarehouses.map(w => w.name));
-                console.log("[CHECKOUT DEBUG] default warehouses - Ing:", ingredientsWarehouse?.name, "Prod:", productsWarehouse?.name);
 
                 for (const item of items) {
                     if (!item.productId) continue;
@@ -378,6 +574,10 @@ export async function POST(request: Request) {
                     });
 
                     if (originalCheck) {
+                        // Зберегти інформацію про депозит у квитанції
+                        const depositInfo = originalCheck.deposit || bodyDeposit || null;
+                        const totalPaidDeposit = originalCheck.paidAmount || bodyPaidAmount || 0;
+
                         // Update receipt with checkId and additional data from check
                         await db.collection("receipts").updateOne(
                             { _id: receiptId },
@@ -392,15 +592,17 @@ export async function POST(request: Request) {
                                     waiterName: originalCheck.waiterName,
                                     comment: originalCheck.comment,
                                     notes: originalCheck.notes,
-                                    history: originalCheck.history || []
+                                    history: originalCheck.history || [],
+                                    // Інформація про депозит
+                                    depositAmount: totalPaidDeposit,
+                                    depositInfo: depositInfo,
+                                    depositMethod: depositInfo?.method || null
                                 }
                             },
                             { session }
                         );
 
-                        // --- NEW: Update linked Event status ---
-                        // Search for an event that is linked to this checkId
-                        // checkId in events is stored as a string (the MongoDB _id of the check)
+                        // --- Update linked Event status ---
                         await db.collection("events").updateMany(
                             { checkId: body.checkId },
                             {
@@ -414,7 +616,7 @@ export async function POST(request: Request) {
                             { session }
                         );
 
-                        // --- NEW: Update linked Visit status ---
+                        // --- Update linked Visit status ---
                         await db.collection("visits").updateMany(
                             { checkId: body.checkId },
                             {
@@ -426,7 +628,7 @@ export async function POST(request: Request) {
                             { session }
                         );
 
-                        // Delete from checks (economy)
+                        // Delete from checks
                         await db.collection("checks").deleteOne({
                             _id: new ObjectId(body.checkId)
                         }, { session });

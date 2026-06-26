@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="97db1282-f4e1-48b5-aeea-0996f7171340" name="Changes" comment="" />
+    <list default="true" id="97db1282-f4e1-48b5-aeea-0996f7171340" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/app/api/cash-register/checkout/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/cash-register/checkout/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/cash-register/shifts/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/cash-register/shifts/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/cash-register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/cash-register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/cash-register/CheckView.module.css" beforeDir="false" afterPath="$PROJECT_DIR$/components/cash-register/CheckView.module.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/cash-register/CheckView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/cash-register/CheckView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/cash-register/TableSelector.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/cash-register/TableSelector.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/cash-register/XReportView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/cash-register/XReportView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/cash-register/ZReportView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/cash-register/ZReportView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/cash-register/modals/PaymentModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/cash-register/modals/PaymentModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/types/cash-register.ts" beforeDir="false" afterPath="$PROJECT_DIR$/types/cash-register.ts" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,9 +24,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 3
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
   <component name="ProjectId" id="3ChOvs8k9HtOXQ8On7KPkJ07LGc" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -27,11 +41,12 @@
     "ignore.virus.scanning.warn.message": "true",
     "js.debugger.nextJs.config.created.client": "true",
     "js.debugger.nextJs.config.created.server": "true",
+    "last_opened_file_path": "C:/Users/vanus/Desktop/Works/Giraffe/Giraffe+/allgiraffe",
     "nodejs_package_manager_path": "npm",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="npm.Next.js: server-side">
+  <component name="RunManager">
     <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
       <method v="2" />
     </configuration>
@@ -49,7 +64,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-WS-252.25557.126" />
+        <option value="bundled-python-sdk-7e47963ff851-f0eec537fc84-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.23892.515" />
       </set>
     </attachedChunks>
   </component>

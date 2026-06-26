@@ -53,3 +53,6 @@ playwright-visual-test.js
 server.log
 test-screenshots/
 /scratch
+.opencode
+.windsurf
+.idea

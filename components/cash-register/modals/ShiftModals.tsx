@@ -167,7 +167,7 @@ export const ShiftModals = ({
                                 <span className={styles.value}>{formatCurrency(closingData.totalSalesCard)}</span>
                             </div>
                             <div className={`${styles.summaryRow} ${styles.green}`}>
-                                <span className={styles.label}>Внесення (Income):</span>
+                                <span className={styles.label}>Ручні доходи:</span>
                                 <span className={styles.value}>{formatCurrency(closingData.totalIncome)}</span>
                             </div>
                             <div className={`${styles.summaryRow} ${styles.red}`}>

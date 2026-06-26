@@ -129,7 +129,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 }
 
-// DELETE: Cancel check (or specialized logic to close/void)
+// DELETE: Cancel check with deposit refund
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
@@ -137,30 +137,95 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         const client = await clientPromise;
         const db = client.db("giraffe");
 
-        // Get check to know tableId
         const check = await db.collection("checks").findOne({ _id: new ObjectId(id) });
         if (!check) return NextResponse.json({ error: "Check not found" }, { status: 404 });
 
-        // Delete check
+        // 1. Повернення депозиту якщо є
+        if (check.deposit) {
+            const deposit = check.deposit;
+
+            const settings = await db.collection("settings").findOne({ type: "global" });
+            const financeSettings = settings?.finance || {};
+            const accountIdStr = deposit.method === 'cash'
+                ? financeSettings.cashAccountId
+                : financeSettings.cardAccountId;
+
+            let accountId: ObjectId | null = null;
+            if (accountIdStr) {
+                try { accountId = new ObjectId(accountIdStr); } catch (e) { }
+            }
+
+            if (accountId) {
+                await db.collection("transactions").insertOne({
+                    date: new Date(),
+                    amount: deposit.amount,
+                    type: "expense",
+                    category: "deposit_refund",
+                    description: `Повернення передплати при видаленні чеку #${id.slice(-4)} (${check.tableName})`,
+                    source: "cash-register",
+                    referenceId: id,
+                    paymentMethod: deposit.method,
+                    status: "completed",
+                    moneyAccountId: accountId.toString(),
+                    shiftId: check.shiftId ? new ObjectId(check.shiftId) : null
+                });
+
+                await db.collection("money_accounts").updateOne(
+                    { _id: accountId },
+                    { $inc: { balance: -deposit.amount }, $set: { updatedAt: new Date() } }
+                );
+            }
+
+            await db.collection("cash_transactions").insertOne({
+                shiftId: check.shiftId ? new ObjectId(check.shiftId) : null,
+                type: 'expense',
+                category: 'deposit_refund',
+                amount: deposit.amount,
+                comment: `Повернення передплати при видаленні чеку #${id.slice(-4)} (${check.tableName})`,
+                authorName: check.waiterName || 'System',
+                checkId: id,
+                paymentMethod: deposit.method,
+                createdAt: new Date()
+            });
+
+            if (deposit.transactionId) {
+                await db.collection("cash_transactions").updateOne(
+                    { _id: new ObjectId(deposit.transactionId) },
+                    {
+                        $set: {
+                            isDeleted: true,
+                            deletedAt: new Date(),
+                            deletedBy: check.waiterName || 'System',
+                            deleteReason: 'delete_deposit_refunded'
+                        }
+                    }
+                );
+            }
+        }
+
+        // 2. Видалити чек
         await db.collection("checks").deleteOne({ _id: new ObjectId(id) });
 
-        // --- NEW: Cancel linked Event status ---
-        // Search for an event that is linked to this checkId (which is the parameter 'id')
+        // 3. Скасувати пов'язані події
         await db.collection("events").updateMany(
             { checkId: id },
             {
                 $set: {
                     status: 'cancelled',
+                    paymentStatus: 'unpaid',
+                    paidAmount: 0,
                     updatedAt: new Date().toISOString()
                 }
             }
         );
 
-        // Free up the table and reset seats
-        await db.collection("tables").updateOne(
-            { _id: new ObjectId(check.tableId) },
-            { $set: { status: 'free', seats: 0 } }
-        );
+        // 4. Звільнити стіл
+        if (check.tableId) {
+            await db.collection("tables").updateOne(
+                { _id: new ObjectId(check.tableId) },
+                { $set: { status: 'free', seats: 0 } }
+            );
+        }
 
         return NextResponse.json({ success: true });
 

@@ -4,54 +4,80 @@ import { jwtVerify } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
-// Paths that require authentication
-const protectedPaths = ['/admin', '/accounting', '/docs', '/projects', '/staff', '/cash-register', '/supply', '/visits', '/clients', '/social-planner'];
-
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // only run for protected paths
-  if (protectedPaths.some((p) => pathname.startsWith(p))) {
-    const token = req.cookies.get('token')?.value;
+  // 1. Skip static assets, public files, and public auth endpoints
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/static/') ||
+    pathname === '/favicon.ico' ||
+    pathname.includes('.') || // matches assets like audio, images, etc.
+    pathname.startsWith('/api/auth/') // allow login, register, me, logout
+  ) {
+    return NextResponse.next();
+  }
 
-    if (!token) {
-      const url = req.nextUrl.clone();
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
-    }
+  const token = req.cookies.get('token')?.value;
 
-    try {
-      // Verify JWT using jose (Edge-compatible)
-      const secret = new TextEncoder().encode(JWT_SECRET);
-      const { payload } = await jwtVerify(token, secret);
-      const role = payload.role as string;
-
-      // Access Control Logic
-      if (role === 'user') {
-        // Allowed paths for 'user' role
-        const allowedPaths = ['/', '/cash-register', '/projects', '/docs', '/supply', '/staff', '/visits', '/events', '/clients', '/social-planner'];
-
-        const isAllowed = allowedPaths.some(p =>
-          pathname === p || pathname.startsWith(`${p}/`)
-        );
-
-        // Special case: Home page '/' is not in protectedPaths usually, but if we are here
-        // it means we hit a protected path. 'user' should not access /accounting or /staff.
-
-        if (!isAllowed) {
-          // User is trying to access restricted area
-          const url = req.nextUrl.clone();
-          url.pathname = '/'; // Redirect to home
-          return NextResponse.redirect(url);
-        }
+  // 2. Public route login redirection
+  if (pathname === '/login') {
+    if (token) {
+      try {
+        const secret = new TextEncoder().encode(JWT_SECRET);
+        await jwtVerify(token, secret);
+        // Valid token, redirect to home page
+        const url = req.nextUrl.clone();
+        url.pathname = '/';
+        return NextResponse.redirect(url);
+      } catch (err) {
+        // Invalid token, allow access to login page
+        return NextResponse.next();
       }
-
-    } catch (err) {
-      // Token invalid or verification failed
-      const url = req.nextUrl.clone();
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
     }
+    return NextResponse.next();
+  }
+
+  // 3. Check authentication for all other pages and API endpoints
+  if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
+
+  try {
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    const role = payload.role as string;
+
+    // 4. Role-Based Access Control (RBAC)
+    if (role === 'user') {
+      // User is forbidden from entering admin/accounting areas
+      const restrictedPaths = ['/admin', '/accounting', '/api/admin', '/api/accounting'];
+      const isRestricted = restrictedPaths.some(p => 
+        pathname === p || pathname.startsWith(`${p}/`)
+      );
+
+      if (isRestricted) {
+        if (pathname.startsWith('/api/')) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+        const url = req.nextUrl.clone();
+        url.pathname = '/';
+        return NextResponse.redirect(url);
+      }
+    }
+  } catch (err) {
+    // Verification failed / token invalid
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
@@ -59,15 +85,10 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/accounting/:path*',
-    '/docs/:path*',
-    '/projects/:path*',
-    '/staff/:path*',
-    '/cash-register/:path*',
-    '/supply/:path*',
-    '/telegram/:path*',
-    '/clients/:path*',
-    '/social-planner/:path*'
+    /*
+     * Match all request paths except static files and favicon.
+     * Matches pages and api routes.
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

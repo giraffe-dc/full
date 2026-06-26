@@ -62,9 +62,15 @@ export async function GET(req: NextRequest) {
             : stockMovements;
 
         // 4. Get Cash Register Transactions
-        const cashTransactions = await db.collection("cash_transactions").find({}).toArray();
+        //    Exclude categories already counted via 'transactions' collection:
+        //    - 'deposit' (source: 'cash-register')
+        //    - 'deposit_refund' (source: 'cash-register')
+        const cashTransactions = await db.collection("cash_transactions").find({
+            isDeleted: { $ne: true },
+            category: { $nin: ['deposit', 'deposit_refund', 'deposit_audit'] }
+        }).toArray();
         const periodCashTransactions = Object.keys(dateFilter).length
-            ? await db.collection("cash_transactions").find({ ...matchDate("createdAt") }).toArray()
+            ? await db.collection("cash_transactions").find({ ...matchDate("createdAt"), isDeleted: { $ne: true }, category: { $nin: ['deposit', 'deposit_refund', 'deposit_audit'] } }).toArray()
             : cashTransactions;
 
         // 5. Get Receipts (Income)

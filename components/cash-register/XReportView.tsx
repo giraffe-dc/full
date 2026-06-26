@@ -65,7 +65,7 @@ export function XReportView({ report, shiftId, prevDenomInfo }: XReportViewProps
             <span style={{ color: '#2563eb', fontWeight: '800' }}>{report.totalSalesCard?.toFixed(2) || '0.00'} ₴</span>
           </div>
           <div className={styles.detailItem}>
-            <span>📥 Внесення коштів:</span>
+            <span>📥 Ручні доходи:</span>
             <span style={{ color: '#16a34a', fontWeight: '800' }}>+ {report.totalIncome?.toFixed(2) || '0.00'} ₴</span>
           </div>
           <div className={styles.detailItem}>
@@ -136,7 +136,7 @@ export function XReportView({ report, shiftId, prevDenomInfo }: XReportViewProps
                     </td>
                     <td className={styles.txType}>
                       <div className={styles.typeLabel}>
-                        <span>{tx.category || tx.type}</span>
+                        <span>{tx.category === 'deposit' ? 'Передплата' : tx.category === 'deposit_refund' ? 'Повернення передплати' : tx.category || tx.type}</span>
                         {tx.source && (
                           <span className={styles.sourceLabel}>• {tx.source === 'accounting' ? 'Бухгалтерія' : tx.source === 'stock' ? 'Склад' : 'Каса'}</span>
                         )}

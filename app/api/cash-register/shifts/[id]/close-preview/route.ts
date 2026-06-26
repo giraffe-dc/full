@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { calculateSalesCash, calculateSalesCard } from "@/lib/deposit-utils";
 
 export async function GET(
     request: Request,
@@ -19,15 +20,16 @@ export async function GET(
         }
 
         const receipts = await db.collection("receipts").find({ shiftId: new ObjectId(id) }).toArray();
-        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id) }).toArray();
+        const transactions = await db.collection("cash_transactions").find({ shiftId: new ObjectId(id), isDeleted: { $ne: true } }).toArray();
 
         const totalSales = receipts.reduce((sum, r) => sum + (r.total || 0), 0);
+        // Продажі з чеків: універсальна формула з deposit-utils
         const totalSalesCash = receipts
-            .filter(r => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
-            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.cash || 0) : r.total), 0);
+            .filter((r: any) => r.paymentMethod === 'cash' || r.paymentMethod === 'mixed')
+            .reduce((sum: number, r: any) => sum + calculateSalesCash(r), 0);
         const totalSalesCard = receipts
-            .filter(r => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
-            .reduce((sum, r) => sum + (r.paymentMethod === 'mixed' ? (r.paymentDetails?.card || 0) : r.total), 0);
+            .filter((r: any) => r.paymentMethod === 'card' || r.paymentMethod === 'mixed')
+            .reduce((sum: number, r: any) => sum + calculateSalesCard(r), 0);
 
         // 3. General Transactions (External Manual)
         const settings = await db.collection("settings").findOne({ type: "global" });
@@ -92,10 +94,22 @@ export async function GET(
             ...mappedSupplies
         ];
 
-        // Filter out sales-related transactions to match X-Report logic
+        // Filter out sales-related and deposit transactions to match X-Report logic
         const manualTransactions = allTransactions.filter(t =>
-            t.category !== 'sales' && t.source !== 'cash-register'
+            t.category !== 'sales'
+            && t.category !== 'deposit'
+            && t.category !== 'deposit_refund'
+            && t.category !== 'deposit_audit'
+            && t.source !== 'cash-register'
         );
+
+        // Депозити поточної зміни (додаємо до продажів)
+        const depositCash = transactions
+            .filter(t => t.category === 'deposit' && (t.paymentMethod === 'cash' || !t.paymentMethod))
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const depositCard = transactions
+            .filter(t => t.category === 'deposit' && t.paymentMethod === 'card')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         const totalIncome = manualTransactions
             .filter(t => t.type === 'income')
@@ -110,15 +124,15 @@ export async function GET(
             .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         const startBalance = shift.startBalance || 0;
-        // Logic: Start Balance + Cash Sales + Manual Income - Manual Expenses - Incasation
-        const expectedBalance = startBalance + totalSalesCash + totalIncome - totalExpenses - totalIncasation;
+        // Logic: Start Balance + (Cash Sales + Cash Deposits) + Manual Income - Manual Expenses - Incasation
+        const expectedBalance = startBalance + (totalSalesCash + depositCash) + totalIncome - totalExpenses - totalIncasation;
 
         const data = {
             startBalance,
             totalSales,
-            totalSalesCash,
-            totalSalesCard,
-            totalIncome,
+            totalSalesCash: totalSalesCash + depositCash,  // Готівкові депозити = "Продажі (Готівка)"
+            totalSalesCard: totalSalesCard + depositCard,  // Карткові депозити = "Продажі (Карта)"
+            totalIncome,  // Тільки ручні доходи (без депозитів)
             totalExpenses,
             totalIncasation,
             expectedBalance

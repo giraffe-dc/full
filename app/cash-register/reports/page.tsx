@@ -7,6 +7,7 @@ import { XReportView } from "../../../components/cash-register/XReportView";
 import { ZReportView } from "../../../components/cash-register/ZReportView";
 import { DenomAnalyticsView } from "../../../components/cash-register/DenomAnalyticsView";
 import { Preloader } from "@/components/ui/Preloader";
+import { calculateSalesCash, calculateSalesCard } from "@/lib/deposit-utils";
 
 type ReportType = "x-report" | "z-report" | "receipts" | "denom-analytics";
 
@@ -145,15 +146,23 @@ export default function ReportsPage() {
 
     state.currentShift.receipts.forEach((receipt) => {
       const total = receipt.total || 0;
-      totalSales += total;
 
       if (receipt.paymentMethod === 'cash') {
-        totalSalesCash += total;
+        totalSalesCash += calculateSalesCash(receipt);
+        totalSales += calculateSalesCash(receipt);
       } else if (receipt.paymentMethod === 'card') {
-        totalSalesCard += total;
+        totalSalesCard += calculateSalesCard(receipt);
+        totalSales += calculateSalesCard(receipt);
       } else if (receipt.paymentMethod === 'mixed' && receipt.paymentDetails) {
-        totalSalesCash += (receipt.paymentDetails.cash || 0);
-        totalSalesCard += (receipt.paymentDetails.card || 0);
+        // paymentDetails contains remaining payment split (deposit excluded)
+        // Deposits are counted separately via deposit transactions
+        const cashPart = (receipt.paymentDetails.cash || 0);
+        const cardPart = (receipt.paymentDetails.card || 0);
+        totalSalesCash += cashPart;
+        totalSalesCard += cardPart;
+        totalSales += cashPart + cardPart;
+      } else if (receipt.paymentMethod === 'certificate') {
+        totalSales += total;
       }
 
       receipt.items.forEach((item) => {
@@ -177,18 +186,54 @@ export default function ReportsPage() {
     let totalExpenses = 0;
     let totalIncasation = 0;
 
-    // Filter out sales transactions that are automatically created
-    // We only want manual transactions (income/expense/incasation) to appear in the transaction list and "Cash In" block
+    // Filter out sales transactions (already counted via receipts)
     const filteredTransactions = transactions.filter(t => {
       const isSale = (t as any).category === 'sales' || (t as any).source === 'cash-register';
       return !isSale;
     });
 
+    // Розрахунок totalSalesCash, totalSalesCard та totalIncome з транзакцій:
+    // - Готівкові deposits → totalSalesCash (відображаємо як продажі готівкою)
+    // - Карткові deposits → totalSalesCard (відображаємо як продажі карткою)
+    // - Повернення готівкового deposit → віднімаємо з totalSalesCash
+    // - Повернення карткового deposit → віднімаємо з totalSalesCard
     filteredTransactions.forEach(t => {
       const amt = t.amount || 0;
-      // We look at 't.type' or just the sign if normalized, but backend normalized 'amount' to be negative for expenses.
-      // However, frontend ZReportView might expect separate absolute totals.
-      // Backend normalization for [id] route: amount is negative for expense/incasation.
+      const cat = (t as any).category;
+      const method = (t as any).paymentMethod;
+
+      // Готівковий deposit — додаємо як продажі готівкою
+      if (cat === 'deposit' && method === 'cash') {
+        totalSalesCash += amt;
+        totalSales += amt;
+        return;
+      }
+
+      // Картковий deposit — додаємо як продажі карткою
+      if (cat === 'deposit' && method === 'card') {
+        totalSalesCard += amt;
+        totalSales += amt;
+        return;
+      }
+
+      // Повернення готівкового deposit — віднімаємо з продажів готівкою
+      if (cat === 'deposit_refund' && method === 'cash') {
+        totalSalesCash -= Math.abs(amt);
+        totalSales -= Math.abs(amt);
+        return;
+      }
+
+      // Повернення карткового deposit — віднімаємо з продажів карткою
+      if (cat === 'deposit_refund' && method === 'card') {
+        totalSalesCard -= Math.abs(amt);
+        totalSales -= Math.abs(amt);
+        return;
+      }
+
+      // Інші deposit операції — пропускаємо
+      if (cat === 'deposit_refund' || cat === 'deposit_audit') {
+        return;
+      }
 
       if ((t as any).type === 'income' || (t as any).type?.includes('Прихід')) {
         totalIncome += amt;
@@ -411,6 +456,15 @@ export default function ReportsPage() {
                             {receipt.paymentMethod === 'mixed' && receipt.paymentDetails && (
                               <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '10px' }}>
                                 (Готівка: {receipt.paymentDetails.cash?.toFixed(2)} ₴ | Картка: {receipt.paymentDetails.card?.toFixed(2)} ₴)
+                              </span>
+                            )}
+                            {(receipt.depositAmount || 0) > 0 && (
+                              <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '600', marginLeft: '10px' }}>
+                                | Передплата: {receipt.depositAmount?.toFixed(2)} ₴
+                                ({receipt.depositMethod === 'card' ? '💳 Карта' : '💵 Готівка'})
+                                {receipt.depositInfo?.createdAt && (
+                                  <> {new Date(receipt.depositInfo.createdAt).toLocaleString('uk-UA')}</>
+                                )}
                               </span>
                             )}
                             {receipt.subtotal !== undefined && (

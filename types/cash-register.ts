@@ -80,6 +80,16 @@ export interface Receipt {
     certificate?: number;
     certificateId?: string;
   };
+  depositAmount?: number;
+  depositMethod?: 'cash' | 'card' | null;
+  depositInfo?: {
+    id?: string;
+    amount?: number;
+    method?: string;
+    createdAt?: string;
+    authorName?: string;
+    transactionId?: string;
+  };
 }
 
 // Подарункові сертифікати
@@ -301,6 +311,16 @@ export interface Table {
   y?: number;
 }
 
+// Запис передплати (депозиту) по чеку
+export interface CheckDeposit {
+  id: string;           // Унікальний ID запису депозиту
+  amount: number;       // Сума передплати
+  method: 'cash' | 'card'; // Спосіб оплати
+  createdAt: string;
+  authorName?: string;  // Хто прийняв передплату
+  transactionId?: string; // Зв'язок з cash_transactions
+}
+
 export interface Check {
   id: string; // MongoDB _id
   tableId: string;
@@ -322,4 +342,9 @@ export interface Check {
   total: number;
   createdAt: string;
   updatedAt: string;
+
+  // Передплата (депозит)
+  paidAmount?: number;                          // Сума вже сплаченого депозиту
+  paymentStatus?: 'unpaid' | 'deposit' | 'paid'; // Статус оплати чеку
+  deposit?: CheckDeposit;                       // Дані поточного депозиту (один на чек)
 }
