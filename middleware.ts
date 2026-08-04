@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { RESTRICTED_PATHS, RESTRICTED_API_PATHS, type Role } from './lib/roles';
+import { RESTRICTED_PATHS, RESTRICTED_API_PATHS, STAFF_SUPPLY_API_PATHS, type Role } from './lib/roles';
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
@@ -81,6 +81,16 @@ export async function middleware(req: NextRequest) {
 
         // Перевірка API маршрутів
         if (pathname.startsWith('/api/')) {
+          // staff має доступ до маршрутів постачання
+          if (role === 'staff') {
+            const isStaffAllowed = STAFF_SUPPLY_API_PATHS.some(p =>
+              pathname.startsWith(p)
+            );
+            if (isStaffAllowed) {
+              return NextResponse.next();
+            }
+          }
+
           const isRestrictedApi = RESTRICTED_API_PATHS.some(p =>
             pathname.startsWith(p)
           );

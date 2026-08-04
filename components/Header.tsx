@@ -263,7 +263,7 @@ export default function Header() {
 
     const filteredNavItems = navItems.filter(item => {
         if (!user) return false; // Hide navigation items while user data is loading
-        if (user.role === 'user') {
+        if (user.role === 'user'|| user.role === 'staff') {
             return ['/cash-register', '/supply', '/visits', '/events', '/telegram', '/clients', '/social-planner'].includes(item.href);
         }
         return true;

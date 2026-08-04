@@ -39,6 +39,16 @@ export const POS_ALLOWED_API_PATHS = [
   '/api/accounting/clients',
   '/api/accounting/categories',
   '/api/accounting/ingredients',
+  '/api/accounting/stock/warehouses',
+  '/api/accounting/stock/suppliers'
+];
+
+// API routes, ДОПУСКНІ для staff (створення/редагування постачання)
+export const STAFF_SUPPLY_API_PATHS = [
+  '/api/accounting/stock/movements',
+  '/api/accounting/stock/warehouses',
+  '/api/accounting/stock/suppliers',
+  '/api/accounting/stock/last-prices',
 ];
 
 // Перевіряє чи роль має доступ до маршруту
@@ -52,6 +62,14 @@ export function hasAccess(role: Role, pathname: string): boolean {
     pathname === p || pathname.startsWith(`${p}/`)
   );
   if (isRestrictedPage) return false;
+
+  // staff має доступ до маршрутів постачання
+  if (role === 'staff') {
+    const isStaffAllowed = STAFF_SUPPLY_API_PATHS.some(p =>
+      pathname.startsWith(p)
+    );
+    if (isStaffAllowed) return true;
+  }
 
   const isRestrictedApi = RESTRICTED_API_PATHS.some(p =>
     pathname.startsWith(p)

@@ -5,6 +5,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 16px;
     overflow: hidden;
+    /* width: 50%; */
 }
 
 .denomHeader {
@@ -64,6 +65,7 @@
 
 .denomBody {
     padding: 20px;
+    
 }
 
 .denomTableWrapper {
@@ -71,10 +73,11 @@
 }
 
 .denomTable {
-    width: 100%;
+    width: 50%;
     border-collapse: collapse;
     font-size: 0.9rem;
-    min-width: 420px;
+    margin: 0 auto;
+    /* min-width: 420px; */
 }
 
 .denomTable thead th {
