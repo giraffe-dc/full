@@ -27,6 +27,9 @@ export function StockBalances() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isRecalculating, setIsRecalculating] = useState(false);
     const [recalcConfirmOpen, setRecalcConfirmOpen] = useState(false);
+    // PRICE SYNC: легка синхронізація цін (WMA) — ?pricesOnly=1, вміщується
+    // в 60с ліміт Hobby-тарифу Vercel (повний перерахунок — ні)
+    const [isSyncingPrices, setIsSyncingPrices] = useState(false);
     const toast = useToast();
 
     // Accordion state
@@ -66,6 +69,28 @@ export function StockBalances() {
             toast.error('Помилка завантаження залишків');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSyncPrices = async () => {
+        try {
+            setIsSyncingPrices(true);
+            const res = await fetch('/api/accounting/stock/recalculate?pricesOnly=1', {
+                method: 'POST'
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success(`Ціни інгредієнтів синхронізовано (WMA). Оновлено: ${data.ingredientsUpdated}`);
+                fetchBalances();
+            } else {
+                toast.error(`Помилка: ${data.error || 'Невідома помилка'}`);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Помилка підключення до сервера');
+        } finally {
+            setIsSyncingPrices(false);
         }
     };
 
@@ -206,8 +231,17 @@ export function StockBalances() {
                     </select>
                     <button
                         className={styles.toolbarButton}
+                        onClick={handleSyncPrices}
+                        disabled={isLoading || isRecalculating || isSyncingPrices}
+                        style={{ marginRight: '10px', background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', border: '1px solid rgba(34, 197, 94, 0.25)' }}
+                        title="Оновити ціни інгредієнтів у техкартах за середньою зваженою по приходах (швидко)"
+                    >
+                        {isSyncingPrices ? '⏳ ...' : '💰 Синхронізувати ціни'}
+                    </button>
+                    <button
+                        className={styles.toolbarButton}
                         onClick={() => setRecalcConfirmOpen(true)}
-                        disabled={isLoading || isRecalculating}
+                        disabled={isLoading || isRecalculating || isSyncingPrices}
                         style={{ marginRight: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.2)' }}
                         title="Виправити помилки минулих списань"
                     >

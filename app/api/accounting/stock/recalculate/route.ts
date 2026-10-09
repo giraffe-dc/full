@@ -1,16 +1,35 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { isPriceSyncEnabled, syncAllIngredientPrices } from "@/lib/stock-utils";
+
+// Vercel Hobby (free): ліміт serverless-функції 60с. Повний перерахунок на
+// прод-обсязі триває ~2 хв і не встигає (НЕ регресія — і раніше падав на
+// 60с-ліміті транзакції MongoDB). Легкий режим ?pricesOnly=1 (синхронізація
+// цін, ~секунди) вміщується в ліміт будь-якого тарифу.
+export const maxDuration = 60;
 
 // Одною транзакцією на прод-обсязі (~1200+ чеків) не вистачає ліміту 60с
 // (виявлено e2e на копії проду 09.10.2026) → перебудова sale-рухів чанками.
 const RECEIPTS_PER_TXN = 200;
 
-export async function POST() {
+export async function POST(req: NextRequest) {
     try {
         const client = await clientPromise;
         const db = client.db("giraffe");
+
+        // ============ Легкий режим: лише синхронізація цін (WMA) ============
+        // Використовувати на Hobby-тарифі замість повного перерахунку.
+        if (req.nextUrl.searchParams.get("pricesOnly") === "1") {
+            if (!isPriceSyncEnabled()) {
+                return NextResponse.json(
+                    { success: false, error: "Синхронізацію цін вимкнено (STOCK_PRICE_SYNC_ENABLED=false)" },
+                    { status: 400 }
+                );
+            }
+            const updated = await syncAllIngredientPrices(db);
+            return NextResponse.json({ success: true, mode: "pricesOnly", ingredientsUpdated: updated });
+        }
 
         // ============ Підготовка (поза транзакціями) ============
         console.log("[RECALCULATE] Fetching receipts & warehouses...");
