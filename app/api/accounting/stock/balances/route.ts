@@ -1,6 +1,6 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../../lib/mongodb";
+import { isPriceSyncEnabled } from "@/lib/stock-utils";
 
 export async function GET(req: NextRequest) {
     try {
@@ -8,6 +8,36 @@ export async function GET(req: NextRequest) {
         const db = client.db('giraffe');
         const searchParams = req.nextUrl.searchParams;
         const warehouseId = searchParams.get("warehouseId");
+
+        // PRICE SYNC (P7): з flag ON lastCost береться ЛИШЕ з supply-рухів, щоб
+        // продаж (cost: 0) не обнуляв «останню ціну». З flag OFF — стара поведінка.
+        const priceSync = isPriceSyncEnabled();
+
+        // Group stage. lastCost/lastPurchaseCost для flag OFF залишені в $group як раніше;
+        // для flag ON вони обчислюються ПІСЛЯ групування (див. $addFields нижче), бо
+        // "$$REMOVE" всередині $last-акумулятора не працює (дає null) — виявлено e2e-тестом.
+        const groupStage: any = {
+            _id: {
+                warehouseId: "$movements.warehouseId",
+                itemId: "$movements.itemId"
+            },
+            itemName: { $first: "$movements.itemName" },
+            unit: { $first: "$movements.unit" },
+            // Push all movements to array to reduce them
+            history: { $push: "$movements" }
+        };
+        if (!priceSync) {
+            groupStage.lastCost = { $last: "$movements.cost" };
+            groupStage.lastPurchaseCost = {
+                $last: {
+                    $cond: [
+                        { $eq: ["$movements.type", "supply"] },
+                        "$movements.cost",
+                        "$$REMOVE"
+                    ]
+                }
+            };
+        }
 
         const aggregation: any[] = [
             // 1. Filter out deleted movements
@@ -36,7 +66,6 @@ export async function GET(req: NextRequest) {
             {
                 $project: {
                     movements: [
-                        // Primary warehouse change
                         {
                             warehouseId: "$warehouseId",
                             itemId: "$itemId",
@@ -54,14 +83,12 @@ export async function GET(req: NextRequest) {
                                         { case: { $eq: ["$type", "writeoff"] }, then: { $multiply: ["$qty", -1] } },
                                         { case: { $eq: ["$type", "sale"] }, then: { $multiply: ["$qty", -1] } },
                                         { case: { $eq: ["$type", "move"] }, then: { $multiply: ["$qty", -1] } },
-                                        // Inventory is special - handled in reduce
                                         { case: { $eq: ["$type", "inventory"] }, then: 0 }
                                     ],
                                     default: 0
                                 }
                             }
                         },
-                        // Target warehouse change (only for moves)
                         {
                             warehouseId: "$toWarehouseId",
                             itemId: "$itemId",
@@ -69,7 +96,7 @@ export async function GET(req: NextRequest) {
                             unit: "$unit",
                             date: "$date",
                             cost: "$cost",
-                            type: "move_in", // custom type for target
+                            type: "move_in",
                             qty: "$qty",
                             actualQty: "$actualQty",
                             change: { $cond: [{ $eq: ["$type", "move"] }, "$qty", 0] }
@@ -85,32 +112,16 @@ export async function GET(req: NextRequest) {
             // 6. Sort by date ASC to get correct timeline
             { $sort: { "movements.date": 1 } },
 
-            // 7. Group by warehouse and item, and Accumulate logic
-            {
-                $group: {
-                    _id: {
-                        warehouseId: "$movements.warehouseId",
-                        itemId: "$movements.itemId"
-                    },
-                    itemName: { $first: "$movements.itemName" },
-                    unit: { $first: "$movements.unit" },
-                    lastCost: { $last: "$movements.cost" },
-                    // Get last purchase cost (from supply movements)
-                    lastPurchaseCost: {
-                        $last: {
-                            $cond: [
-                                { $eq: ["$movements.type", "supply"] },
-                                "$movements.cost",
-                                "$$REMOVE"
-                            ]
-                        }
-                    },
-                    // Push all movements to array to reduce them
-                    history: { $push: "$movements" }
-                }
-            },
+            // 7. Group by warehouse and item
+            { $group: groupStage },
 
-            // 8. Calculate Balance using $reduce
+            // 8. PRICE SYNC: lastCost/lastPurchaseCost лише з supply-рухів (P7)
+            ...(priceSync ? [
+                { $addFields: { supplyHistory: { $filter: { input: "$history", as: "h", cond: { $eq: ["$$h.type", "supply"] } } } } },
+                { $addFields: { lastCostObj: { $cond: [{ $gt: [{ $size: "$supplyHistory" }, 0] }, { $last: "$supplyHistory" }, null] } } }
+            ] : []),
+
+            // 9. Calculate Balance using $reduce
             // Logic: If type is 'inventory', RESET balance to qty. Else add 'change'.
             {
                 $addFields: {
@@ -121,8 +132,8 @@ export async function GET(req: NextRequest) {
                             in: {
                                 $cond: [
                                     { $eq: ["$$this.type", "inventory"] },
-                                    "$$this.actualQty", // Reset to inventory snapshot count
-                                    { $add: ["$$value", "$$this.change"] } // Apply change
+                                    "$$this.actualQty",
+                                    { $add: ["$$value", "$$this.change"] }
                                 ]
                             }
                         }
@@ -130,10 +141,10 @@ export async function GET(req: NextRequest) {
                 }
             },
 
-            // 9. Optional filtering by warehouse
+            // 10. Optional filtering by warehouse
             ...(warehouseId ? [{ $match: { "_id.warehouseId": warehouseId } }] : []),
 
-            // 10. Final Sorting
+            // 11. Final Sorting
             { $sort: { itemName: 1 } }
         ];
 
@@ -147,8 +158,9 @@ export async function GET(req: NextRequest) {
             itemName: b.itemName,
             unit: b.unit,
             quantity: b.quantity,
-            lastCost: b.lastCost,
-            lastPurchaseCost: b.lastPurchaseCost
+            // PRICE SYNC: з flag ON обидва поля = ціна останнього supply-руху
+            lastCost: priceSync ? (b.lastCostObj ? b.lastCostObj.cost : null) : b.lastCost,
+            lastPurchaseCost: priceSync ? (b.lastCostObj ? b.lastCostObj.cost : null) : b.lastPurchaseCost
         }));
 
         return NextResponse.json({ data: formattedBalances });

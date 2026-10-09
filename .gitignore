@@ -19,7 +19,12 @@
 
 # production
 /build
-/scripts
+# scripts ігнорується ЦІЛКОМ, крім verify-wma.js (read-only верифікатор WMA,
+# план docs/STOCK_PRICING_FIX_PLAN.md; запуск перед увімкненням STOCK_PRICE_SYNC_ENABLED).
+# Увага: '!/scripts/verify-wma.js' не працює при '/scripts' — батьківську папку
+# ігнорувати не можна, тому використовуємо '/scripts/*'.
+/scripts/*
+!/scripts/verify-wma.js
 
 # misc
 .DS_Store

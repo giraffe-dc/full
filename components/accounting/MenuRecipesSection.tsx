@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MenuRecipe } from '../../types/accounting';
 import { RecipeFormModal } from './RecipeFormModal';
-import { getRecipes, createRecipe, updateRecipe, deleteRecipe, getCategories, getIngredients } from '../../lib/api-client';
+import { getRecipes, createRecipe, updateRecipe, deleteRecipe, getCategories, getIngredients, getPriceSyncEnabled } from '../../lib/api-client';
 import { ImportModal } from './ImportModal';
 import { TrashModal } from './TrashModal';
 import styles from './MenuRecipesSection.module.css';
@@ -26,6 +26,9 @@ export function MenuRecipesSection({
   const [recipes, setRecipes] = useState<MenuRecipe[]>(initialRows || []);
   const [categories, setCategories] = useState<string[]>(initialCategories || []);
   const [ingredientsList, setIngredientsList] = useState<import('../../types/accounting').MenuIngredient[]>([]);
+  // PRICE SYNC (Этап 4): чи увімкнено автооновлення цін на сервері —
+  // передається в RecipeFormModal для merge актуальних цін при відкритті картки
+  const [priceSyncEnabled, setPriceSyncEnabled] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null);
@@ -59,6 +62,12 @@ export function MenuRecipesSection({
       // Load recipes
       const recipesData = await getRecipes();
       setRecipes(recipesData);
+
+      // PRICE SYNC (Этап 4): тягнемо flag сервера (не критично — при помилці лишиться false)
+      try {
+        const flag = await getPriceSyncEnabled();
+        setPriceSyncEnabled(flag);
+      } catch (e) { console.error('Failed to load priceSyncEnabled', e); }
 
       // Load additional data if not provided props (or just refresh it)
       // For now, let's always fetch to ensure freshness or if props are missing
@@ -417,6 +426,7 @@ export function MenuRecipesSection({
         recipe={editingRecipe}
         categories={categories}
         ingredients={ingredientsList}
+        priceSyncEnabled={priceSyncEnabled}
         onClose={() => setIsFormOpen(false)}
         onSave={handleSaveRecipe}
       />

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "../../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
-import { applyBalances, revertBalances } from "@/lib/stock-utils";
+import {
+    applyBalances,
+    revertBalances,
+    isPriceSyncEnabled,
+    getItemBalances,
+    syncSupplyPrices,
+    recalcSupplyItemPrices,
+} from "@/lib/stock-utils";
 
 export async function GET(req: NextRequest) {
     try {
@@ -68,11 +75,33 @@ export async function POST(req: NextRequest) {
         const session = client.startSession();
         let result;
 
+        // PRICE SYNC (WMA): зчитуємо залишки ДО приходу, ЛИШЕ якщо синхронізація увімкнена.
+        // З flag OFF — жодного додаткового запиту до БД (нульовий вплив, розділ 5.1.1 плану).
+        const priceSync = isPriceSyncEnabled() && body.type === 'supply';
+        let preBalances: Map<string, number> = new Map();
+        if (priceSync) {
+            const itemIds = [...new Set(
+                (body.items as any[]).map(i => i?.itemId?.toString()).filter(Boolean)
+            )];
+            preBalances = await getItemBalances(db, itemIds);
+        }
+
         await session.withTransaction(async () => {
             await processTransaction(db, body, session);
         });
 
         await session.endSession();
+
+        // PRICE SYNC (WMA): ПІСЛЯ коміту транзакції і ПОЗА нею — помилка синхронізації
+        // цін ніколи не валить проведення приходу (розділ 5.4 плану).
+        if (priceSync) {
+            try {
+                await syncSupplyPrices(db, body.items, preBalances);
+            } catch (e: any) {
+                console.warn('[PRICE_SYNC] Supply price sync failed (non-fatal):', e?.message);
+            }
+        }
+
         return NextResponse.json({ success: true, id: result }); // ID might be lost in helper, need to return it carefully
 
     } catch (e: any) {
@@ -91,9 +120,10 @@ export async function PUT(req: NextRequest) {
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
         const session = client.startSession();
+        let oldDoc: any = null; // PRICE SYNC: потрібен після транзакції (поза її скоупом)
         await session.withTransaction(async () => {
             // 1. Get Old Document
-            const oldDoc = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
+            oldDoc = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
             if (!oldDoc) throw new Error("Document not found");
 
             // 1.5 Check Period Lock for both OLD and NEW dates/warehouses
@@ -137,6 +167,16 @@ export async function PUT(req: NextRequest) {
         });
 
         await session.endSession();
+
+        // PRICE SYNC (WMA): після редагування приходу — перерахунок цін по активних supply
+        if (isPriceSyncEnabled() && oldDoc.type === 'supply') {
+            try {
+                await recalcSupplyItemPrices(db, [oldDoc.items, body.items]);
+            } catch (e: any) {
+                console.warn('[PRICE_SYNC] Price recalc after supply update failed (non-fatal):', e?.message);
+            }
+        }
+
         return NextResponse.json({ success: true });
 
     } catch (e: any) {
@@ -155,8 +195,9 @@ export async function DELETE(req: NextRequest) {
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
         const session = client.startSession();
+        let doc: any = null; // PRICE SYNC: потрібен після транзакції (поза її скоупом)
         await session.withTransaction(async () => {
-            const doc = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
+            doc = await db.collection("stock_movements").findOne({ _id: new ObjectId(id) }, { session });
             if (!doc) throw new Error("Document not found");
 
             // Check Period Lock
@@ -187,6 +228,16 @@ export async function DELETE(req: NextRequest) {
         });
 
         await session.endSession();
+
+        // PRICE SYNC (WMA): після видалення/відновлення приходу — перерахунок цін
+        if (isPriceSyncEnabled() && doc.type === 'supply') {
+            try {
+                await recalcSupplyItemPrices(db, [doc.items]);
+            } catch (e: any) {
+                console.warn('[PRICE_SYNC] Price recalc after supply delete/restore failed (non-fatal):', e?.message);
+            }
+        }
+
         return NextResponse.json({ success: true });
 
     } catch (e: any) {

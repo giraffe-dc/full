@@ -243,6 +243,19 @@ export async function deleteProduct(id: string): Promise<void> {
 
 // ============ RECIPES API ============
 
+// PRICE SYNC (Этап 4): чи увімкнено автооновлення цін на сервері (STOCK_PRICE_SYNC_ENABLED)
+export async function getPriceSyncEnabled(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/accounting/recipes?meta=1');
+    if (!response.ok) return false;
+    const result = await response.json();
+    return result.priceSyncEnabled === true;
+  } catch (e) {
+    console.error('Error fetching priceSyncEnabled:', e);
+    return false;
+  }
+}
+
 export async function getRecipes(filters?: {
   category?: string;
   status?: string;

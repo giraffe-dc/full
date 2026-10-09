@@ -8,6 +8,7 @@ interface RecipeFormModalProps {
   recipe?: MenuRecipe;
   categories: string[];
   ingredients: import('../../types/accounting').MenuIngredient[];
+  priceSyncEnabled?: boolean; // PRICE SYNC (Этап 4): merge актуальних цін при відкритті
   onClose: () => void;
   onSave: (recipe: MenuRecipe) => void;
 }
@@ -20,6 +21,7 @@ export function RecipeFormModal({
   recipe,
   categories,
   ingredients,
+  priceSyncEnabled = false,
   onClose,
   onSave,
 }: RecipeFormModalProps) {
@@ -44,7 +46,32 @@ export function RecipeFormModal({
   useEffect(() => {
     if (recipe) {
       setFormData(recipe);
-      setRecipeIngredients(recipe.ingredients || []);
+      let ings: RecipeIngredient[] = recipe.ingredients || [];
+
+      // PRICE SYNC (Этап 4): merge актуальних цін з довідника при відкритті картки.
+      // Техкарти зберігають снапшот ing.costPerUnit — після приходів він застаріває.
+      // Матчинг: за справжнім ID (_id/id), fallback — normalized name (як у cascadeUpdateRecipes).
+      // Лише коли priceSyncEnabled (flag сервера) і знайдена ціна > 0.
+      if (priceSyncEnabled && ings.length > 0 && ingredients.length > 0) {
+        const norm = (v: any) => (v || '').toString().toLowerCase().trim();
+        ings = ings.map(ing => {
+          const match = ingredients.find(i =>
+            (ing.id && (i.id === ing.id || i._id === ing.id)) ||
+            (norm(i.name) !== '' && norm(i.name) === norm(ing.name))
+          );
+          const freshCost = Number(match?.costPerUnit) || 0;
+          if (!match || freshCost <= 0) return ing;
+          const qtyField = Number(ing.gross) || Number(ing.net) || Number(ing.quantity) || 0;
+          return {
+            ...ing,
+            id: (ing.id && !String(ing.id).startsWith('ing-')) ? ing.id : (match._id || match.id || ing.id),
+            costPerUnit: freshCost,
+            totalCost: freshCost * qtyField,
+          };
+        });
+      }
+
+      setRecipeIngredients(ings);
     } else {
       setFormData({
         code: '',

@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { MenuRecipe } from '@/types/accounting';
+import { isPriceSyncEnabled } from '@/lib/stock-utils';
 
 // GET /api/accounting/recipes - отримати всі тех. картки
 export async function GET(request: NextRequest) {
   try {
+    // PRICE SYNC (Этап 4): lightweight-ендпоінт для UI — чи увімкнено автооновлення цін.
+    // Викликається з RecipeFormModal/MenuRecipesSection, щоб не тягнути всі дані.
+    if (request.nextUrl.searchParams.get('meta') === '1') {
+      return NextResponse.json({ success: true, priceSyncEnabled: isPriceSyncEnabled() });
+    }
+
     const client = await clientPromise;
     const db = client.db('giraffe');
     const collection = db.collection<MenuRecipe>('recipes');
